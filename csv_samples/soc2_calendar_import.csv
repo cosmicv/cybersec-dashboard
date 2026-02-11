@@ -1,0 +1,166 @@
+Date,Task,Category,Priority,Owner,Notes,Status
+2026-01-01,Review SOC2 requirements and gap analysis,Administrative,Warning,Admin Team,One-time - Kickoff activities,Not Started
+2026-01-01,Assign evidence owners and responsibilities,Administrative,Normal,Admin Team,One-time - Kickoff activities,Not Started
+2026-01-01,Set up evidence repository/documentation system,Administrative,Normal,Admin Team,One-time - Kickoff activities,Not Started
+2026-01-06,Annual risk assessment documentation,Security,Warning,Security Team,Annual - Collect early for remediation time,Not Started
+2026-01-06,Vendor security assessments,Vendor Management,Warning,Vendor Team,Annual - Annual reviews,Not Started
+2026-01-06,Set up automated evidence collection tools,Administrative,Normal,Admin Team,One-time - System setup,Not Started
+2026-01-13,Disaster recovery/business continuity test results,Business Continuity,Normal,BC Team,Annual - Collect early,Not Started
+2026-01-13,Annual security awareness training completion records,Human Resources,Normal,HR Team,Annual - All employee records,Not Started
+2026-01-13,Q4 2025 access reviews,Access Control,Warning,IAM Team,Quarterly - If not already done,Not Started
+2026-01-20,Background check records for all employees,Human Resources,Normal,HR Team,Annual - All current employees,Not Started
+2026-01-20,Insurance policy documentation,Legal/Compliance,Normal,Compliance Team,Annual - Cyber liability and E&O,Not Started
+2026-01-20,Review and organize evidence collected,Administrative,Warning,Admin Team,Weekly Review - Progress assessment,Not Started
+2026-01-27,Begin Q1 2026 access review process,Access Control,Warning,IAM Team,Quarterly - Q1 process starts,Not Started
+2026-01-27,Organizational chart and reporting structures,Administrative,Normal,Admin Team,Annual - Document current structure,Not Started
+2026-01-27,Review week: Assess January progress,Administrative,Warning,Admin Team,Weekly Review - Month-end assessment,Not Started
+2026-02-01,Penetration testing - schedule and initiate,Security,Normal,Security Team,Annual - Allow time for completion,Not Started
+2026-02-01,SOC2 policy annual review and approval documentation,Policy,Warning,Policy Team,Annual - Board/management approval,Not Started
+2026-02-01,Continue Q1 access reviews,Access Control,Warning,IAM Team,Quarterly - Ongoing Q1 process,Not Started
+2026-02-09,Infrastructure and network diagrams,Technical,Normal,IT Team,Annual - Current architecture,Not Started
+2026-02-09,Asset inventory documentation,Asset Management,Normal,Asset Team,Annual - Complete inventory,Not Started
+2026-02-09,Information security committee meeting minutes,Governance,Normal,Governance Team,Annual - Year's minutes,Not Started
+2026-02-16,Compliance attestations from critical vendors,Vendor Management,Critical,Vendor Team,Annual - Key vendor documentation,Not Started
+2026-02-16,Complete Q1 access reviews,Access Control,Critical,IAM Team,Quarterly - Finalize Q1 reviews,Not Started
+2026-02-16,Review penetration testing preliminary findings,Security,Warning,Security Team,Annual - Initial findings review,Not Started
+2026-02-23,Q1 vulnerability scan results,Security,Normal,Security Team,Quarterly - Q1 scanning,Not Started
+2026-02-23,Review and remediate critical pentesting findings,Security,Critical,Security Team,Annual - Address critical issues,Not Started
+2026-02-23,Review week: Assess February progress,Administrative,Warning,Admin Team,Weekly Review - Month-end assessment,Not Started
+2026-03-01,Data classification and handling procedures,Data Management,Normal,Data Team,Annual - Classification documentation,Not Started
+2026-03-01,Q1 security metrics reporting,Metrics,Normal,Metrics Team,Quarterly - Q1 KPIs,Not Started
+2026-03-01,Finalize penetration testing and remediation plans,Security,Critical,Security Team,Annual - Complete pentest cycle,Not Started
+2026-03-09,Encryption documentation (at-rest and in-transit),Security,Normal,Security Team,Annual - Encryption controls,Not Started
+2026-03-09,Change management process documentation,Change Management,Normal,Change Team,Annual - Process documentation,Not Started
+2026-03-09,Incident response plan testing documentation,Security,Normal,Security Team,Annual - Test results,Not Started
+2026-03-16,Q1 board/management reporting on security,Governance,Normal,Governance Team,Quarterly - Q1 reporting,Not Started
+2026-03-16,Physical security documentation and access logs,Physical Security,Normal,Security Team,Annual - Facility security,Not Started
+2026-03-16,Review all annual evidence collected to date,Administrative,Warning,Admin Team,Weekly Review - Progress check,Not Started
+2026-03-23,Complete Q1 evidence package,Administrative,Critical,Admin Team,Quarterly - Q1 package finalization,Not Started
+2026-03-23,Gap analysis: Identify missing annual evidence,Administrative,Warning,Admin Team,Quarterly - Identify gaps,Not Started
+2026-03-23,Review week: Q1 assessment and Q2 planning,Administrative,Warning,Admin Team,Weekly Review - Quarter-end assessment,Not Started
+2026-03-30,Buffer week for Q1 evidence completion,Administrative,Normal,Admin Team,Buffer - Catch-up time,Not Started
+2026-04-01,Begin Q2 access review process,Access Control,Warning,IAM Team,Quarterly - Q2 process starts,Not Started
+2026-04-01,Begin monthly log reviews (April logs),Logging,Warning,Security Team,Monthly - Start monthly cycle,Not Started
+2026-04-01,Customer data handling procedures documentation,Data Management,Normal,Data Team,Annual - Data handling docs,Not Started
+2026-04-06,Q2 vulnerability scanning,Security,Normal,Security Team,Quarterly - Q2 scanning,Not Started
+2026-04-06,Security incident log review (March-April),Incident Management,Warning,Incident Team,Monthly - March-April incidents,Not Started
+2026-04-06,Data retention and disposal procedures,Data Management,Normal,Data Team,Annual - Retention policies,Not Started
+2026-04-13,Collect any remaining annual evidence,Administrative,Normal,Admin Team,Annual - Final annual evidence,Not Started
+2026-04-13,Continue Q2 access reviews,Access Control,Warning,IAM Team,Quarterly - Ongoing Q2 process,Not Started
+2026-04-13,Change management tickets and approvals,Change Management,Normal,Change Team,Annual - Historical changes,Not Started
+2026-04-20,System availability/uptime reports (April),Operations,Normal,Ops Team,Monthly - April metrics,Not Started
+2026-04-20,Q2 security metrics,Metrics,Normal,Metrics Team,Quarterly - Q2 KPIs,Not Started
+2026-04-20,Backup and recovery documentation,Business Continuity,Normal,BC Team,Annual - Backup procedures,Not Started
+2026-04-27,Complete Q2 access reviews,Access Control,Critical,IAM Team,Quarterly - Finalize Q2 reviews,Not Started
+2026-04-27,Review week: April progress assessment,Administrative,Warning,Admin Team,Weekly Review - Month-end assessment,Not Started
+2026-05-01,Monthly log reviews (May logs),Logging,Warning,Security Team,Monthly - May logs,Not Started
+2026-05-01,Q2 board/management security reporting,Governance,Normal,Governance Team,Quarterly - Q2 reporting,Not Started
+2026-05-04,Security incident log review (April-May),Incident Management,Warning,Incident Team,Monthly - April-May incidents,Not Started
+2026-05-04,Begin preparation of evidence index/matrix,Administrative,Normal,Admin Team,One-time - Audit preparation,Not Started
+2026-05-04,Monitoring and alerting configurations documentation,Security,Normal,Security Team,Annual - Monitoring setup,Not Started
+2026-05-11,System availability/uptime reports (May),Operations,Normal,Ops Team,Monthly - May metrics,Not Started
+2026-05-11,User access provisioning/deprovisioning processes,Access Control,Normal,IAM Team,Annual - Process documentation,Not Started
+2026-05-11,Authentication and authorization controls review,Security,Warning,Security Team,Annual - Access controls,Not Started
+2026-05-18,Complete Q2 evidence package,Administrative,Critical,Admin Team,Quarterly - Q2 package finalization,Not Started
+2026-05-18,Mid-year review: Assess all evidence collected,Administrative,Warning,Admin Team,Mid-Year Review - Comprehensive review,Not Started
+2026-05-18,Identify and prioritize any gaps,Administrative,Warning,Admin Team,Mid-Year Review - Gap identification,Not Started
+2026-05-25,Review week: Gap remediation planning,Administrative,Warning,Admin Team,Weekly Review - Plan gap closure,Not Started
+2026-05-25,Update evidence collection tracker,Administrative,Normal,Admin Team,Weekly Review - Tracker update,Not Started
+2026-06-01,Begin Q3 access review process,Access Control,Warning,IAM Team,Quarterly - Q3 process starts,Not Started
+2026-06-01,Monthly log reviews (June logs),Logging,Warning,Security Team,Monthly - June logs,Not Started
+2026-06-01,Security incident log review (May-June),Incident Management,Warning,Incident Team,Monthly - May-June incidents,Not Started
+2026-06-08,Q3 vulnerability scanning,Security,Normal,Security Team,Quarterly - Q3 scanning,Not Started
+2026-06-08,System availability/uptime reports (June),Operations,Normal,Ops Team,Monthly - June metrics,Not Started
+2026-06-08,Configuration management processes documentation,Change Management,Normal,Change Team,Annual - Config management,Not Started
+2026-06-15,Continue Q3 access reviews,Access Control,Warning,IAM Team,Quarterly - Ongoing Q3 process,Not Started
+2026-06-15,Change management documentation review (Q2),Change Management,Warning,Change Team,Monthly - Q2 changes,Not Started
+2026-06-15,Organize evidence by Trust Service Criteria,Administrative,Normal,Admin Team,One-time - TSC organization,Not Started
+2026-06-22,Q3 security metrics,Metrics,Normal,Metrics Team,Quarterly - Q3 KPIs,Not Started
+2026-06-22,Backup verification logs,Operations,Normal,Ops Team,Monthly - Backup verification,Not Started
+2026-06-22,Security training completion rates review,Human Resources,Warning,HR Team,Ongoing - Training status,Not Started
+2026-06-29,Review week: June assessment and Q3 planning,Administrative,Warning,Admin Team,Weekly Review - Month-end assessment,Not Started
+2026-07-01,Monthly log reviews (July logs),Logging,Warning,Security Team,Monthly - July logs,Not Started
+2026-07-01,Complete Q3 access reviews,Access Control,Critical,IAM Team,Quarterly - Finalize Q3 reviews,Not Started
+2026-07-01,Security incident log review (June-July),Incident Management,Warning,Incident Team,Monthly - June-July incidents,Not Started
+2026-07-06,Q3 board/management security reporting,Governance,Normal,Governance Team,Quarterly - Q3 reporting,Not Started
+2026-07-06,System availability/uptime reports (July),Operations,Normal,Ops Team,Monthly - July metrics,Not Started
+2026-07-06,API security controls documentation,Security,Normal,Security Team,Annual - API security,Not Started
+2026-07-13,Firewall rule review documentation,Security,Warning,Security Team,Monthly - Firewall rules,Not Started
+2026-07-13,Complete Q3 evidence package,Administrative,Critical,Admin Team,Quarterly - Q3 package finalization,Not Started
+2026-07-13,Pre-audit preparation: Organize evidence repository,Administrative,Critical,Admin Team,Pre-Audit - Repository organization,Not Started
+2026-07-20,Database access logs review,Logging,Warning,Security Team,Monthly - Database access,Not Started
+2026-07-20,Review all evidence collected year-to-date,Administrative,Warning,Admin Team,Pre-Audit - Comprehensive review,Not Started
+2026-07-20,Create preliminary evidence matrix for auditors,Administrative,Critical,Admin Team,Pre-Audit - Evidence matrix,Not Started
+2026-07-27,Review week: Comprehensive mid-summer assessment,Administrative,Warning,Admin Team,Weekly Review - Pre-audit assessment,Not Started
+2026-07-27,Finalize audit preparation timeline,Administrative,Critical,Admin Team,Pre-Audit - Timeline finalization,Not Started
+2026-08-01,Begin Q4 access review process (early start),Access Control,Warning,IAM Team,Quarterly - Q4 early start for audit,Not Started
+2026-08-01,Monthly log reviews (August logs),Logging,Warning,Security Team,Monthly - August logs,Not Started
+2026-08-03,Begin weekly security monitoring reviews,Monitoring,Warning,Security Team,Weekly - Weekly cycle begins,Not Started
+2026-08-03,Security incident log review (July-August),Incident Management,Warning,Incident Team,Monthly - July-August incidents,Not Started
+2026-08-03,Q4 vulnerability scanning,Security,Normal,Security Team,Quarterly - Q4 scanning,Not Started
+2026-08-10,Weekly access provisioning/deprovisioning logs,Access Control,Normal,IAM Team,Weekly - Weekly logs,Not Started
+2026-08-10,System availability/uptime reports (August),Operations,Normal,Ops Team,Monthly - August metrics,Not Started
+2026-08-10,Continue Q4 access reviews,Access Control,Warning,IAM Team,Quarterly - Ongoing Q4 process,Not Started
+2026-08-17,Weekly change management approvals,Change Management,Normal,Change Team,Weekly - Weekly approvals,Not Started
+2026-08-17,Backup verification logs (August),Operations,Normal,Ops Team,Monthly - August backups,Not Started
+2026-08-17,Begin daily log sampling (if required),Logging,Normal,Security Team,Daily - Daily logs start,Not Started
+2026-08-24,Weekly security incident reviews,Incident Management,Warning,Incident Team,Weekly - Weekly reviews,Not Started
+2026-08-24,Complete Q4 access reviews,Access Control,Critical,IAM Team,Quarterly - Finalize Q4 reviews,Not Started
+2026-08-24,Q4 security metrics,Metrics,Normal,Metrics Team,Quarterly - Q4 KPIs,Not Started
+2026-08-31,Review week: Final pre-audit assessment,Administrative,Critical,Admin Team,Weekly Review - Pre-audit final check,Not Started
+2026-08-31,Ensure all evidence through August collected,Administrative,Normal,Admin Team,Pre-Audit - Evidence verification,Not Started
+2026-09-01,Weekly monitoring and log reviews,Monitoring,Warning,Security Team,Weekly - Ongoing weekly,Not Started
+2026-09-01,Monthly log reviews (September logs),Logging,Warning,Security Team,Monthly - September logs,Not Started
+2026-09-01,Daily critical system access logs,Logging,Critical,Security Team,Daily - Daily logs,Not Started
+2026-09-07,All weekly evidence collection activities,Multiple,Normal,Multiple Teams,Weekly - Continue all weekly,Not Started
+2026-09-07,Security incident log review (August-September),Incident Management,Warning,Incident Team,Monthly - Aug-Sept incidents,Not Started
+2026-09-07,Complete evidence cross-referencing to TSC,Administrative,Critical,Admin Team,Pre-Audit - TSC mapping,Not Started
+2026-09-14,All weekly evidence collection,Multiple,Normal,Multiple Teams,Weekly - Continue all weekly,Not Started
+2026-09-14,System availability/uptime reports (September),Operations,Normal,Ops Team,Monthly - September metrics,Not Started
+2026-09-14,Final evidence organization and indexing,Administrative,Critical,Admin Team,Pre-Audit - Final organization,Not Started
+2026-09-21,Complete Q4 evidence package (partial),Administrative,Critical,Admin Team,Quarterly - Q4 partial package,Not Started
+2026-09-21,All weekly evidence collection,Multiple,Normal,Multiple Teams,Weekly - Continue all weekly,Not Started
+2026-09-21,Audit preparation: Final evidence review,Administrative,Critical,Admin Team,Pre-Audit - Final review,Not Started
+2026-09-28,AUDIT BEGINS (potential start date),Audit,Critical,Audit Team,Audit Period - Audit fieldwork starts,Not Started
+2026-09-28,Continue all regular evidence collection,Multiple,Normal,Multiple Teams,Ongoing - Normal operations continue,Not Started
+2026-09-28,Respond to auditor requests,Audit,Critical,Audit Team,Audit Period - Auditor support,Not Started
+2026-10-01,All weekly evidence collection continues,Multiple,Normal,Multiple Teams,Weekly - Continue all weekly,Not Started
+2026-10-01,Monthly log reviews (October logs),Logging,Warning,Security Team,Monthly - October logs,Not Started
+2026-10-01,Daily evidence as requested by auditors,Multiple,Critical,Multiple Teams,Daily - Auditor requests,Not Started
+2026-10-05,Continue all weekly collections,Multiple,Normal,Multiple Teams,Weekly - Ongoing weekly,Not Started
+2026-10-05,Security incident log review (September-October),Incident Management,Warning,Incident Team,Monthly - Sept-Oct incidents,Not Started
+2026-10-05,Provide supplemental evidence as requested,Audit,Normal,Audit Team,Audit Period - Additional evidence,Not Started
+2026-10-12,All weekly evidence collection,Multiple,Normal,Multiple Teams,Weekly - Continue all weekly,Not Started
+2026-10-12,System availability/uptime reports (October),Operations,Normal,Ops Team,Monthly - October metrics,Not Started
+2026-10-12,Address auditor findings and questions,Audit,Critical,Audit Team,Audit Period - Respond to findings,Not Started
+2026-10-19,Continue evidence collection,Multiple,Normal,Multiple Teams,Weekly - Ongoing evidence,Not Started
+2026-10-19,Q4 final evidence (if audit extends),Administrative,Critical,Admin Team,Quarterly - Q4 completion,Not Started
+2026-10-19,Management representation letters and sign-offs,Audit,Normal,Audit Team,Audit Period - Final audit docs,Not Started
+2026-10-26,AUDIT FIELDWORK COMPLETION (expected),Audit,Critical,Audit Team,Audit Period - Fieldwork ends,Not Started
+2026-10-26,Final evidence submissions,Audit,Critical,Audit Team,Audit Period - Last submissions,Not Started
+2026-10-26,Review week: Audit debrief and lessons learned,Administrative,Critical,Admin Team,Weekly Review - Post-audit debrief,Not Started
+2026-11-01,Respond to outstanding auditor questions,Audit,Critical,Audit Team,Post-Audit - Final questions,Not Started
+2026-11-01,Begin remediation of any findings,Remediation,Normal,Security Team,Post-Audit - Address findings,Not Started
+2026-11-01,Archive audit evidence package,Administrative,Critical,Admin Team,Post-Audit - Evidence archival,Not Started
+2026-11-09,Receive draft audit report,Audit,Critical,Audit Team,Post-Audit - Draft report,Not Started
+2026-11-09,Review and provide feedback on draft report,Audit,Warning,Audit Team,Post-Audit - Report review,Not Started
+2026-11-09,Document lessons learned,Administrative,Normal,Admin Team,Post-Audit - Process improvement,Not Started
+2026-11-16,Q4 completion (standard operations resume),Administrative,Normal,Admin Team,Quarterly - Normal ops resume,Not Started
+2026-11-16,Finalize remediation plans for findings,Remediation,Critical,Security Team,Post-Audit - Remediation planning,Not Started
+2026-11-16,Update policies/procedures based on audit insights,Policy,Critical,Policy Team,Post-Audit - Policy updates,Not Started
+2026-11-23,Receive final SOC2 report,Audit,Critical,Audit Team,Post-Audit - Final report received,Not Started
+2026-11-23,Communicate results to stakeholders,Communication,Normal,Communications,Post-Audit - Stakeholder updates,Not Started
+2026-11-23,Review week: Plan for next audit cycle,Administrative,Critical,Admin Team,Weekly Review - Next cycle planning,Not Started
+2026-12-01,Implement improvements from audit findings,Remediation,Critical,Security Team,Continuous Improvement - Implementation,Not Started
+2026-12-01,Resume normal monthly evidence collection,Multiple,Normal,Multiple Teams,Monthly - Normal monthly cycle,Not Started
+2026-12-01,Update evidence collection procedures,Administrative,Normal,Admin Team,Continuous Improvement - Procedure updates,Not Started
+2026-12-07,Year-end security reviews and reporting,Security,Warning,Security Team,Annual - Year-end activities,Not Started
+2026-12-07,Q4 2026 final evidence package,Administrative,Critical,Admin Team,Quarterly - Q4 final package,Not Started
+2026-12-07,Plan for 2027 audit cycle,Administrative,Critical,Admin Team,Planning - 2027 planning,Not Started
+2026-12-14,Archive all 2026 evidence,Administrative,Normal,Admin Team,Annual - Annual archival,Not Started
+2026-12-14,Update audit readiness documentation,Administrative,Critical,Admin Team,Annual - Documentation updates,Not Started
+2026-12-14,Team retrospective on audit process,Administrative,Critical,Admin Team,Annual - Team retrospective,Not Started
+2026-12-21,Holiday week - minimal activity,Administrative,Normal,Admin Team,Holiday - Holiday period,Not Started
+2026-12-21,Review week: Annual assessment,Administrative,Warning,Admin Team,Weekly Review - Annual review,Not Started
+2026-12-28,Year-end closeout,Administrative,Normal,Admin Team,Annual - Year-end closeout,Not Started
+2026-12-28,Prepare 2027 evidence collection schedule,Administrative,Warning,Admin Team,Planning - Next year schedule,Not Started

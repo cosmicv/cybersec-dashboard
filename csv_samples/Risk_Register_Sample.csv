@@ -1,0 +1,46 @@
+Title,Description,Category,Probability,Impact,Status,Owner,Mitigation Plan,Notes,Date Created,Date Modified
+Unpatched Production Systems,Critical and high severity vulnerabilities remain unpatched beyond SLA timelines on production servers and endpoints.,Technical,8,9,Open,IT Director,"Implement automated patch management with 14-day SLA for critical, 30-day for high. Deploy vulnerability scanning on weekly cadence.","250115 - 12 critical vulns identified in quarterly scan.
+250301 - Reduced to 4 after patch cycle.
+250601 - New Java CVE affecting API servers, emergency patch scheduled.",2025-01-15,2025-06-01
+Vendor Insufficient Controls,Third-party vendor lacks adequate security controls including background checks and information security policy.,Compliance,7,8,Open,CISO,"Issue formal risk acceptance memo to leadership. Require vendor to remediate within 90 days or evaluate alternatives.","250414 - AccuPro questionnaire response reveals gaps.
+250424 - Discussed with SC, emailed risk summary with recommendations.",2025-04-14,2025-04-24
+Lack of MFA on Critical Systems,Multi-factor authentication not enforced across all critical systems and user accounts.,Security,8,9,Monitoring,IT Director,"Roll out MFA for all users by Q1 2025. Prioritize admin accounts and systems with access to confidential data.","240806 - MFA implementation planned for fall 2024.
+241112 - Delayed to Q1 2025.
+250315 - MFA enforced for 85% of users. Remaining accounts in progress.",2024-08-06,2025-03-15
+Unencrypted Endpoints,Staff laptops lack full disk encryption exposing confidential data if device is lost or stolen.,Technical,6,8,Monitoring,IT Director,"Enable FileVault/BitLocker on all endpoints. Migrate to virtual desktop infrastructure as long-term solution.","240108 - Need to verify encryption status on all devices.
+240722 - Holding for VM implementation. Compensating control via contract language.
+241201 - Contract language implemented. Probability reduced.",2024-01-08,2024-12-01
+Phishing Attack Success,Employees fall victim to phishing attempts leading to credential compromise or malware infection.,Security,7,7,Open,CISO,"Conduct monthly phishing simulations. Require security awareness training quarterly. Deploy email filtering with advanced threat protection.","250201 - Q4 phishing sim showed 12% click rate.
+250501 - Q1 sim improved to 8% click rate after targeted training.",2025-02-01,2025-05-01
+No Disaster Recovery Testing,Disaster recovery plan has not been tested in over 12 months creating uncertainty about recovery capabilities.,Operational,6,9,Open,IT Director,"Schedule DR tabletop exercise quarterly and full failover test annually. Document RTO/RPO for all critical systems.","250301 - Last DR test was March 2024. Overdue.
+250615 - Tabletop scheduled for July 2025.",2025-03-01,2025-06-15
+Excessive User Permissions,Users retain access permissions beyond what is required for their current role violating least privilege.,Security,7,7,Monitoring,IT Director,"Implement quarterly user access reviews. Deploy role-based access control. Automate deprovisioning on role change.","250110 - Access review identified 15 users with excessive permissions.
+250401 - Remediated 12 of 15. Remaining 3 pending manager approval.",2025-01-10,2025-04-01
+Missing Security Logging,Insufficient logging and monitoring on several production systems limiting incident detection and forensic capability.,Technical,6,8,Open,CISO,"Deploy centralized SIEM. Ensure all critical systems forward logs. Establish 90-day retention minimum.","250201 - Only 60% of production systems forwarding logs.
+250415 - SIEM deployment in progress, target 90% coverage by Q3.",2025-02-01,2025-04-15
+Insecure API Endpoints,Public-facing API endpoints lack rate limiting and input validation creating risk of abuse or data exposure.,Technical,7,8,Open,CTO,"Implement API gateway with rate limiting. Add input validation and output encoding. Conduct API-specific penetration test.","250301 - Penetration test identified 3 high findings on API.
+250501 - 2 of 3 remediated. Rate limiting deployed.",2025-03-01,2025-05-01
+No Formal Incident Response Plan,Organization lacks a documented and tested incident response plan.,Compliance,5,9,Monitoring,CISO,"Draft IR plan aligned to NIST CSF. Conduct tabletop exercises quarterly. Establish incident commander rotation.","250115 - IR plan draft completed.
+250401 - Tabletop exercise conducted, identified communication gaps.
+250601 - Plan updated with lessons learned.",2025-01-15,2025-06-01
+Shadow IT Usage,Staff using unapproved SaaS applications to process business data without security review.,Operational,7,6,Open,IT Director,"Deploy CASB for shadow IT discovery. Establish expedited app approval process. Communicate acceptable use policy.","250301 - Discovery scan found 23 unapproved SaaS tools.
+250501 - 8 approved after review, 10 blocked, 5 pending.",2025-03-01,2025-05-01
+Inadequate Backup Verification,Backups are running but restoration has not been tested to verify data integrity and recoverability.,Operational,5,9,Open,IT Director,"Implement monthly backup restoration tests for critical systems. Document and report results to leadership.","250201 - Last verified restore was October 2024.
+250601 - Restore test scheduled for July 2025.",2025-02-01,2025-06-01
+Lack of Network Segmentation,Flat network topology allows lateral movement if an attacker gains access to any internal system.,Technical,6,8,Open,IT Director,"Implement network segmentation isolating production, development, and corporate environments. Deploy micro-segmentation for critical assets.","250401 - Network assessment completed. Segmentation design in progress.
+250701 - Phase 1 deployment targeting production isolation by Q4.",2025-04-01,2025-07-01
+Weak Password Policy,Current password policy does not meet NIST 800-63 guidelines allowing weak or reused passwords.,Security,6,7,Monitoring,IT Director,"Update password policy to NIST 800-63 standards. Deploy password manager enterprise-wide. Enable breached password detection.","250201 - Policy updated, pending approval.
+250315 - Policy approved. LastPass deployment at 70%.
+250601 - 95% adoption of password manager.",2025-02-01,2025-06-01
+Third Party Data Breach,A critical vendor experiences a data breach exposing customer data shared with them.,Strategic,5,9,Open,CISO,"Maintain vendor incident notification requirements in contracts. Monitor vendor security posture. Ensure data minimization practices.","250301 - Reviewed all vendor contracts for breach notification clauses.
+250501 - 3 vendors missing clause, amendments in progress.",2025-03-01,2025-05-01
+Regulatory Non-Compliance,Failure to meet regulatory requirements resulting in fines or enforcement actions.,Compliance,4,9,Monitoring,CISO,"Maintain compliance calendar. Conduct annual compliance gap assessments. Engage external auditors for validation.","250115 - Gap assessment completed against NIST CSF 2.0.
+250401 - 4 gaps identified, remediation plans in place.",2025-01-15,2025-04-01
+Key Person Dependency,Critical security knowledge concentrated in single individuals creating operational risk if unavailable.,Operational,7,7,Open,CISO,"Document all critical procedures. Cross-train team members. Establish backup responsibilities for key functions.","250201 - Identified 5 key person dependencies.
+250501 - Documentation completed for 3 of 5. Cross-training in progress.",2025-02-01,2025-05-01
+Insecure Data Disposal,No formal process for secure disposal of hardware and media containing confidential data.,Compliance,4,7,Open,IT Director,"Implement certified data destruction for all hardware. Maintain chain of custody documentation. Include in asset management lifecycle.","250401 - Inventory of hardware pending disposal: 12 devices.
+250601 - Engaged certified destruction vendor.",2025-04-01,2025-06-01
+Cloud Misconfiguration,Cloud infrastructure settings deviating from security baselines exposing resources to unauthorized access.,Technical,7,8,Open,CTO,"Deploy cloud security posture management tool. Implement infrastructure as code with security guardrails. Conduct monthly configuration reviews.","250301 - CSPM scan found 18 misconfigurations.
+250501 - Remediated 14. Remaining 4 require architecture changes.",2025-03-01,2025-05-01
+Insider Threat,Risk of intentional or accidental data exfiltration or sabotage by employees or contractors.,Security,4,8,Monitoring,CISO,"Deploy DLP solution for sensitive data. Implement user behavior analytics. Conduct background checks on all staff with access to confidential data.","250201 - DLP pilot on email gateway.
+250501 - Expanded to cloud storage. UBA tool evaluation underway.",2025-02-01,2025-05-01

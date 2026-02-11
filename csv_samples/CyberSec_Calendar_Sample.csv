@@ -1,0 +1,23 @@
+Date,Task,Category,Priority,Owner,Notes
+2026-02-02,Monthly Vulnerability Scan,Vulnerability Management,Critical,Security Team,Run authenticated scans on all production systems and generate report
+2026-02-05,Phishing Simulation Campaign,Training & Awareness,Normal,HR & Security,Monthly simulated phishing test targeting all staff
+2026-02-09,Firewall Rule Review,Network Security,Warning,Network Team,Review and clean up unused firewall rules across all perimeters
+2026-02-11,Patch Tuesday Deployment,System Maintenance,Critical,IT Operations,Deploy Microsoft and third-party critical patches within 14-day SLA
+2026-02-13,Access Review - Privileged Accounts,Identity & Access,Critical,IAM Team,Quarterly review of all admin and service accounts
+2026-02-16,Backup Restoration Test,Data Protection,Warning,Infrastructure Team,Test restore of production database and file server backups
+2026-02-18,Security Awareness Newsletter,Training & Awareness,Normal,HR & Security,Distribute monthly security tips and recent threat briefing
+2026-02-20,Vendor Security Review - Stripe,Vendor Management,Warning,CISO,Annual SOC2 review for payment processing vendor
+2026-02-23,Incident Response Tabletop,Incident Response,Critical,Security Team,Quarterly tabletop exercise - ransomware scenario
+2026-02-25,Cloud Configuration Audit,Cloud Security,Warning,Cloud Team,Review AWS/Azure security posture against CIS benchmarks
+2026-02-27,SSL Certificate Expiration Check,System Maintenance,Normal,Infrastructure Team,Verify all production certificates valid for 60+ days
+2026-03-02,Monthly Vulnerability Scan,Vulnerability Management,Critical,Security Team,Run authenticated scans on all production systems
+2026-03-04,SIEM Alert Tuning,Security Operations,Normal,Security Team,Review and tune SIEM detection rules to reduce false positives
+2026-03-09,User Access Review - All Staff,Identity & Access,Critical,IAM Team,Quarterly review of all user access permissions and role assignments
+2026-03-11,Patch Tuesday Deployment,System Maintenance,Critical,IT Operations,Deploy Microsoft and third-party critical patches
+2026-03-13,DLP Policy Review,Data Protection,Warning,CISO,Review data loss prevention rules and update for new data types
+2026-03-16,Penetration Test Kickoff,Vulnerability Management,Critical,Security Team,Annual external penetration test - vendor onsite week of 3/16
+2026-03-18,Business Continuity Plan Review,Business Continuity,Warning,COO,Annual review of BCP and update contact trees and recovery procedures
+2026-03-20,Security Metrics Report to Board,Governance,Critical,CISO,Quarterly security metrics and risk posture report for board presentation
+2026-03-25,Vendor Security Review - AWS,Vendor Management,Warning,CISO,Annual review of cloud provider SOC2 and shared responsibility controls
+2026-03-27,Endpoint Protection Update,System Maintenance,Normal,IT Operations,Verify EDR agent versions current across all endpoints
+2026-03-30,Policy Review - Acceptable Use,Governance,Normal,CISO,Annual review of acceptable use policy - update for remote work changes
