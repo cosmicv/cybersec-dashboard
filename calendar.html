@@ -1,0 +1,1285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Operations Calendar</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f8f9fa;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .subtitle {
+            font-size: 1em;
+            opacity: 0.9;
+        }
+
+        .controls {
+            padding: 20px 30px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+        }
+
+        .file-input-wrapper input[type=file] {
+            position: absolute;
+            left: -9999px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+            transform: translateY(-2px);
+        }
+
+        .btn-warning {
+            background: #ffc107;
+            color: #212529;
+        }
+
+        .btn-warning:hover {
+            background: #e0a800;
+            transform: translateY(-2px);
+        }
+
+        .nav-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-left: auto;
+        }
+
+        .nav-btn {
+            padding: 8px 16px;
+            background: white;
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            color: #495057;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .nav-btn:hover {
+            border-color: #667eea;
+            color: #667eea;
+            background: #f8f9ff;
+        }
+
+        .current-month {
+            font-size: 16px;
+            font-weight: 600;
+            color: #667eea;
+            padding: 0 15px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .calendar-wrapper {
+            padding: 30px;
+            background: white;
+            min-height: 600px;
+        }
+
+        .calendar {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 1px;
+            background: #dee2e6;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            overflow: hidden;
+            min-height: 500px;
+        }
+
+        .calendar-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .calendar-day {
+            background: white;
+            padding: 12px;
+            min-height: 100px;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .calendar-day:hover {
+            background: #f8f9fa;
+            box-shadow: inset 0 0 0 2px #667eea;
+        }
+
+        .calendar-day.other-month {
+            background: #f8f9fa;
+            opacity: 0.5;
+        }
+
+        .calendar-day.today {
+            background: #e3f2fd;
+            box-shadow: inset 0 0 0 2px #667eea;
+        }
+
+        .day-number {
+            font-weight: 600;
+            font-size: 14px;
+            color: #212529;
+            margin-bottom: 8px;
+        }
+
+        .day-event {
+            font-size: 11px;
+            padding: 4px 6px;
+            margin-bottom: 4px;
+            border-radius: 4px;
+            color: white;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .day-event:hover {
+            transform: scale(1.05);
+            z-index: 10;
+        }
+
+        .day-event.critical {
+            background: #dc3545;
+        }
+
+        .day-event.warning {
+            background: #fd7e14;
+        }
+
+        .day-event.normal {
+            background: #28a745;
+        }
+
+        .table-wrapper {
+            padding: 30px;
+            background: white;
+            border-top: 1px solid #dee2e6;
+        }
+
+        .table-header {
+            font-size: 20px;
+            font-weight: 600;
+            color: #212529;
+            margin-bottom: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #dee2e6;
+            font-size: 14px;
+            color: #495057;
+        }
+
+        tr:hover {
+            background: #f8f9fa;
+        }
+
+        .status-badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            display: inline-block;
+        }
+
+        .status-critical {
+            background: #dc3545;
+            color: white;
+        }
+
+        .status-warning {
+            background: #ffc107;
+            color: #212529;
+        }
+
+        .status-normal {
+            background: #28a745;
+            color: white;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6c757d;
+        }
+
+        .empty-state h2 {
+            font-size: 24px;
+            margin-bottom: 10px;
+            color: #495057;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .close {
+            color: #6c757d;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            line-height: 20px;
+        }
+
+        .close:hover {
+            color: #dc3545;
+        }
+
+        .modal-content h2 {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #212529;
+            clear: both;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            font-size: 14px;
+            color: #495057;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: inherit;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+
+        .action-btn {
+            padding: 6px 12px;
+            border: 1px solid #ced4da;
+            background: white;
+            color: #495057;
+            font-size: 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+
+        .action-btn:hover {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .action-btn.delete:hover {
+            background: #dc3545;
+            color: white;
+            border-color: #dc3545;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            h1 {
+                font-size: 1.5em;
+            }
+
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .nav-controls {
+                margin-left: 0;
+                width: 100%;
+                justify-content: center;
+            }
+
+            .calendar {
+                gap: 0;
+            }
+
+            .calendar-day {
+                min-height: 60px;
+                padding: 6px;
+            }
+
+            .day-event {
+                font-size: 9px;
+                padding: 2px 4px;
+            }
+
+            table {
+                font-size: 12px;
+            }
+
+            th, td {
+                padding: 8px;
+            }
+
+            .modal-content {
+                width: 95%;
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>CyberSec Ops Calendar</h1>
+            <p class="subtitle">Security Operations Scheduler</p>
+        </header>
+
+        <div class="controls">
+            
+            <button class="btn" id="addEventBtn" class="btn btn-warning">+ Add Event</button>
+
+            <div class="nav-controls">
+                <button class="nav-btn" id="prevMonth">&#9664; Prev</button>
+                <span class="current-month" id="currentMonth"></span>
+                <button class="nav-btn" id="nextMonth">Next &#9654;</button>
+                <button class="nav-btn" id="todayBtn">Today</button>
+            </div>
+        </div>
+
+        <div class="calendar-wrapper">
+            <div class="calendar" id="calendar"></div>
+        </div>
+
+        <div class="table-wrapper">
+            <h2 class="table-header">Scheduled Operations</h2>
+            <div id="tableContainer"></div>
+        </div>
+
+        <!-- Modal for Add/Edit Event -->
+        <div id="eventModal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h2 id="modalTitle">Add New Event</h2>
+                <form id="eventForm">
+                    <div class="form-group">
+                        <label>Start Date & Time:</label>
+                        <input type="datetime-local" id="startTime" required>
+                    </div>
+                    <div class="form-group">
+                        <label>End Date & Time:</label>
+                        <input type="datetime-local" id="endTime" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Task/Description:</label>
+                        <input type="text" id="taskInput" placeholder="Enter task description" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Category/Color:</label>
+                        <select id="categoryInput">
+                            <option value="blue">Blue - General</option>
+                            <option value="green">Green - Success</option>
+                            <option value="red">Red - Critical</option>
+                            <option value="orange">Orange - Warning</option>
+                            <option value="purple">Purple - Review</option>
+                            <option value="pink">Pink - Planning</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Priority:</label>
+                        <select id="priorityInput">
+                            <option value="Normal">Normal</option>
+                            <option value="Warning">Warning</option>
+                            <option value="Critical">Critical</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Owner:</label>
+                        <input type="text" id="ownerInput" placeholder="Team or person responsible">
+                    </div>
+                    <div class="form-group">
+                        <label>Notes:</label>
+                        <textarea id="notesInput" placeholder="Additional notes" rows="3"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Repeat:</label>
+                        <select id="repeatInput" onchange="toggleRepeatOptions()">
+                            <option value="none">Does not repeat</option>
+                            <option value="daily">Daily</option>
+                            <option value="weekly">Weekly</option>
+                            <option value="monthly">Monthly</option>
+                            <option value="yearly">Yearly</option>
+                        </select>
+                    </div>
+                    <div id="repeatOptions" style="display: none;">
+                        <div class="form-group">
+                            <label>Repeat Until:</label>
+                            <input type="date" id="repeatUntilInput">
+                        </div>
+                        <div class="form-group">
+                            <label>Or Number of Occurrences:</label>
+                            <input type="number" id="repeatCountInput" min="1" max="365" placeholder="Leave blank to use end date">
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">Save Event</button>
+                        <button type="button" class="btn btn-secondary" id="cancelBtn">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // State management
+        let currentDate = new Date();
+        let operations = [];
+        let editingIndex = -1; // -1 means adding new, >= 0 means editing existing
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Calendar initializing...');
+            console.log('Calendar element exists:', !!document.getElementById('calendar'));
+            console.log('Current month element exists:', !!document.getElementById('currentMonth'));
+            
+            renderCalendar();
+            updateMonthDisplay();
+            setupEventListeners();
+            
+            console.log('Calendar initialized successfully');
+        });
+
+        // Event Listeners
+        function setupEventListeners() {
+            document.getElementById('csvFile').addEventListener('change', handleFileUpload);
+            document.getElementById('exportBtn').addEventListener('click', exportTemplate);
+            document.getElementById('addEventBtn').addEventListener('click', openAddEventModal);
+            document.getElementById('prevMonth').addEventListener('click', () => changeMonth(-1));
+            document.getElementById('nextMonth').addEventListener('click', () => changeMonth(1));
+            document.getElementById('todayBtn').addEventListener('click', goToToday);
+            
+            // Modal event listeners
+            document.querySelector('.close').addEventListener('click', closeModal);
+            document.getElementById('cancelBtn').addEventListener('click', closeModal);
+            document.getElementById('eventForm').addEventListener('submit', handleEventSubmit);
+            
+            // Close modal when clicking outside
+            window.addEventListener('click', (e) => {
+                const modal = document.getElementById('eventModal');
+                if (e.target === modal) {
+                    closeModal();
+                }
+            });
+        }
+
+        // Calendar rendering
+        function renderCalendar() {
+            console.log('=== renderCalendar called ===');
+            console.log('Total operations:', operations.length);
+            operations.forEach((op, idx) => {
+                console.log(`Op ${idx}:`, op.task, '| Date:', op.date);
+            });
+            
+            const calendar = document.getElementById('calendar');
+            calendar.innerHTML = '';
+
+            // Add day headers
+            const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            days.forEach(day => {
+                const header = document.createElement('div');
+                header.className = 'calendar-header';
+                header.textContent = day;
+                calendar.appendChild(header);
+            });
+
+            // Get calendar data
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+            const prevLastDay = new Date(year, month, 0);
+            const firstDayOfWeek = firstDay.getDay();
+            const lastDate = lastDay.getDate();
+            const prevLastDate = prevLastDay.getDate();
+
+            // Previous month's trailing days
+            for (let i = firstDayOfWeek - 1; i >= 0; i--) {
+                const day = createDayElement(prevLastDate - i, true);
+                calendar.appendChild(day);
+            }
+
+            // Current month's days
+            const today = new Date();
+            for (let i = 1; i <= lastDate; i++) {
+                const isToday = i === today.getDate() && 
+                               month === today.getMonth() && 
+                               year === today.getFullYear();
+                const day = createDayElement(i, false, isToday);
+                
+                // Add events for this day
+                const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+                const dayOperations = operations.filter(op => {
+                    // Extract just the date part from the op.date (which might be datetime)
+                    const opDateOnly = op.date.split('T')[0];
+                    const matches = opDateOnly === dateStr;
+                    if (matches) {
+                        console.log(`Found event for ${dateStr}:`, op.task, '| op.date:', op.date, '| opDateOnly:', opDateOnly);
+                    }
+                    return matches;
+                });
+                
+                console.log(`Date ${dateStr}: ${dayOperations.length} events`);
+                
+                dayOperations.forEach(op => {
+                    const event = document.createElement('div');
+                    event.className = `day-event ${op.priority.toLowerCase()}`;
+                    event.textContent = op.task;
+                    event.title = `${op.task} - ${op.category}`;
+                    day.appendChild(event);
+                });
+                
+                calendar.appendChild(day);
+            }
+
+            // Next month's leading days
+            const remainingDays = 42 - (firstDayOfWeek + lastDate);
+            for (let i = 1; i <= remainingDays; i++) {
+                const day = createDayElement(i, true);
+                calendar.appendChild(day);
+            }
+
+            renderTable();
+        }
+
+        function createDayElement(dayNumber, isOtherMonth = false, isToday = false) {
+            const day = document.createElement('div');
+            day.className = 'calendar-day';
+            if (isOtherMonth) day.classList.add('other-month');
+            if (isToday) day.classList.add('today');
+            
+            const number = document.createElement('div');
+            number.className = 'day-number';
+            number.textContent = dayNumber;
+            day.appendChild(number);
+            
+            return day;
+        }
+
+        function updateMonthDisplay() {
+            const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                              'July', 'August', 'September', 'October', 'November', 'December'];
+            document.getElementById('currentMonth').textContent = 
+                `${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
+        }
+
+        function changeMonth(delta) {
+            currentDate.setMonth(currentDate.getMonth() + delta);
+            renderCalendar();
+            updateMonthDisplay();
+        }
+
+        function goToToday() {
+            currentDate = new Date();
+            renderCalendar();
+            updateMonthDisplay();
+        }
+
+        // Table rendering
+        function renderTable() {
+            console.log('renderTable called, operations.length:', operations.length);
+            const container = document.getElementById('tableContainer');
+            console.log('tableContainer found:', !!container);
+            
+            if (operations.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <p>No operations scheduled. Import a CSV file to get started.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Sort operations by date
+            const sortedOps = [...operations].sort((a, b) => new Date(a.date) - new Date(b.date));
+            console.log('sortedOps:', sortedOps);
+
+            let html = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Task</th>
+                            <th>Category</th>
+                            <th>Priority</th>
+                            <th>Owner</th>
+                            <th>Notes</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            sortedOps.forEach((op, index) => {
+                // Parse date string to avoid timezone issues
+                const dateStr = op.date.split('T')[0]; // Get just the date part (YYYY-MM-DD)
+                const [year, month, day] = dateStr.split('-');
+                const date = new Date(year, month - 1, day); // Create date in local timezone
+                
+                const formattedDate = date.toLocaleDateString('en-US', { 
+                    month: 'short', 
+                    day: 'numeric', 
+                    year: 'numeric' 
+                });
+                
+                // Find the original index in operations array
+                const originalIndex = operations.indexOf(op);
+                
+                html += `
+                    <tr>
+                        <td>${formattedDate}</td>
+                        <td><strong>${op.task}</strong>${op.isRecurring ? ' <span style="color: #667eea; font-size: 12px;">&#128257;</span>' : ''}</td>
+                        <td>${op.category}</td>
+                        <td><span class="status-badge status-${op.priority.toLowerCase()}">${op.priority}</span></td>
+                        <td>${op.owner}</td>
+                        <td>${op.notes}</td>
+                        <td>
+                            <button class="action-btn" onclick="editEvent(${originalIndex})">&#9998;&#65039; Edit</button>
+                            <button class="action-btn delete" onclick="deleteEvent(${originalIndex})">&#128465;&#65039; Delete</button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            html += '</tbody></table>';
+            console.log('Setting innerHTML, html length:', html.length);
+            container.innerHTML = html;
+            console.log('innerHTML set successfully');
+        }
+
+        // CSV handling
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const csv = e.target.result;
+                parseCSV(csv);
+            };
+            reader.readAsText(file);
+        }
+
+        function parseCSV(csv) {
+            const lines = csv.split('\n').filter(line => line.trim());
+            console.log('Total lines found:', lines.length);
+            
+            if (lines.length < 2) {
+                alert('CSV file appears to be empty or invalid.');
+                return;
+            }
+
+            operations = [];
+            
+            // Get header to detect format
+            const headerLine = lines[0].toLowerCase();
+            const isEventFormat = headerLine.includes('title') && headerLine.includes('start');
+            console.log('Detected format:', isEventFormat ? 'Event format (title,start,end,color)' : 'Task format (date,task,category,etc)');
+            
+            // Skip header row, process data rows
+            for (let i = 1; i < lines.length; i++) {
+                const line = lines[i];
+                const values = parseCSVLine(line);
+                console.log('Line', i, 'parsed values:', values, 'length:', values.length);
+                
+                if (isEventFormat) {
+                    // Format: title, start, end, color
+                    if (values.length >= 2 && values[0] && values[1]) {
+                        const startDate = new Date(values[1]);
+                        const endDate = values[2] ? new Date(values[2]) : startDate;
+                        const color = values[3] || 'blue';
+                        
+                        // Extract just the date portion (YYYY-MM-DD)
+                        const dateStr = startDate.toISOString().split('T')[0];
+                        
+                        // Format time range for notes
+                        const startTime = startDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+                        const endTime = endDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+                        const timeRange = startDate.toDateString() === endDate.toDateString() 
+                            ? `${startTime} - ${endTime}`
+                            : `${startDate.toLocaleDateString()} ${startTime} - ${endDate.toLocaleDateString()} ${endTime}`;
+                        
+                        operations.push({
+                            date: dateStr,
+                            task: values[0], // title
+                            category: color.charAt(0).toUpperCase() + color.slice(1), // capitalize color
+                            priority: 'Normal',
+                            owner: 'Scheduled',
+                            notes: timeRange
+                        });
+                    }
+                } else {
+                    // Original format: date, task, category, priority, owner, notes
+                    if (values.length >= 2 && values[0] && values[1]) {
+                        operations.push({
+                            date: values[0],
+                            task: values[1],
+                            category: values[2] || 'General',
+                            priority: values[3] || 'Normal',
+                            owner: values[4] || 'Unassigned',
+                            notes: values[5] || ''
+                        });
+                    } else {
+                        console.log('Skipping line', i, '- insufficient data');
+                    }
+                }
+            }
+
+            console.log('Parsed operations:', operations);
+            renderCalendar();
+            updateMonthDisplay();
+            renderTable();
+            
+            // Show success message
+            if (operations.length > 0) {
+                alert(`Successfully imported ${operations.length} operation(s)!`);
+            } else {
+                alert('No valid operations found in CSV file. Please check the format.');
+            }
+        }
+
+        // Helper function to properly parse CSV lines with quoted fields
+        function parseCSVLine(line) {
+            const values = [];
+            let current = '';
+            let inQuotes = false;
+            
+            for (let i = 0; i < line.length; i++) {
+                const char = line[i];
+                const nextChar = line[i + 1];
+                
+                if (char === '"') {
+                    if (inQuotes && nextChar === '"') {
+                        // Escaped quote
+                        current += '"';
+                        i++; // Skip next quote
+                    } else {
+                        // Toggle quote state
+                        inQuotes = !inQuotes;
+                    }
+                } else if (char === ',' && !inQuotes) {
+                    // Field separator
+                    values.push(current.trim());
+                    current = '';
+                } else {
+                    current += char;
+                }
+            }
+            
+            // Add last field
+            values.push(current.trim());
+            
+            return values;
+        }
+
+        function loadSampleData() {
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = today.getMonth();
+
+            operations = [
+                {
+                    date: `${year}-${String(month + 1).padStart(2, '0')}-05`,
+                    task: 'Quarterly Firewall Review',
+                    category: 'Network Security',
+                    priority: 'Critical',
+                    owner: 'Network Team',
+                    notes: 'Review and update firewall rules quarterly'
+                },
+                {
+                    date: `${year}-${String(month + 1).padStart(2, '0')}-10`,
+                    task: 'User Access Review',
+                    category: 'Identity & Access',
+                    priority: 'Critical',
+                    owner: 'IAM Team',
+                    notes: 'Review all user access permissions'
+                },
+                {
+                    date: `${year}-${String(month + 1).padStart(2, '0')}-15`,
+                    task: 'Vulnerability Scan',
+                    category: 'Vulnerability Management',
+                    priority: 'Normal',
+                    owner: 'Security Team',
+                    notes: 'Monthly vulnerability assessment'
+                },
+                {
+                    date: `${year}-${String(month + 1).padStart(2, '0')}-20`,
+                    task: 'Patch Management Review',
+                    category: 'System Maintenance',
+                    priority: 'Warning',
+                    owner: 'IT Operations',
+                    notes: 'Review and deploy critical patches'
+                },
+                {
+                    date: `${year}-${String(month + 1).padStart(2, '0')}-25`,
+                    task: 'Security Awareness Training',
+                    category: 'Training & Awareness',
+                    priority: 'Normal',
+                    owner: 'HR & Security',
+                    notes: 'Monthly phishing simulation and training'
+                },
+                {
+                    date: `${year}-${String(month + 1).padStart(2, '0')}-28`,
+                    task: 'Backup Verification',
+                    category: 'Data Protection',
+                    priority: 'Critical',
+                    owner: 'Infrastructure Team',
+                    notes: 'Verify backup integrity and test restoration'
+                },
+                {
+                    date: `${year}-${String(month + 2).padStart(2, '0')}-01`,
+                    task: 'Incident Response Drill',
+                    category: 'Incident Response',
+                    priority: 'Warning',
+                    owner: 'Security Team',
+                    notes: 'Quarterly incident response tabletop exercise'
+                }
+            ];
+
+            renderCalendar();
+            updateMonthDisplay();
+        }
+
+        function exportTemplate() {
+            if (operations.length === 0) {
+                alert('No data to export. Please import or add some events first.');
+                return;
+            }
+
+            let csv = 'Date,Task,Category,Priority,Owner,Notes\n';
+            
+            operations.forEach(op => {
+                // Escape quotes and wrap fields with commas in quotes
+                const escape = (str) => {
+                    if (str === undefined || str === null) return '';
+                    str = String(str);
+                    if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+                        return `"${str.replace(/"/g, '""')}"`;
+                    }
+                    return str;
+                };
+                
+                csv += `${escape(op.date)},${escape(op.task)},${escape(op.category)},${escape(op.priority)},${escape(op.owner)},${escape(op.notes)}\n`;
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            const timestamp = new Date().toISOString().split('T')[0];
+            a.download = `cybersec_operations_${timestamp}.csv`;
+            a.click();
+            window.URL.revokeObjectURL(url);
+            
+            alert(`Successfully exported ${operations.length} operation(s)!`);
+        }
+
+        // Modal functions
+        function openAddEventModal() {
+            editingIndex = -1;
+            document.getElementById('modalTitle').textContent = 'Add New Event';
+            document.getElementById('eventForm').reset();
+            
+            // Set default start time to now
+            const now = new Date();
+            const startInput = document.getElementById('startTime');
+            startInput.value = formatDateTimeLocal(now);
+            
+            // Set default end time to 1 hour from now
+            const oneHourLater = new Date(now.getTime() + 60 * 60 * 1000);
+            document.getElementById('endTime').value = formatDateTimeLocal(oneHourLater);
+            
+            document.getElementById('eventModal').style.display = 'block';
+        }
+
+        function editEvent(index) {
+            editingIndex = index;
+            const op = operations[index];
+            
+            document.getElementById('modalTitle').textContent = 'Edit Event';
+            
+            // Parse the date to get start time (we're storing it as date field)
+            document.getElementById('startTime').value = formatDateTimeLocal(new Date(op.date));
+            
+            // For end time, we don't have it stored separately, so set it 1 hour after start
+            const startDate = new Date(op.date);
+            const endDate = new Date(startDate.getTime() + 60 * 60 * 1000);
+            document.getElementById('endTime').value = formatDateTimeLocal(endDate);
+            
+            document.getElementById('taskInput').value = op.task || '';
+            document.getElementById('categoryInput').value = op.category || 'blue';
+            document.getElementById('priorityInput').value = op.priority || 'Normal';
+            document.getElementById('ownerInput').value = op.owner || '';
+            document.getElementById('notesInput').value = op.notes || '';
+            
+            document.getElementById('eventModal').style.display = 'block';
+        }
+
+        function deleteEvent(index) {
+            const op = operations[index];
+            
+            if (op.isRecurring && op.recurringId) {
+                const recurringCount = operations.filter(o => o.recurringId === op.recurringId).length;
+                
+                if (recurringCount > 1) {
+                    const choice = confirm(
+                        `This is a recurring event with ${recurringCount} occurrences.\n\n` +
+                        `Click OK to delete ALL occurrences\n` +
+                        `Click Cancel to delete only this instance`
+                    );
+                    
+                    if (choice) {
+                        // Delete all occurrences
+                        operations = operations.filter(o => o.recurringId !== op.recurringId);
+                        alert(`Deleted all ${recurringCount} occurrences!`);
+                    } else {
+                        // Delete only this instance
+                        operations.splice(index, 1);
+                        alert('Single instance deleted!');
+                    }
+                } else {
+                    operations.splice(index, 1);
+                    alert('Event deleted successfully!');
+                }
+            } else {
+                if (confirm(`Are you sure you want to delete "${op.task}"?`)) {
+                    operations.splice(index, 1);
+                    alert('Event deleted successfully!');
+                }
+            }
+            
+            renderCalendar();
+            renderTable();
+        }
+
+        function closeModal() {
+            document.getElementById('eventModal').style.display = 'none';
+            document.getElementById('repeatOptions').style.display = 'none';
+            document.getElementById('repeatInput').value = 'none';
+            document.getElementById('repeatUntilInput').value = '';
+            document.getElementById('repeatCountInput').value = '';
+            editingIndex = -1;
+        }
+
+        function toggleRepeatOptions() {
+            const repeatValue = document.getElementById('repeatInput').value;
+            const repeatOptions = document.getElementById('repeatOptions');
+            
+            if (repeatValue !== 'none') {
+                repeatOptions.style.display = 'block';
+            } else {
+                repeatOptions.style.display = 'none';
+            }
+        }
+
+        function generateRecurringEvents(baseEvent, repeatType, repeatUntil, repeatCount) {
+            const events = [];
+            const startDate = new Date(baseEvent.date);
+            let currentDate = new Date(startDate);
+            let occurrences = 0;
+            const maxOccurrences = repeatCount || 365; // Default max to prevent infinite loops
+            const endDate = repeatUntil ? new Date(repeatUntil) : new Date(startDate.getTime() + (365 * 24 * 60 * 60 * 1000)); // Default 1 year
+            
+            while (currentDate <= endDate && occurrences < maxOccurrences) {
+                // Create a copy of the event with the new date
+                const event = {
+                    ...baseEvent,
+                    date: currentDate.toISOString().slice(0, 16), // Format: YYYY-MM-DDTHH:MM
+                    isRecurring: true,
+                    recurringId: baseEvent.task + '_' + startDate.getTime() // Group recurring events
+                };
+                events.push(event);
+                occurrences++;
+                
+                // Calculate next occurrence
+                switch(repeatType) {
+                    case 'daily':
+                        currentDate.setDate(currentDate.getDate() + 1);
+                        break;
+                    case 'weekly':
+                        currentDate.setDate(currentDate.getDate() + 7);
+                        break;
+                    case 'monthly':
+                        currentDate.setMonth(currentDate.getMonth() + 1);
+                        break;
+                    case 'yearly':
+                        currentDate.setFullYear(currentDate.getFullYear() + 1);
+                        break;
+                }
+                
+                // If we have a count limit, check it
+                if (repeatCount && occurrences >= repeatCount) {
+                    break;
+                }
+            }
+            
+            return events;
+        }
+
+        function handleEventSubmit(e) {
+            e.preventDefault();
+            
+            const startTime = document.getElementById('startTime').value;
+            const endTime = document.getElementById('endTime').value;
+            const task = document.getElementById('taskInput').value;
+            const category = document.getElementById('categoryInput').value;
+            const priority = document.getElementById('priorityInput').value;
+            const owner = document.getElementById('ownerInput').value;
+            const notes = document.getElementById('notesInput').value;
+            const repeatType = document.getElementById('repeatInput').value;
+            const repeatUntil = document.getElementById('repeatUntilInput').value;
+            const repeatCount = document.getElementById('repeatCountInput').value;
+            
+            // Validate that end time is after start time
+            if (new Date(endTime) <= new Date(startTime)) {
+                alert('End time must be after start time!');
+                return;
+            }
+            
+            const baseOperation = {
+                date: startTime,
+                task: task,
+                category: category,
+                priority: priority,
+                owner: owner,
+                notes: notes
+            };
+            
+            if (editingIndex >= 0) {
+                // Editing existing event
+                operations[editingIndex] = baseOperation;
+                alert('Event updated successfully!');
+            } else {
+                // Adding new event
+                if (repeatType !== 'none') {
+                    // Generate recurring events
+                    const recurringEvents = generateRecurringEvents(
+                        baseOperation,
+                        repeatType,
+                        repeatUntil,
+                        repeatCount ? parseInt(repeatCount) : null
+                    );
+                    
+                    operations.push(...recurringEvents);
+                    alert(`Successfully created ${recurringEvents.length} recurring event(s)!`);
+                } else {
+                    operations.push(baseOperation);
+                    alert('Event added successfully!');
+                }
+            }
+            
+            closeModal();
+            renderCalendar();
+            renderTable();
+        }
+
+        // Helper function to format date for datetime-local input
+        function formatDateTimeLocal(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            return `${year}-${month}-${day}T${hours}:${minutes}`;
+        }
+        // ========== Workbook Integration (postMessage API) ==========
+        window.addEventListener('message', function(event) {
+            if (event.data && event.data.type === 'getDataForExport') {
+                const exportData = operations.map(op => ({
+                    'Date': op.date || '',
+                    'Task': op.task || '',
+                    'Category': op.category || '',
+                    'Priority': op.priority || '',
+                    'Owner': op.owner || '',
+                    'Notes': op.notes || ''
+                }));
+                event.source.postMessage({
+                    type: 'exportData',
+                    module: 'calendar',
+                    data: exportData,
+                    headers: ['Date','Task','Category','Priority','Owner','Notes']
+                }, '*');
+            }
+            if (event.data && event.data.type === 'importDataFromWorkbook' && event.data.module === 'calendar') {
+                const rows = event.data.data || [];
+                if (rows.length === 0) return;
+                operations = rows.map(r => ({
+                    date: r['Date'] || r['date'] || '',
+                    task: r['Task'] || r['task'] || '',
+                    category: r['Category'] || r['category'] || 'General',
+                    priority: r['Priority'] || r['priority'] || 'Normal',
+                    owner: r['Owner'] || r['owner'] || 'Unassigned',
+                    notes: r['Notes'] || r['notes'] || ''
+                }));
+                renderCalendar();
+                updateMonthDisplay();
+                renderTable();
+                event.source.postMessage({ type: 'importComplete', module: 'calendar', count: operations.length }, '*');
+            }
+        });
+    </script>
+</body>
+</html>

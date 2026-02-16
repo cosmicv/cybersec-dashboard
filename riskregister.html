@@ -1,0 +1,1300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Risk Register</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f8f9fa;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        header h1 { font-size: 2em; margin-bottom: 10px; font-weight: 700; }
+        header p { font-size: 1em; opacity: 0.9; }
+
+        /* ===== Controls ===== */
+        .controls {
+            padding: 20px 30px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        .btn:hover { transform: translateY(-2px); }
+
+        .btn-primary { background: #667eea; color: white; }
+        .btn-primary:hover { background: #5568d3; box-shadow: 0 4px 12px rgba(102,126,234,0.4); }
+        .btn-success { background: #28a745; color: white; }
+        .btn-success:hover { background: #218838; }
+        .btn-secondary { background: #6c757d; color: white; }
+        .btn-secondary:hover { background: #5a6268; }
+        .btn-warning { background: #ffc107; color: #212529; }
+        .btn-warning:hover { background: #e0a800; }
+        .btn-danger { background: #dc3545; color: white; }
+        .btn-danger:hover { background: #c82333; }
+
+        .file-input-wrapper input[type=file] { display: none; }
+
+        .filter-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-left: auto;
+            flex-wrap: wrap;
+        }
+
+        .filter-group label {
+            font-weight: 600;
+            font-size: 14px;
+            color: #495057;
+        }
+
+        .filter-group select {
+            padding: 8px 12px;
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            font-size: 14px;
+            background: white;
+        }
+
+        /* Multi-select dropdowns */
+        .multi-select-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+
+        .multi-select-display {
+            padding: 8px 30px 8px 12px;
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            font-size: 14px;
+            background: white;
+            cursor: pointer;
+            min-width: 140px;
+            position: relative;
+            user-select: none;
+        }
+
+        .multi-select-display::after {
+            content: '\25BC';
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 10px;
+            color: #6c757d;
+        }
+
+        .multi-select-dropdown {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background: white;
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 100;
+            min-width: 180px;
+            max-height: 250px;
+            overflow-y: auto;
+        }
+
+        .multi-select-dropdown.open { display: block; }
+
+        .multi-select-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .multi-select-option:hover { background: #f0f2ff; }
+
+        .multi-select-option input[type="checkbox"] { cursor: pointer; }
+        .multi-select-option label { cursor: pointer; margin: 0; flex: 1; }
+
+        /* ===== Charts ===== */
+        .charts-section {
+            padding: 20px 30px;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .charts-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .chart-box {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            border: 1px solid #e9ecef;
+        }
+
+        .chart-box h3 {
+            font-size: 16px;
+            color: #495057;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        /* ===== Stats Bar ===== */
+        .stats-bar {
+            display: flex;
+            gap: 15px;
+            padding: 20px 30px;
+            border-bottom: 1px solid #dee2e6;
+            flex-wrap: wrap;
+        }
+
+        .stat-card {
+            flex: 1;
+            min-width: 120px;
+            padding: 14px 18px;
+            border-radius: 10px;
+            border: 1px solid #e9ecef;
+            text-align: center;
+        }
+
+        .stat-card .stat-value { font-size: 26px; font-weight: 700; line-height: 1.2; }
+        .stat-card .stat-label { font-size: 11px; color: #6c757d; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px; }
+
+        /* ===== Risk Grid ===== */
+        .risk-grid {
+            padding: 20px 30px 30px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 16px;
+        }
+
+        .risk-card {
+            border: 1px solid #e9ecef;
+            border-radius: 10px;
+            padding: 20px;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .risk-card:hover {
+            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+
+        .risk-card .severity-stripe {
+            position: absolute;
+            top: 0; left: 0; bottom: 0;
+            width: 5px;
+        }
+
+        .risk-card .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 10px;
+            padding-left: 10px;
+        }
+
+        .risk-card .card-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #212529;
+            flex: 1;
+            margin-right: 10px;
+        }
+
+        .risk-card .card-body {
+            padding-left: 10px;
+            font-size: 13px;
+            color: #495057;
+        }
+
+        .risk-card .card-body p { margin-bottom: 6px; }
+
+        .risk-card .card-meta {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+            padding-left: 10px;
+        }
+
+        .risk-card .card-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 14px;
+            padding-left: 10px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+        .badge-critical { background: #dc3545; color: white; }
+        .badge-high { background: #fd7e14; color: white; }
+        .badge-medium { background: #ffc107; color: #212529; }
+        .badge-low { background: #28a745; color: white; }
+
+        .badge-open { background: #dc3545; color: white; }
+        .badge-monitoring { background: #ffc107; color: #212529; }
+        .badge-mitigated { background: #17a2b8; color: white; }
+        .badge-closed { background: #28a745; color: white; }
+        .badge-archived { background: #6c757d; color: white; }
+
+        .severity-critical { background-color: #dc3545; }
+        .severity-high { background-color: #fd7e14; }
+        .severity-medium { background-color: #ffc107; }
+        .severity-low { background-color: #28a745; }
+
+        .action-btn {
+            padding: 5px 12px;
+            border: 1px solid #ced4da;
+            background: white;
+            color: #495057;
+            font-size: 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 500;
+        }
+        .action-btn:hover { background: #667eea; color: white; border-color: #667eea; }
+        .action-btn.delete:hover { background: #dc3545; color: white; border-color: #dc3545; }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6c757d;
+            grid-column: 1 / -1;
+        }
+
+        .empty-state h2 { font-size: 22px; margin-bottom: 8px; color: #495057; }
+
+        /* ===== Modal ===== */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal.active { display: flex; }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 650px;
+            width: 95%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .modal-content h2 {
+            font-size: 22px;
+            margin-bottom: 20px;
+            color: #212529;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .close-modal {
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            color: #6c757d;
+            line-height: 20px;
+        }
+        .close-modal:hover { color: #dc3545; }
+
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: 500; font-size: 13px; color: #495057; }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 9px 12px;
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102,126,234,0.1);
+        }
+
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+
+        .info-box {
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            font-size: 13px;
+            color: #495057;
+        }
+
+        .score-display {
+            text-align: center;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-weight: 700;
+            font-size: 18px;
+        }
+
+        .person-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            margin-bottom: 6px;
+        }
+
+        .person-item button {
+            background: none;
+            border: none;
+            color: #dc3545;
+            cursor: pointer;
+            font-size: 16px;
+            padding: 0 4px;
+        }
+
+        @media (max-width: 768px) {
+            body { padding: 10px; }
+            header h1 { font-size: 1.5em; }
+            .controls { flex-direction: column; align-items: stretch; }
+            .filter-group { margin-left: 0; }
+            .charts-container { grid-template-columns: 1fr; }
+            .risk-grid { grid-template-columns: 1fr; }
+            .form-row { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>&#128737;&#65039; Risk Register</h1>
+            <p>Manage and track business risks</p>
+        </header>
+
+        <div class="controls">
+            <button class="btn btn-warning" onclick="openAddModal()">+ Add Risk</button>
+            <button class="btn btn-secondary" onclick="openPeopleModal()">Manage People</button>
+            <button class="btn btn-secondary" onclick="toggleCharts()" id="toggleChartsBtn">Hide Charts</button>
+            <button class="btn btn-danger" onclick="deleteAllRisks()">Delete All</button>
+
+            <div class="filter-group">
+                <label>Filter:</label>
+
+                <div class="multi-select-wrapper">
+                    <div class="multi-select-display" id="statusFilterDisplay" onclick="toggleDropdown('statusDropdown')">All Status</div>
+                    <div class="multi-select-dropdown" id="statusDropdown">
+                        <div class="multi-select-option"><input type="checkbox" id="status_all" checked onchange="handleFilterChange('status', this)"><label for="status_all">All Status</label></div>
+                        <div class="multi-select-option"><input type="checkbox" id="status_Open" onchange="handleFilterChange('status', this)"><label for="status_Open">Open</label></div>
+                        <div class="multi-select-option"><input type="checkbox" id="status_Monitoring" onchange="handleFilterChange('status', this)"><label for="status_Monitoring">Monitoring</label></div>
+                        <div class="multi-select-option"><input type="checkbox" id="status_Mitigated" onchange="handleFilterChange('status', this)"><label for="status_Mitigated">Mitigated</label></div>
+                        <div class="multi-select-option"><input type="checkbox" id="status_Closed" onchange="handleFilterChange('status', this)"><label for="status_Closed">Closed</label></div>
+                        <div class="multi-select-option"><input type="checkbox" id="status_Archived" onchange="handleFilterChange('status', this)"><label for="status_Archived">Archived</label></div>
+                    </div>
+                </div>
+
+                <div class="multi-select-wrapper">
+                    <div class="multi-select-display" id="severityFilterDisplay" onclick="toggleDropdown('severityDropdown')">All Severity</div>
+                    <div class="multi-select-dropdown" id="severityDropdown">
+                        <div class="multi-select-option"><input type="checkbox" id="severity_all" checked onchange="handleFilterChange('severity', this)"><label for="severity_all">All Severity</label></div>
+                        <div class="multi-select-option"><input type="checkbox" id="severity_Critical" onchange="handleFilterChange('severity', this)"><label for="severity_Critical">Critical</label></div>
+                        <div class="multi-select-option"><input type="checkbox" id="severity_High" onchange="handleFilterChange('severity', this)"><label for="severity_High">High</label></div>
+                        <div class="multi-select-option"><input type="checkbox" id="severity_Medium" onchange="handleFilterChange('severity', this)"><label for="severity_Medium">Medium</label></div>
+                        <div class="multi-select-option"><input type="checkbox" id="severity_Low" onchange="handleFilterChange('severity', this)"><label for="severity_Low">Low</label></div>
+                    </div>
+                </div>
+
+                <select id="filterOwner" onchange="renderAll()">
+                    <option value="all">All People</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="stats-bar" id="statsBar"></div>
+
+        <div class="charts-section" id="chartsSection">
+            <div class="charts-container">
+                <div class="chart-box">
+                    <h3>Risk Severity Distribution</h3>
+                    <canvas id="severityChart"></canvas>
+                </div>
+                <div class="chart-box">
+                    <h3>Risks by Status</h3>
+                    <canvas id="statusChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="risk-grid" id="riskGrid">
+            <div class="empty-state">
+                <h2>No Risks Yet</h2>
+                <p>Click "+ Add Risk" to get started</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Risk Modal -->
+    <div class="modal" id="addModal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeAddModal()">&times;</span>
+            <h2 id="addModalTitle">Add New Risk</h2>
+            <form id="riskForm" onsubmit="saveRisk(event)">
+                <div class="form-group">
+                    <label>Risk Title *</label>
+                    <input type="text" id="riskTitle" required>
+                </div>
+                <div class="form-group">
+                    <label>Description *</label>
+                    <textarea id="riskDescription" required rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Category</label>
+                    <input type="text" id="riskCategory" list="categoryList" placeholder="e.g., Financial, Operational, Strategic, Compliance">
+                    <datalist id="categoryList">
+                        <option value="Financial">
+                        <option value="Operational">
+                        <option value="Strategic">
+                        <option value="Compliance">
+                        <option value="Technical">
+                        <option value="Security">
+                        <option value="Reputational">
+                    </datalist>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Probability (1-10) *</label>
+                        <input type="number" id="riskProbability" min="1" max="10" value="5" required oninput="updateScorePreview()">
+                    </div>
+                    <div class="form-group">
+                        <label>Impact (1-10) *</label>
+                        <input type="number" id="riskImpact" min="1" max="10" value="5" required oninput="updateScorePreview()">
+                    </div>
+                </div>
+                <div class="score-display" id="scorePreview">Severity Score: 25 (Medium)</div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Status *</label>
+                        <select id="riskStatus" required>
+                            <option value="Open">Open</option>
+                            <option value="Monitoring">Monitoring</option>
+                            <option value="Mitigated">Mitigated</option>
+                            <option value="Closed">Closed</option>
+                            <option value="Archived">Archived</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Assigned To</label>
+                        <select id="riskOwner">
+                            <option value="">Unassigned</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Mitigation Plan</label>
+                    <textarea id="riskMitigation" rows="2" placeholder="Describe mitigation steps..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Notes</label>
+                    <textarea id="riskNotes" rows="2"></textarea>
+                </div>
+                <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; padding-top: 15px; border-top: 1px solid #dee2e6;">
+                    <button type="button" class="btn btn-secondary" onclick="closeAddModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Risk</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- People Modal -->
+    <div class="modal" id="peopleModal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closePeopleModal()">&times;</span>
+            <h2>Manage People</h2>
+            <div class="form-group">
+                <label>Add New Person</label>
+                <div style="display: flex; gap: 10px;">
+                    <input type="text" id="newPersonName" placeholder="Enter name" style="flex: 1;" onkeydown="if(event.key==='Enter'){event.preventDefault();addPerson();}">
+                    <button class="btn btn-primary" onclick="addPerson()">Add</button>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Current People</label>
+                <div id="peopleList">
+                    <p style="color: #6c757d; font-size: 14px;">No people added yet</p>
+                </div>
+            </div>
+            <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+                <button class="btn btn-secondary" onclick="closePeopleModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Risk Detail Modal -->
+    <div class="modal" id="detailModal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeDetailModal()">&times;</span>
+            <h2 id="detailTitle">Risk Details</h2>
+            <div id="detailBody"></div>
+            <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; padding-top: 15px; border-top: 1px solid #dee2e6;">
+                <button class="btn btn-secondary" onclick="closeDetailModal()">Close</button>
+                <button class="btn btn-primary" id="detailEditBtn">&#9998; Edit</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==================== DATA ====================
+        let risks = [];
+        let people = [];
+        let editingIndex = -1;
+        let chartsVisible = true;
+        let severityChartInstance = null;
+        let statusChartInstance = null;
+
+        // ==================== SEVERITY CALC ====================
+        function calcSeverity(prob, impact) {
+            const score = prob * impact;
+            if (score >= 70) return { label: 'Critical', score };
+            if (score >= 40) return { label: 'High', score };
+            if (score >= 15) return { label: 'Medium', score };
+            return { label: 'Low', score };
+        }
+
+        function severityColor(label) {
+            const map = { Critical: '#dc3545', High: '#fd7e14', Medium: '#ffc107', Low: '#28a745' };
+            return map[label] || '#6c757d';
+        }
+
+        // ==================== INIT ====================
+        document.addEventListener('DOMContentLoaded', () => {
+            document.addEventListener('click', (e) => {
+                // Close dropdowns when clicking outside
+                document.querySelectorAll('.multi-select-dropdown.open').forEach(dd => {
+                    if (!dd.parentElement.contains(e.target)) {
+                        dd.classList.remove('open');
+                    }
+                });
+            });
+            renderAll();
+        });
+
+        // ==================== FILTERS ====================
+        function toggleDropdown(id) {
+            const dd = document.getElementById(id);
+            // Close other dropdowns
+            document.querySelectorAll('.multi-select-dropdown.open').forEach(d => {
+                if (d.id !== id) d.classList.remove('open');
+            });
+            dd.classList.toggle('open');
+        }
+
+        function handleFilterChange(type, checkbox) {
+            const prefix = type + '_';
+            const allCheckbox = document.getElementById(prefix + 'all');
+
+            if (checkbox.id === prefix + 'all') {
+                // "All" was clicked - uncheck others
+                const others = document.querySelectorAll(`[id^="${prefix}"]:not(#${prefix}all)`);
+                others.forEach(cb => cb.checked = false);
+                allCheckbox.checked = true;
+            } else {
+                // Specific option clicked - uncheck "All"
+                allCheckbox.checked = false;
+                // If nothing is checked, re-check "All"
+                const others = document.querySelectorAll(`[id^="${prefix}"]:not(#${prefix}all)`);
+                const anyChecked = Array.from(others).some(cb => cb.checked);
+                if (!anyChecked) allCheckbox.checked = true;
+            }
+
+            // Update display text
+            updateFilterDisplay(type);
+            renderAll();
+        }
+
+        function updateFilterDisplay(type) {
+            const prefix = type + '_';
+            const allCheckbox = document.getElementById(prefix + 'all');
+            const displayId = type === 'status' ? 'statusFilterDisplay' : 'severityFilterDisplay';
+            const display = document.getElementById(displayId);
+
+            if (allCheckbox.checked) {
+                display.textContent = type === 'status' ? 'All Status' : 'All Severity';
+                return;
+            }
+
+            const others = document.querySelectorAll(`[id^="${prefix}"]:not(#${prefix}all)`);
+            const selected = Array.from(others).filter(cb => cb.checked).map(cb => cb.id.replace(prefix, ''));
+
+            if (selected.length === 0) {
+                display.textContent = type === 'status' ? 'All Status' : 'All Severity';
+            } else if (selected.length <= 2) {
+                display.textContent = selected.join(', ');
+            } else {
+                display.textContent = `${selected.length} selected`;
+            }
+        }
+
+        function getActiveFilters(type) {
+            const prefix = type + '_';
+            const allCheckbox = document.getElementById(prefix + 'all');
+            if (allCheckbox.checked) return null; // null means "all"
+            const others = document.querySelectorAll(`[id^="${prefix}"]:not(#${prefix}all)`);
+            return Array.from(others).filter(cb => cb.checked).map(cb => cb.id.replace(prefix, ''));
+        }
+
+        function getFilteredRisks() {
+            const statusFilters = getActiveFilters('status');
+            const severityFilters = getActiveFilters('severity');
+            const ownerFilter = document.getElementById('filterOwner').value;
+
+            return risks.filter(r => {
+                if (statusFilters && !statusFilters.includes(r.status)) return false;
+                const sev = calcSeverity(r.probability, r.impact);
+                if (severityFilters && !severityFilters.includes(sev.label)) return false;
+                if (ownerFilter !== 'all' && (r.owner || '') !== ownerFilter) return false;
+                return true;
+            });
+        }
+
+        // ==================== RENDERING ====================
+        function renderAll() {
+            renderStats();
+            renderGrid();
+            renderCharts();
+        }
+
+        function renderStats() {
+            const total = risks.length;
+            const open = risks.filter(r => r.status === 'Open').length;
+            const monitoring = risks.filter(r => r.status === 'Monitoring').length;
+            const mitigated = risks.filter(r => r.status === 'Mitigated').length;
+            const critical = risks.filter(r => calcSeverity(r.probability, r.impact).label === 'Critical').length;
+
+            document.getElementById('statsBar').innerHTML = `
+                <div class="stat-card"><div class="stat-value" style="color:#667eea;">${total}</div><div class="stat-label">Total Risks</div></div>
+                <div class="stat-card"><div class="stat-value" style="color:#dc3545;">${open}</div><div class="stat-label">Open</div></div>
+                <div class="stat-card"><div class="stat-value" style="color:#ffc107;">${monitoring}</div><div class="stat-label">Monitoring</div></div>
+                <div class="stat-card"><div class="stat-value" style="color:#17a2b8;">${mitigated}</div><div class="stat-label">Mitigated</div></div>
+                <div class="stat-card"><div class="stat-value" style="color:#dc3545;">${critical}</div><div class="stat-label">Critical Severity</div></div>
+            `;
+        }
+
+        function renderGrid() {
+            const grid = document.getElementById('riskGrid');
+            const filtered = getFilteredRisks();
+
+            if (risks.length === 0) {
+                grid.innerHTML = '<div class="empty-state"><h2>No Risks Yet</h2><p>Click "+ Add Risk" to get started, or import a CSV.</p></div>';
+                return;
+            }
+
+            if (filtered.length === 0) {
+                grid.innerHTML = '<div class="empty-state"><h2>No Matching Risks</h2><p>Adjust your filters to see risks.</p></div>';
+                return;
+            }
+
+            // Sort by severity score descending
+            const sorted = [...filtered].sort((a, b) => {
+                return (b.probability * b.impact) - (a.probability * a.impact);
+            });
+
+            grid.innerHTML = sorted.map(r => {
+                const origIdx = risks.indexOf(r);
+                const sev = calcSeverity(r.probability, r.impact);
+                const sevClass = sev.label.toLowerCase();
+
+                return `
+                    <div class="risk-card">
+                        <div class="severity-stripe severity-${sevClass}"></div>
+                        <div class="card-header">
+                            <div class="card-title">${escapeHtml(r.title)}</div>
+                            <span class="badge badge-${r.status.toLowerCase()}">${r.status}</span>
+                        </div>
+                        <div class="card-body">
+                            <p>${escapeHtml(r.description).substring(0, 150)}${r.description.length > 150 ? '...' : ''}</p>
+                        </div>
+                        <div class="card-meta">
+                            <span class="badge badge-${sevClass}">${sev.label} (${sev.score})</span>
+                            ${r.category ? `<span class="badge" style="background:#e9ecef; color:#495057;">${escapeHtml(r.category)}</span>` : ''}
+                            ${r.owner ? `<span class="badge" style="background:#e8eaf6; color:#3949ab;">${escapeHtml(r.owner)}</span>` : ''}
+                        </div>
+                        <div class="card-actions">
+                            <button class="action-btn" onclick="viewRisk(${origIdx})">View</button>
+                            <button class="action-btn" onclick="editRisk(${origIdx})">&#9998; Edit</button>
+                            <button class="action-btn delete" onclick="deleteRisk(${origIdx})">Delete</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        }
+
+        // ==================== CHARTS ====================
+        function renderCharts() {
+            if (!chartsVisible) return;
+
+            // Severity distribution
+            const sevCounts = { Critical: 0, High: 0, Medium: 0, Low: 0 };
+            risks.forEach(r => {
+                const sev = calcSeverity(r.probability, r.impact);
+                sevCounts[sev.label]++;
+            });
+
+            if (severityChartInstance) severityChartInstance.destroy();
+            const sevCtx = document.getElementById('severityChart').getContext('2d');
+            severityChartInstance = new Chart(sevCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(sevCounts),
+                    datasets: [{
+                        data: Object.values(sevCounts),
+                        backgroundColor: ['#dc3545', '#fd7e14', '#ffc107', '#28a745'],
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    }
+                }
+            });
+
+            // Status distribution
+            const statusCounts = { Open: 0, Monitoring: 0, Mitigated: 0, Closed: 0, Archived: 0 };
+            risks.forEach(r => { statusCounts[r.status] = (statusCounts[r.status] || 0) + 1; });
+
+            if (statusChartInstance) statusChartInstance.destroy();
+            const statusCtx = document.getElementById('statusChart').getContext('2d');
+            statusChartInstance = new Chart(statusCtx, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(statusCounts),
+                    datasets: [{
+                        label: 'Risks',
+                        data: Object.values(statusCounts),
+                        backgroundColor: ['#dc3545', '#ffc107', '#17a2b8', '#28a745', '#6c757d'],
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, ticks: { stepSize: 1 } }
+                    }
+                }
+            });
+        }
+
+        function toggleCharts() {
+            chartsVisible = !chartsVisible;
+            document.getElementById('chartsSection').style.display = chartsVisible ? 'block' : 'none';
+            document.getElementById('toggleChartsBtn').textContent = chartsVisible ? 'Hide Charts' : 'Show Charts';
+            if (chartsVisible) renderCharts();
+        }
+
+        // ==================== RISK CRUD ====================
+        function openAddModal() {
+            editingIndex = -1;
+            document.getElementById('addModalTitle').textContent = 'Add New Risk';
+            document.getElementById('riskForm').reset();
+            document.getElementById('riskProbability').value = 5;
+            document.getElementById('riskImpact').value = 5;
+            populateOwnerSelects();
+            updateScorePreview();
+            document.getElementById('addModal').classList.add('active');
+        }
+
+        function closeAddModal() {
+            document.getElementById('addModal').classList.remove('active');
+            editingIndex = -1;
+        }
+
+        function editRisk(idx) {
+            editingIndex = idx;
+            const r = risks[idx];
+            document.getElementById('addModalTitle').textContent = 'Edit Risk';
+            document.getElementById('riskTitle').value = r.title || '';
+            document.getElementById('riskDescription').value = r.description || '';
+            document.getElementById('riskCategory').value = r.category || '';
+            document.getElementById('riskProbability').value = r.probability || 5;
+            document.getElementById('riskImpact').value = r.impact || 5;
+            document.getElementById('riskStatus').value = r.status || 'Open';
+            populateOwnerSelects();
+            document.getElementById('riskOwner').value = r.owner || '';
+            document.getElementById('riskMitigation').value = r.mitigation || '';
+            document.getElementById('riskNotes').value = r.notes || '';
+            updateScorePreview();
+            document.getElementById('addModal').classList.add('active');
+        }
+
+        function saveRisk(e) {
+            e.preventDefault();
+            const risk = {
+                title: document.getElementById('riskTitle').value,
+                description: document.getElementById('riskDescription').value,
+                category: document.getElementById('riskCategory').value,
+                probability: parseInt(document.getElementById('riskProbability').value) || 5,
+                impact: parseInt(document.getElementById('riskImpact').value) || 5,
+                status: document.getElementById('riskStatus').value,
+                owner: document.getElementById('riskOwner').value,
+                mitigation: document.getElementById('riskMitigation').value,
+                notes: document.getElementById('riskNotes').value,
+                dateCreated: editingIndex >= 0 ? risks[editingIndex].dateCreated : new Date().toISOString().split('T')[0],
+                dateModified: new Date().toISOString().split('T')[0]
+            };
+
+            if (editingIndex >= 0) {
+                risks[editingIndex] = risk;
+            } else {
+                risks.push(risk);
+            }
+
+            closeAddModal();
+            renderAll();
+        }
+
+        function deleteRisk(idx) {
+            if (confirm(`Delete "${risks[idx].title}"?`)) {
+                risks.splice(idx, 1);
+                renderAll();
+            }
+        }
+
+        function deleteAllRisks() {
+            if (risks.length === 0) return;
+            if (confirm(`Delete all ${risks.length} risks? This cannot be undone.`)) {
+                risks = [];
+                renderAll();
+            }
+        }
+
+        function viewRisk(idx) {
+            const r = risks[idx];
+            const sev = calcSeverity(r.probability, r.impact);
+
+            document.getElementById('detailTitle').textContent = r.title;
+            document.getElementById('detailEditBtn').onclick = () => { closeDetailModal(); editRisk(idx); };
+
+            const fields = [
+                { label: 'Description', value: r.description },
+                { label: 'Category', value: r.category },
+                { label: 'Probability', value: r.probability + ' / 10' },
+                { label: 'Impact', value: r.impact + ' / 10' },
+                { label: 'Severity', value: `${sev.label} (Score: ${sev.score})` },
+                { label: 'Status', value: r.status },
+                { label: 'Assigned To', value: r.owner || 'Unassigned' },
+                { label: 'Mitigation Plan', value: r.mitigation },
+                { label: 'Notes', value: r.notes },
+                { label: 'Date Created', value: r.dateCreated },
+                { label: 'Last Modified', value: r.dateModified }
+            ];
+
+            document.getElementById('detailBody').innerHTML = '<div style="display:grid; gap:12px;">' +
+                fields.filter(f => f.value).map(f => `
+                    <div style="border-bottom:1px solid #e9ecef; padding-bottom:10px;">
+                        <div style="font-weight:600; font-size:12px; color:#667eea; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px;">${f.label}</div>
+                        <div style="font-size:14px; color:#212529; white-space:pre-wrap;">${escapeHtml(f.value)}</div>
+                    </div>
+                `).join('') + '</div>';
+
+            document.getElementById('detailModal').classList.add('active');
+        }
+
+        function closeDetailModal() {
+            document.getElementById('detailModal').classList.remove('active');
+        }
+
+        function updateScorePreview() {
+            const prob = parseInt(document.getElementById('riskProbability').value) || 1;
+            const impact = parseInt(document.getElementById('riskImpact').value) || 1;
+            const sev = calcSeverity(prob, impact);
+            const el = document.getElementById('scorePreview');
+            el.textContent = `Severity Score: ${sev.score} (${sev.label})`;
+            el.style.background = severityColor(sev.label) + '20';
+            el.style.color = severityColor(sev.label);
+            el.style.border = `2px solid ${severityColor(sev.label)}`;
+        }
+
+        // ==================== PEOPLE ====================
+        function openPeopleModal() {
+            renderPeopleList();
+            document.getElementById('peopleModal').classList.add('active');
+        }
+
+        function closePeopleModal() {
+            document.getElementById('peopleModal').classList.remove('active');
+        }
+
+        function addPerson() {
+            const input = document.getElementById('newPersonName');
+            const name = input.value.trim();
+            if (!name) return;
+            if (people.includes(name)) {
+                alert('Person already exists.');
+                return;
+            }
+            people.push(name);
+            people.sort();
+            input.value = '';
+            renderPeopleList();
+            populateOwnerSelects();
+            populateOwnerFilter();
+        }
+
+        function removePerson(idx) {
+            people.splice(idx, 1);
+            renderPeopleList();
+            populateOwnerSelects();
+            populateOwnerFilter();
+        }
+
+        function renderPeopleList() {
+            const container = document.getElementById('peopleList');
+            if (people.length === 0) {
+                container.innerHTML = '<p style="color: #6c757d; font-size: 14px;">No people added yet</p>';
+                return;
+            }
+            container.innerHTML = people.map((p, i) => `
+                <div class="person-item">
+                    <span>${escapeHtml(p)}</span>
+                    <button onclick="removePerson(${i})" title="Remove">&times;</button>
+                </div>
+            `).join('');
+        }
+
+        function populateOwnerSelects() {
+            const selects = [document.getElementById('riskOwner')];
+            selects.forEach(sel => {
+                const current = sel.value;
+                sel.innerHTML = '<option value="">Unassigned</option>' +
+                    people.map(p => `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join('');
+                sel.value = current;
+            });
+        }
+
+        function populateOwnerFilter() {
+            const sel = document.getElementById('filterOwner');
+            const current = sel.value;
+            // Combine people list with any owners already assigned in risks
+            const allOwners = [...new Set([...people, ...risks.map(r => r.owner).filter(Boolean)])].sort();
+            sel.innerHTML = '<option value="all">All People</option>' +
+                allOwners.map(p => `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join('');
+            sel.value = current;
+        }
+
+        // ==================== CSV ====================
+        function exportToCSV() {
+            if (risks.length === 0) {
+                alert('No risks to export.');
+                return;
+            }
+
+            const esc = (v) => {
+                if (v === undefined || v === null) return '';
+                v = String(v);
+                if (v.includes(',') || v.includes('"') || v.includes('\n')) return '"' + v.replace(/"/g, '""') + '"';
+                return v;
+            };
+
+            const headers = ['Title','Description','Category','Probability','Impact','Severity Score','Severity Level','Status','Owner','Mitigation Plan','Notes','Date Created','Date Modified'];
+            let csv = headers.join(',') + '\r\n';
+
+            risks.forEach(r => {
+                const sev = calcSeverity(r.probability, r.impact);
+                csv += [
+                    esc(r.title), esc(r.description), esc(r.category),
+                    r.probability, r.impact, sev.score, esc(sev.label),
+                    esc(r.status), esc(r.owner), esc(r.mitigation), esc(r.notes),
+                    esc(r.dateCreated), esc(r.dateModified)
+                ].join(',') + '\r\n';
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = `Risk_Register_${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+            URL.revokeObjectURL(a.href);
+        }
+
+        function importCSV(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const rows = parseCSVContent(e.target.result);
+
+                let headerIdx = -1;
+                for (let i = 0; i < rows.length; i++) {
+                    if (rows[i].some(c => c.toLowerCase().includes('title'))) {
+                        headerIdx = i;
+                        break;
+                    }
+                }
+
+                if (headerIdx === -1) {
+                    alert('Could not find header row.');
+                    return;
+                }
+
+                const headers = rows[headerIdx].map(h => h.toLowerCase().trim());
+                const col = (name) => {
+                    // Exact match first
+                    let idx = headers.indexOf(name);
+                    if (idx >= 0) return idx;
+                    // Partial/fuzzy match for common variations
+                    for (let j = 0; j < headers.length; j++) {
+                        const h = headers[j];
+                        if (h.includes(name) || name.includes(h)) return j;
+                    }
+                    return -1;
+                };
+
+                // Build a flexible column lookup supporting common header variations
+                const colIdx = {};
+                const aliases = {
+                    title: ['title', 'risk title', 'risk name', 'name'],
+                    description: ['description', 'desc', 'risk description'],
+                    category: ['category', 'risk category', 'type'],
+                    probability: ['probability', 'prob', 'likelihood'],
+                    impact: ['impact', 'consequence'],
+                    status: ['status', 'risk status', 'state'],
+                    owner: ['owner', 'assigned to', 'assigned', 'risk owner', 'responsible'],
+                    mitigation: ['mitigation plan', 'mitigation', 'treatment', 'response'],
+                    notes: ['notes', 'comments', 'remarks', 'observations'],
+                    dateCreated: ['date created', 'created', 'date added', 'creation date'],
+                    dateModified: ['date modified', 'modified', 'last modified', 'last updated']
+                };
+
+                for (const [key, names] of Object.entries(aliases)) {
+                    colIdx[key] = -1;
+                    for (const n of names) {
+                        const idx = headers.indexOf(n);
+                        if (idx >= 0) { colIdx[key] = idx; break; }
+                    }
+                }
+
+                const getVal = (row, key) => {
+                    const idx = colIdx[key];
+                    return (idx >= 0 && idx < row.length) ? row[idx] : '';
+                };
+
+                const imported = [];
+                for (let i = headerIdx + 1; i < rows.length; i++) {
+                    const r = rows[i];
+                    const title = (getVal(r, 'title') || '').trim();
+                    if (!title) continue;
+
+                    const rawProb = parseInt(getVal(r, 'probability')) || 5;
+                    const rawImpact = parseInt(getVal(r, 'impact')) || 5;
+
+                    // If impact > 10, it's likely a pre-calculated score (prob × impact)
+                    // Derive the actual 1-10 impact by dividing by probability
+                    let prob, impact;
+                    if (rawImpact > 10 && rawProb > 0) {
+                        prob = Math.min(10, Math.max(1, rawProb));
+                        impact = Math.min(10, Math.max(1, Math.round(rawImpact / rawProb)));
+                    } else {
+                        prob = Math.min(10, Math.max(1, rawProb));
+                        impact = Math.min(10, Math.max(1, rawImpact));
+                    }
+
+                    imported.push({
+                        title: title,
+                        description: getVal(r, 'description'),
+                        category: getVal(r, 'category'),
+                        probability: Math.min(10, Math.max(1, prob)),
+                        impact: Math.min(10, Math.max(1, impact)),
+                        status: getVal(r, 'status') || 'Open',
+                        owner: getVal(r, 'owner'),
+                        mitigation: getVal(r, 'mitigation'),
+                        notes: getVal(r, 'notes'),
+                        dateCreated: getVal(r, 'dateCreated') || new Date().toISOString().split('T')[0],
+                        dateModified: getVal(r, 'dateModified') || new Date().toISOString().split('T')[0]
+                    });
+
+                    // Auto-add owners to people list
+                    const owner = getVal(r, 'owner');
+                    if (owner && !people.includes(owner)) {
+                        people.push(owner);
+                    }
+                }
+
+                people.sort();
+                risks = imported;
+                populateOwnerFilter();
+                renderAll();
+                alert(`Imported ${risks.length} risk(s)!`);
+            };
+            reader.readAsText(file);
+            event.target.value = '';
+        }
+
+        function parseCSVContent(text) {
+            const rows = [];
+            let row = [];
+            let field = '';
+            let inQuotes = false;
+            let i = 0;
+
+            while (i < text.length) {
+                const ch = text[i];
+                if (inQuotes) {
+                    if (ch === '"') {
+                        if (text[i + 1] === '"') {
+                            field += '"';
+                            i += 2;
+                        } else {
+                            inQuotes = false;
+                            i++;
+                        }
+                    } else {
+                        field += ch;
+                        i++;
+                    }
+                } else {
+                    if (ch === '"') {
+                        inQuotes = true;
+                        i++;
+                    } else if (ch === ',') {
+                        row.push(field.trim());
+                        field = '';
+                        i++;
+                    } else if (ch === '\r' || ch === '\n') {
+                        row.push(field.trim());
+                        field = '';
+                        if (ch === '\r' && text[i + 1] === '\n') i++;
+                        i++;
+                        rows.push(row);
+                        row = [];
+                    } else {
+                        field += ch;
+                        i++;
+                    }
+                }
+            }
+            if (field || row.length > 0) {
+                row.push(field.trim());
+                rows.push(row);
+            }
+            return rows;
+        }
+
+        // ========== Workbook Integration (postMessage API) ==========
+        window.addEventListener('message', function(event) {
+            if (event.data && event.data.type === 'getDataForExport') {
+                const exportData = risks.map(r => {
+                    const sev = calcSeverity(r.probability, r.impact);
+                    return {
+                        'Title': r.title || '',
+                        'Description': r.description || '',
+                        'Category': r.category || '',
+                        'Probability': r.probability || 0,
+                        'Impact': r.impact || 0,
+                        'Severity Score': sev.score,
+                        'Severity Level': sev.label,
+                        'Status': r.status || '',
+                        'Owner': r.owner || '',
+                        'Mitigation Plan': r.mitigation || '',
+                        'Notes': r.notes || '',
+                        'Date Created': r.dateCreated || '',
+                        'Date Modified': r.dateModified || ''
+                    };
+                });
+                event.source.postMessage({
+                    type: 'exportData',
+                    module: 'risks',
+                    data: exportData,
+                    headers: ['Title','Description','Category','Probability','Impact','Severity Score','Severity Level','Status','Owner','Mitigation Plan','Notes','Date Created','Date Modified']
+                }, '*');
+            }
+            if (event.data && event.data.type === 'importDataFromWorkbook' && event.data.module === 'risks') {
+                const rows = event.data.data || [];
+                if (rows.length === 0) return;
+                rows.forEach(r => {
+                    risks.push({
+                        id: 'r_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
+                        title: r['Title'] || r['title'] || '',
+                        description: r['Description'] || r['description'] || '',
+                        category: r['Category'] || r['category'] || '',
+                        probability: parseInt(r['Probability'] || r['probability']) || 5,
+                        impact: parseInt(r['Impact'] || r['impact']) || 5,
+                        status: r['Status'] || r['status'] || 'Open',
+                        owner: r['Owner'] || r['owner'] || '',
+                        mitigation: r['Mitigation Plan'] || r['mitigation'] || '',
+                        notes: r['Notes'] || r['notes'] || '',
+                        dateCreated: r['Date Created'] || r['dateCreated'] || new Date().toISOString(),
+                        dateModified: r['Date Modified'] || r['dateModified'] || new Date().toISOString()
+                    });
+                });
+                renderAll();
+                event.source.postMessage({ type: 'importComplete', module: 'risks', count: rows.length }, '*');
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberSec Operations Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .dashboard-container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .dashboard-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .dashboard-header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .dashboard-header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .tab-navigation {
+            background: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
+            padding: 0;
+            display: flex;
+            gap: 0;
+        }
+
+        .tab-button {
+            flex: 1;
+            padding: 18px 30px;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            color: #6c757d;
+            transition: all 0.3s ease;
+            border-bottom: 3px solid transparent;
+            position: relative;
+        }
+
+        .tab-button:hover {
+            background: #e9ecef;
+            color: #495057;
+        }
+
+        .tab-button.active {
+            color: #667eea;
+            background: white;
+            border-bottom-color: #667eea;
+        }
+
+        .tab-content {
+            display: none;
+            min-height: 600px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Embedded iframe styling */
+        .iframe-container {
+            width: 100%;
+            height: calc(100vh - 200px);
+            min-height: 600px;
+            border: none;
+            overflow: auto;
+        }
+
+        .iframe-container iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        /* Info Tab Styles */
+        .info-content {
+            padding: 40px;
+            max-width: 1000px;
+            margin: 0 auto;
+            color: #333;
+            line-height: 1.7;
+        }
+
+        .info-content h2 {
+            font-size: 1.8em;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 8px;
+        }
+
+        .info-content .info-subtitle {
+            font-size: 1.05em;
+            color: #6c757d;
+            margin-bottom: 30px;
+        }
+
+        .info-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 24px 28px;
+            margin-bottom: 20px;
+            border-left: 4px solid #667eea;
+        }
+
+        .info-section.tip {
+            border-left-color: #28a745;
+            background: #f0faf3;
+        }
+
+        .info-section.warning {
+            border-left-color: #ffc107;
+            background: #fffcf0;
+        }
+
+        .info-section h3 {
+            font-size: 1.15em;
+            font-weight: 600;
+            color: #212529;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .info-section p, .info-section li {
+            font-size: 14px;
+            color: #495057;
+            margin-bottom: 6px;
+        }
+
+        .info-section ul, .info-section ol {
+            padding-left: 20px;
+            margin-top: 8px;
+        }
+
+        .info-section li {
+            margin-bottom: 8px;
+        }
+
+        .info-columns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .info-columns .info-section {
+            margin-bottom: 0;
+        }
+
+        .kbd {
+            display: inline-block;
+            padding: 2px 8px;
+            font-size: 12px;
+            font-family: 'SFMono-Regular', Consolas, monospace;
+            background: #e9ecef;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            color: #495057;
+        }
+
+        .csv-format {
+            background: #2d2d2d;
+            color: #e6e6e6;
+            padding: 14px 18px;
+            border-radius: 6px;
+            font-family: 'SFMono-Regular', Consolas, monospace;
+            font-size: 12.5px;
+            overflow-x: auto;
+            margin-top: 10px;
+            line-height: 1.6;
+        }
+
+        .version-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-header h1 {
+                font-size: 1.8em;
+            }
+
+            .tab-button {
+                padding: 15px 20px;
+                font-size: 14px;
+            }
+
+            .info-content {
+                padding: 20px;
+            }
+
+            .info-columns {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <div class="dashboard-header">
+            <h1>&#x1F6E1;&#xFE0F; CyberSec Operations Dashboard</h1>
+            <p>Unified Security Operations Management Platform</p>
+        </div>
+
+        <div style="background:#f8f9fa;border-bottom:1px solid #dee2e6;padding:12px 30px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+            <span style="font-weight:600;font-size:14px;color:#495057;">&#x1F4D7; Workbook:</span>
+            <button onclick="exportWorkbook()" style="padding:8px 18px;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;background:#667eea;color:white;transition:all 0.3s;">Export .xlsx</button>
+            <label for="wbImportFile" style="padding:8px 18px;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;background:#28a745;color:white;">Import .xlsx</label>
+            <input type="file" id="wbImportFile" accept=".xlsx,.xls" onchange="importWorkbook(event)" style="display:none;">
+            <span id="wbStatus" style="margin-left:auto;font-size:13px;color:#6c757d;font-style:italic;">All module data in one Excel file</span>
+        </div>
+
+        <div class="tab-navigation">
+            <button class="tab-button active" onclick="switchTab('notes')">
+                &#x1F4DD; Notes
+            </button>
+            <button class="tab-button" onclick="switchTab('calendar')">
+                &#x1F4C5; Operations Calendar
+            </button>
+            <button class="tab-button" onclick="switchTab('risks')">
+                &#x26A0;&#xFE0F; Risk Register
+            </button>
+            <button class="tab-button" onclick="switchTab('vendors')">
+                &#x1F4CB; Vendor Tracking
+            </button>
+            <button class="tab-button" onclick="switchTab('policies')">
+                &#x1F4DC; Policy Reviews
+            </button>
+            <button class="tab-button" onclick="switchTab('info')">
+                &#x2139;&#xFE0F; Info &amp; Help
+            </button>
+        </div>
+
+        <div id="notes-tab" class="tab-content active">
+            <div class="iframe-container">
+                <iframe id="notes-iframe" src="notes.html"></iframe>
+            </div>
+        </div>
+
+        <div id="calendar-tab" class="tab-content">
+            <div class="iframe-container">
+                <iframe id="calendar-iframe" src="calendar.html"></iframe>
+            </div>
+        </div>
+
+        <div id="risks-tab" class="tab-content">
+            <div class="iframe-container">
+                <iframe id="risks-iframe" src="riskregister.html"></iframe>
+            </div>
+        </div>
+
+        <div id="vendors-tab" class="tab-content">
+            <div class="iframe-container">
+                <iframe id="vendors-iframe" src="vendor-tracking.html"></iframe>
+            </div>
+        </div>
+
+        <div id="policies-tab" class="tab-content">
+            <div class="iframe-container">
+                <iframe id="policies-iframe" src="policy-reviews.html"></iframe>
+            </div>
+        </div>
+
+        <div id="info-tab" class="tab-content">
+            <div class="info-content">
+                <h2>&#x1F6E1;&#xFE0F; CyberSec Operations Dashboard <span class="version-badge">v1.0</span></h2>
+                <p class="info-subtitle">A unified platform for managing cybersecurity operations, risk tracking, and compliance scheduling.</p>
+
+                <div class="info-columns">
+                    <div class="info-section">
+                        <h3>&#x1F4C5; Operations Calendar</h3>
+                        <p>Schedule and track security operations tasks on an interactive monthly calendar.</p>
+                        <ul>
+                            <li><strong>Add events</strong> &mdash; Click <span class="kbd">+ Add Event</span> to create a new task with date, priority, owner, and category.</li>
+                            <li><strong>Edit / Delete</strong> &mdash; Use the action buttons in the task table below the calendar.</li>
+                            <li><strong>Navigate</strong> &mdash; Use <span class="kbd">Prev</span> / <span class="kbd">Next</span> to browse months, or <span class="kbd">Today</span> to jump back.</li>
+                            <li><strong>Recurring events</strong> &mdash; Set daily, weekly, monthly, or yearly repeats when adding an event.</li>
+                        </ul>
+                    </div>
+                    <div class="info-section">
+                        <h3>&#x26A0;&#xFE0F; Risk Register</h3>
+                        <p>Track, assess, and manage organizational risks with severity scoring and visual charts.</p>
+                        <ul>
+                            <li><strong>Add risks</strong> &mdash; Click <span class="kbd">+ Add Risk</span> and fill in title, probability, impact, and owner.</li>
+                            <li><strong>Auto-severity</strong> &mdash; Severity is calculated automatically as Probability &times; Impact (Critical &ge;70, High &ge;40, Medium &ge;20, Low &lt;20).</li>
+                            <li><strong>Filter &amp; sort</strong> &mdash; Use the multi-select dropdowns to filter by status, severity, or owner.</li>
+                            <li><strong>Charts</strong> &mdash; Toggle visual charts showing severity distribution and risk trends over time.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="info-columns">
+                    <div class="info-section">
+                        <h3>&#x1F4CB; Vendor Tracking</h3>
+                        <p>Manage and monitor third-party vendor security posture and review schedules.</p>
+                        <ul>
+                            <li><strong>Add vendors</strong> &mdash; Record vendor name, classification, risk tier, and review status.</li>
+                            <li><strong>Annual reviews</strong> &mdash; Track due dates for vendor security assessments and SOC reports.</li>
+                            <li><strong>Risk tiers</strong> &mdash; Classify vendors by data access level and criticality to operations.</li>
+                            <li><strong>Import/Export</strong> &mdash; Use CSV to bulk-load or back up your vendor inventory.</li>
+                        </ul>
+                    </div>
+                    <div class="info-section">
+                        <h3>&#x1F4DC; Policy Reviews</h3>
+                        <p>Track organizational security policies and their review cycles.</p>
+                        <ul>
+                            <li><strong>Add policies</strong> &mdash; Document policy name, owner, review frequency, and approval status.</li>
+                            <li><strong>Review tracking</strong> &mdash; Monitor upcoming and overdue policy reviews at a glance.</li>
+                            <li><strong>Version control</strong> &mdash; Record last review date and next scheduled review.</li>
+                            <li><strong>Import/Export</strong> &mdash; CSV support for bulk policy management.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="info-columns">
+                    <div class="info-section">
+                        <h3>&#x1F4DD; Operations Notes</h3>
+                        <p>Capture security operations notes, observations, meeting minutes, and incident documentation.</p>
+                        <ul>
+                            <li><strong>Add notes</strong> &mdash; Click <span class="kbd">+ Add Note</span> with title, category, priority, and content.</li>
+                            <li><strong>Categories</strong> &mdash; General, Incident, Meeting, Audit, Compliance, Project, or Other.</li>
+                            <li><strong>Card &amp; Table views</strong> &mdash; Toggle between a visual card layout and a sortable table view.</li>
+                            <li><strong>Search &amp; filter</strong> &mdash; Filter by category, priority, or free-text search across all fields.</li>
+                            <li><strong>Import/Export</strong> &mdash; Full CSV round-trip support with merge or replace on import.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="info-section">
+                    <h3>&#x1F4E5; Importing Data (CSV)</h3>
+                    <p>All modules support CSV import. Click the <span class="kbd">Import CSV</span> button in any module to upload data.</p>
+
+                    <p><strong>Calendar CSV format:</strong></p>
+                    <div class="csv-format">Date,Task,Category,Priority,Owner,Notes<br>2026-03-15,Firewall Review,Network Security,Critical,Network Team,Quarterly review</div>
+                    <p style="margin-top: 8px; font-size: 13px; color: #6c757d;">The calendar also accepts event-style CSVs with columns: <code>Title, Start, End, Color</code></p>
+
+                    <p style="margin-top: 14px;"><strong>Risk Register CSV format:</strong></p>
+                    <div class="csv-format">Title,Description,Category,Probability,Impact,Status,Owner,Notes<br>Data Breach,Unauthorized access to PII,Cybersecurity,7,9,Open,Security Team,Review quarterly</div>
+
+                    <p style="margin-top: 14px;"><strong>Vendor Tracking CSV format:</strong></p>
+                    <div class="csv-format">Vendor Name,Service Type,Classification,Risk Tier,Review Status,Last Review,Next Review,Owner,Notes<br>Acme Cloud,Cloud Hosting,Critical,Tier 1,Complete,2025-09-15,2026-09-15,Security Team,SOC 2 report on file</div>
+
+                    <p style="margin-top: 14px;"><strong>Policy Reviews CSV format:</strong></p>
+                    <div class="csv-format">Policy Name,Category,Owner,Review Frequency,Last Review,Next Review,Status,Version,Notes<br>Acceptable Use Policy,IT Security,CISO,Annual,2025-06-01,2026-06-01,Current,3.1,Updated for remote work</div>
+
+                    <p style="margin-top: 14px;"><strong>Notes CSV format:</strong></p>
+                    <div class="csv-format">Title,Date,Category,Priority,Author,Content,Tags<br>Firewall Change Review,2026-02-10,Meeting,Medium,Security Team,Reviewed proposed changes,firewall,change-mgmt</div>
+                </div>
+
+                <div class="info-section">
+                    <h3>&#x1F4D7; Excel Workbook Import/Export</h3>
+                    <p>Use the <span class="kbd">Export .xlsx</span> and <span class="kbd">Import .xlsx</span> buttons at the top of the dashboard to save or load all module data in a single Excel workbook.</p>
+                    <ul>
+                        <li>The workbook contains one sheet per module: <strong>Calendar</strong>, <strong>Risk Register</strong>, <strong>Vendors</strong>, <strong>Policy Reviews</strong>, and <strong>Notes</strong>.</li>
+                        <li>Each module also retains its own <strong>CSV import/export</strong> for individual module data.</li>
+                        <li>On import, existing data in each module is <strong>replaced</strong> by the workbook contents. Only sheets present in the file are updated.</li>
+                        <li>File is auto-named with the current date (e.g., <code>CyberSec_Dashboard_2026-02-16.xlsx</code>).</li>
+                    </ul>
+                </div>
+
+                <div class="info-section">
+                    <h3>&#x1F4E4; Exporting Data</h3>
+                    <p>Click <span class="kbd">Export CSV</span> in any module to download all current data as a CSV file. Exported files are fully compatible with re-import, so you can use them for backups, sharing with colleagues, or editing in Excel/Google Sheets.</p>
+                </div>
+
+                <div class="info-columns">
+                    <div class="info-section tip">
+                        <h3>&#x1F4A1; Tips</h3>
+                        <ul>
+                            <li>Use <strong>color categories</strong> in the calendar to visually distinguish task types at a glance.</li>
+                            <li>Assign <strong>owners</strong> to both calendar events and risks for clear accountability.</li>
+                            <li>Set up <strong>recurring events</strong> for routine tasks like monthly vulnerability scans or quarterly access reviews.</li>
+                            <li>Use the <strong>Manage People</strong> button in the Risk Register to maintain a team roster for assignments.</li>
+                            <li>Export regularly to keep <strong>offline backups</strong> of your operations data.</li>
+                        </ul>
+                    </div>
+                    <div class="info-section warning">
+                        <h3>&#x26A0;&#xFE0F; Important Notes</h3>
+                        <ul>
+                            <li>Data is stored in your <strong>browser&rsquo;s local storage</strong>. Clearing browser data will remove saved risks.</li>
+                            <li>Calendar events are session-based &mdash; <strong>export before closing</strong> to preserve them.</li>
+                            <li>CSV files should use <strong>UTF-8 encoding</strong> for best compatibility.</li>
+                            <li>Dates should be in <strong>YYYY-MM-DD</strong> format for reliable import.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="info-section">
+                    <h3>&#x1F512; Compliance Framework Support</h3>
+                    <p>This dashboard is designed to support scheduling and tracking across common compliance frameworks:</p>
+                    <ul>
+                        <li><strong>HIPAA Security Rule</strong> &mdash; Track risk assessments, access reviews, and workforce training requirements.</li>
+                        <li><strong>SOC 2</strong> &mdash; Monitor controls across Trust Services Criteria (security, availability, confidentiality).</li>
+                        <li><strong>ISO 27001</strong> &mdash; Manage ISMS controls, internal audits, and corrective actions.</li>
+                    </ul>
+                    <p style="margin-top: 8px; font-size: 13px; color: #6c757d;">Use calendar categories and risk register entries to map tasks and risks to specific framework controls.</p>
+                </div>
+
+                <div class="info-section">
+                    <h3>&#x2328;&#xFE0F; Quick Reference</h3>
+                    <table style="width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px;">
+                        <tr style="border-bottom: 1px solid #dee2e6;">
+                            <td style="padding: 8px; font-weight: 600; width: 30%;">Priority Levels</td>
+                            <td style="padding: 8px;"><span style="background:#28a745;color:white;padding:2px 8px;border-radius:10px;font-size:11px;">Normal</span> &nbsp; <span style="background:#ffc107;color:#212529;padding:2px 8px;border-radius:10px;font-size:11px;">Warning</span> &nbsp; <span style="background:#dc3545;color:white;padding:2px 8px;border-radius:10px;font-size:11px;">Critical</span></td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid #dee2e6;">
+                            <td style="padding: 8px; font-weight: 600;">Risk Statuses</td>
+                            <td style="padding: 8px;">Open &rarr; Monitoring &rarr; Mitigated &rarr; Closed &rarr; Archived</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid #dee2e6;">
+                            <td style="padding: 8px; font-weight: 600;">Severity Scoring</td>
+                            <td style="padding: 8px;">Probability (1-10) &times; Impact (1-10) = Score (1-100)</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px; font-weight: 600;">Repeat Options</td>
+                            <td style="padding: 8px;">Daily, Weekly, Monthly, Yearly (with end date or occurrence count)</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ========== Tab Switching ==========
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+
+            const tabEl = document.getElementById(tabName + '-tab');
+            if (tabEl) tabEl.classList.add('active');
+
+            const buttons = document.querySelectorAll('.tab-button');
+            const tabIndex = { notes: 0, calendar: 1, risks: 2, vendors: 3, policies: 4, info: 5 };
+            if (buttons[tabIndex[tabName]]) {
+                buttons[tabIndex[tabName]].classList.add('active');
+            }
+        }
+
+        // ========== Workbook Export ==========
+        const MODULE_CONFIG = {
+            calendar: { iframe: 'calendar-iframe', sheetName: 'Calendar' },
+            risks:    { iframe: 'risks-iframe',    sheetName: 'Risk Register' },
+            vendors:  { iframe: 'vendors-iframe',  sheetName: 'Vendors' },
+            policies: { iframe: 'policies-iframe', sheetName: 'Policy Reviews' },
+            notes:    { iframe: 'notes-iframe',    sheetName: 'Notes' }
+        };
+
+        function setStatus(msg) {
+            document.getElementById('wbStatus').textContent = msg;
+        }
+
+        function exportWorkbook() {
+            setStatus('Collecting data from modules...');
+            const collected = {};
+            let pending = Object.keys(MODULE_CONFIG).length;
+            let timeout;
+
+            function onData(event) {
+                if (event.data && event.data.type === 'exportData') {
+                    collected[event.data.module] = event.data;
+                    pending--;
+                    if (pending <= 0) {
+                        window.removeEventListener('message', onData);
+                        clearTimeout(timeout);
+                        buildAndDownloadWorkbook(collected);
+                    }
+                }
+            }
+
+            window.addEventListener('message', onData);
+
+            // Request data from each iframe
+            Object.keys(MODULE_CONFIG).forEach(mod => {
+                const iframe = document.getElementById(MODULE_CONFIG[mod].iframe);
+                if (iframe && iframe.contentWindow) {
+                    iframe.contentWindow.postMessage({ type: 'getDataForExport' }, '*');
+                } else {
+                    pending--;
+                }
+            });
+
+            // Timeout after 5 seconds
+            timeout = setTimeout(() => {
+                window.removeEventListener('message', onData);
+                if (Object.keys(collected).length > 0) {
+                    buildAndDownloadWorkbook(collected);
+                } else {
+                    setStatus('Export failed - modules did not respond.');
+                    alert('Export timed out. Make sure all module tabs have loaded at least once.');
+                }
+            }, 5000);
+        }
+
+        function buildAndDownloadWorkbook(collected) {
+            try {
+                const wb = XLSX.utils.book_new();
+                let totalRows = 0;
+
+                Object.keys(MODULE_CONFIG).forEach(mod => {
+                    const config = MODULE_CONFIG[mod];
+                    const modData = collected[mod];
+
+                    if (modData && modData.data && modData.data.length > 0) {
+                        // Create sheet from array of objects using headers order
+                        const ws = XLSX.utils.json_to_sheet(modData.data, {
+                            header: modData.headers
+                        });
+
+                        // Auto-size columns (approximate)
+                        const colWidths = modData.headers.map(h => {
+                            let maxLen = h.length;
+                            modData.data.forEach(row => {
+                                const val = String(row[h] || '');
+                                if (val.length > maxLen) maxLen = Math.min(val.length, 50);
+                            });
+                            return { wch: maxLen + 2 };
+                        });
+                        ws['!cols'] = colWidths;
+
+                        XLSX.utils.book_append_sheet(wb, ws, config.sheetName);
+                        totalRows += modData.data.length;
+                    } else {
+                        // Add empty sheet with headers if module had no data
+                        const emptyHeaders = getDefaultHeaders(mod);
+                        const ws = XLSX.utils.aoa_to_sheet([emptyHeaders]);
+                        ws['!cols'] = emptyHeaders.map(h => ({ wch: h.length + 2 }));
+                        XLSX.utils.book_append_sheet(wb, ws, config.sheetName);
+                    }
+                });
+
+                const dateStr = new Date().toISOString().split('T')[0];
+                XLSX.writeFile(wb, `CyberSec_Dashboard_${dateStr}.xlsx`);
+                setStatus(`Exported ${totalRows} total rows across ${Object.keys(collected).length} sheets.`);
+            } catch (err) {
+                console.error('Workbook export error:', err);
+                setStatus('Export error: ' + err.message);
+                alert('Error creating workbook: ' + err.message);
+            }
+        }
+
+        function getDefaultHeaders(mod) {
+            const defaults = {
+                calendar: ['Date','Task','Category','Priority','Owner','Notes'],
+                risks: ['Title','Description','Category','Probability','Impact','Severity Score','Severity Level','Status','Owner','Mitigation Plan','Notes','Date Created','Date Modified'],
+                vendors: ['Vendor Name','Vendor Type','Business Purpose','SavvyFi Information','Information Classification','Risk Rating','Information Security Review','Current','Notes','Contact Information','Review Date','Type Review','Vendor Technical Contact','Responsible Team','Administration Portal Link','SavvyFi App Dependency','Integration Type','Administration Responsibilities','Administration Notes'],
+                policies: ['Policy Name','Policy ID','Description','Policy URL','Category','Compliance Framework','Review Frequency','Status','Last Reviewed','Next Review','Effective Date','Version','Owner','Approver','Notes'],
+                notes: ['Title','Date','Category','Priority','Author','Content','Tags']
+            };
+            return defaults[mod] || [];
+        }
+
+        // ========== Workbook Import ==========
+        function importWorkbook(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            setStatus('Reading workbook...');
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const wb = XLSX.read(data, { type: 'array' });
+
+                    const sheetToModule = {};
+                    Object.keys(MODULE_CONFIG).forEach(mod => {
+                        sheetToModule[MODULE_CONFIG[mod].sheetName] = mod;
+                    });
+
+                    let importedCount = 0;
+                    let pending = 0;
+                    const sheetsFound = [];
+
+                    wb.SheetNames.forEach(sheetName => {
+                        const mod = sheetToModule[sheetName];
+                        if (!mod) return; // Skip unknown sheets
+
+                        const ws = wb.Sheets[sheetName];
+                        const rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
+
+                        if (rows.length === 0) return;
+
+                        sheetsFound.push(sheetName);
+                        const iframe = document.getElementById(MODULE_CONFIG[mod].iframe);
+                        if (iframe && iframe.contentWindow) {
+                            pending++;
+                            iframe.contentWindow.postMessage({
+                                type: 'importDataFromWorkbook',
+                                module: mod,
+                                data: rows
+                            }, '*');
+                            importedCount += rows.length;
+                        }
+                    });
+
+                    // Listen for import confirmations
+                    let confirmed = 0;
+                    function onImportComplete(evt) {
+                        if (evt.data && evt.data.type === 'importComplete') {
+                            confirmed++;
+                            if (confirmed >= pending) {
+                                window.removeEventListener('message', onImportComplete);
+                            }
+                        }
+                    }
+                    if (pending > 0) {
+                        window.addEventListener('message', onImportComplete);
+                        setTimeout(() => window.removeEventListener('message', onImportComplete), 5000);
+                    }
+
+                    if (sheetsFound.length > 0) {
+                        setStatus(`Imported ${importedCount} rows from: ${sheetsFound.join(', ')}`);
+                        alert(`Successfully imported data from ${sheetsFound.length} sheet(s):\n${sheetsFound.join(', ')}\n\nTotal rows: ${importedCount}`);
+                    } else {
+                        setStatus('No matching sheets found in workbook.');
+                        alert('No matching sheets found. Expected sheet names: ' + Object.values(MODULE_CONFIG).map(c => c.sheetName).join(', '));
+                    }
+                } catch (err) {
+                    console.error('Workbook import error:', err);
+                    setStatus('Import error: ' + err.message);
+                    alert('Error reading workbook: ' + err.message);
+                }
+            };
+            reader.readAsArrayBuffer(file);
+
+            // Reset file input
+            event.target.value = '';
+        }
+    </script>
+</body>
+</html>

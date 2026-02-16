@@ -1,0 +1,1057 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Policy Review Tracking</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f8f9fa;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        header h1 { font-size: 2em; margin-bottom: 10px; font-weight: 700; }
+        header .subtitle { font-size: 1em; opacity: 0.9; }
+
+        /* Controls */
+        .controls {
+            padding: 20px 30px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        .btn:hover { transform: translateY(-2px); }
+        .btn-primary { background: #667eea; color: white; }
+        .btn-primary:hover { background: #5568d3; box-shadow: 0 4px 12px rgba(102,126,234,0.4); }
+        .btn-success { background: #28a745; color: white; }
+        .btn-success:hover { background: #218838; }
+        .btn-secondary { background: #6c757d; color: white; }
+        .btn-secondary:hover { background: #5a6268; }
+        .btn-warning { background: #ffc107; color: #212529; }
+        .btn-warning:hover { background: #e0a800; }
+        .btn-danger { background: #dc3545; color: white; }
+        .btn-danger:hover { background: #c82333; }
+
+        .file-input-wrapper input[type=file] { display: none; }
+
+        .filter-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-left: auto;
+            flex-wrap: wrap;
+        }
+
+        .filter-group label { font-weight: 600; font-size: 14px; color: #495057; }
+
+        .filter-group select,
+        .search-input {
+            padding: 8px 12px;
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            font-size: 14px;
+            background: white;
+        }
+
+        .search-input { width: 220px; }
+        .search-input:focus, .filter-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102,126,234,0.1);
+        }
+
+        /* Stats */
+        .stats-bar {
+            display: flex;
+            gap: 20px;
+            padding: 20px 30px;
+            border-bottom: 1px solid #dee2e6;
+            flex-wrap: wrap;
+        }
+
+        .stat-card {
+            flex: 1;
+            min-width: 140px;
+            padding: 16px 20px;
+            border-radius: 10px;
+            border: 1px solid #e9ecef;
+            text-align: center;
+            transition: transform 0.2s;
+        }
+        .stat-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        .stat-card .stat-value { font-size: 28px; font-weight: 700; line-height: 1.2; }
+        .stat-card .stat-label { font-size: 12px; color: #6c757d; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px; }
+
+        /* Table */
+        .table-wrapper {
+            padding: 20px 30px 30px;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        thead th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 14px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+            cursor: pointer;
+            user-select: none;
+        }
+        thead th:hover { background: linear-gradient(135deg, #5568d3 0%, #653d8c 100%); }
+        thead th .sort-indicator { margin-left: 4px; opacity: 0.6; }
+        thead th.sorted .sort-indicator { opacity: 1; }
+
+        tbody td {
+            padding: 10px 14px;
+            border-bottom: 1px solid #e9ecef;
+            color: #495057;
+            vertical-align: top;
+        }
+
+        tbody tr { cursor: pointer; }
+        tbody tr:hover { background: #f0f2ff; }
+
+        /* Status coloring on rows */
+        tbody tr.status-current { border-left: 4px solid #28a745; }
+        tbody tr.status-due-soon { border-left: 4px solid #ffc107; }
+        tbody tr.status-overdue { border-left: 4px solid #dc3545; }
+        tbody tr.status-draft { border-left: 4px solid #6c757d; }
+
+        /* Badges */
+        .badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+        .badge-current { background: #d4edda; color: #155724; }
+        .badge-due-soon { background: #fff3cd; color: #856404; }
+        .badge-overdue { background: #f8d7da; color: #721c24; }
+        .badge-draft { background: #e2e3e5; color: #383d41; }
+        .badge-retired { background: #d6d8db; color: #383d41; }
+
+        .badge-annual { background: #e8eaf6; color: #3949ab; }
+        .badge-biannual { background: #fce4ec; color: #c62828; }
+
+        .link-cell a {
+            color: #667eea;
+            text-decoration: none;
+            font-size: 12px;
+            word-break: break-all;
+        }
+        .link-cell a:hover { text-decoration: underline; }
+
+        .notes-cell {
+            max-width: 250px;
+        }
+        .notes-cell .notes-preview {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .notes-cell:hover .notes-preview {
+            display: block;
+            -webkit-line-clamp: unset;
+            white-space: pre-wrap;
+        }
+
+        /* Action buttons */
+        .action-btn {
+            padding: 4px 10px;
+            border: 1px solid #ced4da;
+            background: white;
+            color: #495057;
+            font-size: 11px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-right: 4px;
+        }
+        .action-btn:hover { background: #667eea; color: white; border-color: #667eea; }
+        .action-btn.edit-btn { background: #667eea; color: white; border-color: #667eea; font-weight: 600; }
+        .action-btn.edit-btn:hover { background: #5568d3; }
+        .action-btn.delete:hover { background: #dc3545; color: white; border-color: #dc3545; }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal.active { display: flex; }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 700px;
+            width: 95%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .modal-content h2 {
+            font-size: 22px;
+            margin-bottom: 20px;
+            color: #212529;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .close-modal {
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            color: #6c757d;
+            line-height: 20px;
+        }
+        .close-modal:hover { color: #dc3545; }
+
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group.full-width { grid-column: 1 / -1; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: 500; font-size: 13px; color: #495057; }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 9px 12px;
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102,126,234,0.1);
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #dee2e6;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6c757d;
+        }
+        .empty-state h2 { font-size: 22px; margin-bottom: 8px; color: #495057; }
+
+        @media (max-width: 768px) {
+            body { padding: 10px; }
+            header h1 { font-size: 1.5em; }
+            .controls { flex-direction: column; align-items: stretch; }
+            .filter-group { margin-left: 0; }
+            .stats-bar { flex-direction: column; }
+            .form-row { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Policy Review Tracking</h1>
+            <p class="subtitle">Information Security Policy Review Management</p>
+        </header>
+
+        <div class="controls">
+            <button class="btn btn-warning" onclick="openModal()">+ Add Policy</button>
+            <button class="btn btn-danger" onclick="deleteAll()">Delete All</button>
+
+            <div class="filter-group">
+                <label>Filter:</label>
+                <input type="text" class="search-input" id="searchInput" placeholder="Search policies..." oninput="renderAll()">
+                <select id="filterStatus" onchange="renderAll()">
+                    <option value="all">All Status</option>
+                    <option value="Current">Current</option>
+                    <option value="Due Soon">Due Soon</option>
+                    <option value="Overdue">Overdue</option>
+                    <option value="Draft">Draft</option>
+                    <option value="Retired">Retired</option>
+                </select>
+                <select id="filterFrequency" onchange="renderAll()">
+                    <option value="all">All Frequencies</option>
+                    <option value="Annual">Annual</option>
+                    <option value="BiAnnual">BiAnnual</option>
+                </select>
+                <select id="filterOwner" onchange="renderAll()">
+                    <option value="all">All Owners</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="stats-bar" id="statsBar"></div>
+
+        <div class="table-wrapper">
+            <div id="tableContainer">
+                <div class="empty-state">
+                    <h2>No Policies Loaded</h2>
+                    <p>Import a CSV file or add a policy to get started.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Modal -->
+    <div id="policyModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeModal()">&times;</span>
+            <h2 id="modalTitle">Add Policy</h2>
+            <form id="policyForm" onsubmit="handleSubmit(event)">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Policy Name *</label>
+                        <input type="text" id="fName" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Policy ID / Reference</label>
+                        <input type="text" id="fPolicyId" placeholder="e.g., POL-001">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea id="fDescription" rows="2" placeholder="Brief description of the policy scope and purpose"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Policy Document URL</label>
+                    <input type="url" id="fUrl" placeholder="https://...">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Category</label>
+                        <input type="text" id="fCategory" list="categoryList" placeholder="e.g., Information Security, Acceptable Use">
+                        <datalist id="categoryList">
+                            <option value="Information Security">
+                            <option value="Acceptable Use">
+                            <option value="Access Control">
+                            <option value="Data Classification">
+                            <option value="Incident Response">
+                            <option value="Business Continuity">
+                            <option value="Privacy">
+                            <option value="Vendor Management">
+                            <option value="Change Management">
+                            <option value="Physical Security">
+                            <option value="Human Resources">
+                            <option value="Compliance">
+                        </datalist>
+                    </div>
+                    <div class="form-group">
+                        <label>Compliance Framework</label>
+                        <input type="text" id="fFramework" list="frameworkList" placeholder="e.g., HIPAA, SOC 2, ISO 27001">
+                        <datalist id="frameworkList">
+                            <option value="HIPAA">
+                            <option value="SOC 2">
+                            <option value="ISO 27001">
+                            <option value="NIST CSF">
+                            <option value="PCI DSS">
+                            <option value="GDPR">
+                            <option value="Multiple">
+                        </datalist>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Review Frequency *</label>
+                        <select id="fFrequency" required>
+                            <option value="Annual">Annual</option>
+                            <option value="BiAnnual">BiAnnual</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Status</label>
+                        <select id="fStatus">
+                            <option value="Current">Current</option>
+                            <option value="Due Soon">Due Soon</option>
+                            <option value="Overdue">Overdue</option>
+                            <option value="Draft">Draft</option>
+                            <option value="Retired">Retired</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Last Reviewed Date</label>
+                        <input type="date" id="fLastReview">
+                    </div>
+                    <div class="form-group">
+                        <label>Next Review Date</label>
+                        <input type="date" id="fNextReview">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Effective Date</label>
+                        <input type="date" id="fEffectiveDate">
+                    </div>
+                    <div class="form-group">
+                        <label>Version</label>
+                        <input type="text" id="fVersion" placeholder="e.g., 1.0, 2.1">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Owner / Responsible</label>
+                        <input type="text" id="fOwner" placeholder="Person or team responsible">
+                    </div>
+                    <div class="form-group">
+                        <label>Approver</label>
+                        <input type="text" id="fApprover" placeholder="Person who approves the policy">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Notes</label>
+                    <textarea id="fNotes" rows="3"></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Policy</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Detail Modal -->
+    <div id="detailModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeDetailModal()">&times;</span>
+            <h2 id="detailTitle">Policy Details</h2>
+            <div id="detailBody"></div>
+            <div class="form-actions">
+                <button class="btn btn-secondary" onclick="closeDetailModal()">Close</button>
+                <button class="btn btn-primary" id="detailEditBtn">&#9998; Edit Policy</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==================== DATA ====================
+        const FIELDS = [
+            'Policy Name', 'Policy ID', 'Description', 'Policy URL', 'Category',
+            'Compliance Framework', 'Review Frequency', 'Status', 'Last Reviewed',
+            'Next Review', 'Effective Date', 'Version', 'Owner', 'Approver', 'Notes'
+        ];
+
+        const FIELD_MAP = {
+            'policy name': 'Policy Name',
+            'name': 'Policy Name',
+            'title': 'Policy Name',
+            'policy title': 'Policy Name',
+            'policy id': 'Policy ID',
+            'reference': 'Policy ID',
+            'id': 'Policy ID',
+            'policy reference': 'Policy ID',
+            'description': 'Description',
+            'desc': 'Description',
+            'policy url': 'Policy URL',
+            'url': 'Policy URL',
+            'document url': 'Policy URL',
+            'link': 'Policy URL',
+            'policy link': 'Policy URL',
+            'document link': 'Policy URL',
+            'category': 'Category',
+            'type': 'Category',
+            'policy category': 'Category',
+            'compliance framework': 'Compliance Framework',
+            'framework': 'Compliance Framework',
+            'compliance': 'Compliance Framework',
+            'review frequency': 'Review Frequency',
+            'frequency': 'Review Frequency',
+            'review cycle': 'Review Frequency',
+            'status': 'Status',
+            'review status': 'Status',
+            'policy status': 'Status',
+            'last reviewed': 'Last Reviewed',
+            'last review': 'Last Reviewed',
+            'last review date': 'Last Reviewed',
+            'last reviewed date': 'Last Reviewed',
+            'reviewed': 'Last Reviewed',
+            'review date': 'Last Reviewed',
+            'next review': 'Next Review',
+            'next review date': 'Next Review',
+            'due date': 'Next Review',
+            'effective date': 'Effective Date',
+            'effective': 'Effective Date',
+            'date effective': 'Effective Date',
+            'version': 'Version',
+            'ver': 'Version',
+            'revision': 'Version',
+            'owner': 'Owner',
+            'responsible': 'Owner',
+            'policy owner': 'Owner',
+            'assigned to': 'Owner',
+            'approver': 'Approver',
+            'approved by': 'Approver',
+            'approval': 'Approver',
+            'notes': 'Notes',
+            'comments': 'Notes',
+            'remarks': 'Notes'
+        };
+
+        let policies = [];
+        let editingIndex = -1;
+        let sortColumn = null;
+        let sortAsc = true;
+
+        // ==================== INIT ====================
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('csvFile').addEventListener('change', handleImport);
+            window.addEventListener('click', (e) => {
+                if (e.target.classList.contains('modal')) e.target.classList.remove('active');
+            });
+
+            // Auto-calculate next review when last review or frequency changes
+            document.getElementById('fLastReview').addEventListener('change', autoCalcNextReview);
+            document.getElementById('fFrequency').addEventListener('change', autoCalcNextReview);
+
+            renderAll();
+        });
+
+        function autoCalcNextReview() {
+            const lastReview = document.getElementById('fLastReview').value;
+            const freq = document.getElementById('fFrequency').value;
+            if (!lastReview) return;
+
+            const d = new Date(lastReview);
+            if (freq === 'BiAnnual') {
+                d.setMonth(d.getMonth() + 6);
+            } else {
+                d.setFullYear(d.getFullYear() + 1);
+            }
+            document.getElementById('fNextReview').value = d.toISOString().split('T')[0];
+        }
+
+        // ==================== STATUS CALCULATION ====================
+        function calcStatus(policy) {
+            // If manually set to Draft or Retired, keep it
+            if (policy['Status'] === 'Draft' || policy['Status'] === 'Retired') return policy['Status'];
+
+            const nextReview = policy['Next Review'];
+            if (!nextReview) return policy['Status'] || 'Draft';
+
+            const next = new Date(nextReview);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            const daysUntil = Math.floor((next - today) / (1000 * 60 * 60 * 24));
+
+            if (daysUntil < 0) return 'Overdue';
+            if (daysUntil <= 30) return 'Due Soon';
+            return 'Current';
+        }
+
+        // ==================== CSV PARSING ====================
+        function parseCSVContent(text) {
+            const rows = [];
+            let row = [];
+            let field = '';
+            let inQuotes = false;
+            let i = 0;
+
+            while (i < text.length) {
+                const ch = text[i];
+                if (inQuotes) {
+                    if (ch === '"') {
+                        if (text[i + 1] === '"') { field += '"'; i += 2; }
+                        else { inQuotes = false; i++; }
+                    } else { field += ch; i++; }
+                } else {
+                    if (ch === '"') { inQuotes = true; i++; }
+                    else if (ch === ',') { row.push(field.trim()); field = ''; i++; }
+                    else if (ch === '\r' || ch === '\n') {
+                        row.push(field.trim()); field = '';
+                        if (ch === '\r' && text[i + 1] === '\n') i++;
+                        i++;
+                        rows.push(row); row = [];
+                    } else { field += ch; i++; }
+                }
+            }
+            if (field || row.length > 0) { row.push(field.trim()); rows.push(row); }
+            return rows;
+        }
+
+        function handleImport(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const rows = parseCSVContent(e.target.result);
+
+                // Find header row
+                let headerIdx = -1;
+                for (let i = 0; i < rows.length; i++) {
+                    if (rows[i].some(c => {
+                        const lc = c.toLowerCase().trim();
+                        return lc.includes('policy') || lc === 'name' || lc === 'title';
+                    })) {
+                        headerIdx = i;
+                        break;
+                    }
+                }
+
+                if (headerIdx === -1) {
+                    alert('Could not find header row. Ensure a column contains "Policy Name", "Name", or "Title".');
+                    return;
+                }
+
+                const headers = rows[headerIdx];
+                const colMap = {};
+                headers.forEach((h, idx) => {
+                    const normalized = h.toLowerCase().trim();
+                    if (FIELD_MAP[normalized]) colMap[FIELD_MAP[normalized]] = idx;
+                });
+
+                const imported = [];
+                for (let i = headerIdx + 1; i < rows.length; i++) {
+                    const row = rows[i];
+                    const name = colMap['Policy Name'] !== undefined ? (row[colMap['Policy Name']] || '').trim() : '';
+                    if (!name) continue;
+
+                    const policy = {};
+                    FIELDS.forEach(f => {
+                        const idx = colMap[f];
+                        policy[f] = (idx !== undefined && idx < row.length) ? row[idx] : '';
+                    });
+
+                    // Auto-calculate status if not provided or not manually set
+                    if (!policy['Status'] || (policy['Status'] !== 'Draft' && policy['Status'] !== 'Retired')) {
+                        policy['Status'] = calcStatus(policy);
+                    }
+
+                    imported.push(policy);
+                }
+
+                policies = imported;
+                populateFilters();
+                renderAll();
+                alert(`Successfully imported ${policies.length} policy(ies)!`);
+            };
+            reader.readAsText(file);
+            event.target.value = '';
+        }
+
+        // ==================== CSV EXPORT ====================
+        function exportCSV() {
+            if (policies.length === 0) { alert('No data to export.'); return; }
+
+            const esc = (v) => {
+                if (v === undefined || v === null) return '';
+                v = String(v);
+                if (v.includes(',') || v.includes('"') || v.includes('\n') || v.includes('\r'))
+                    return '"' + v.replace(/"/g, '""') + '"';
+                return v;
+            };
+
+            let csv = FIELDS.join(',') + '\r\n';
+            policies.forEach(p => {
+                csv += FIELDS.map(f => esc(p[f] || '')).join(',') + '\r\n';
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = `Policy_Reviews_${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+            URL.revokeObjectURL(a.href);
+        }
+
+        // ==================== RENDERING ====================
+        function renderAll() {
+            renderStats();
+            renderTable();
+        }
+
+        function renderStats() {
+            // Recalculate statuses
+            policies.forEach(p => {
+                if (p['Status'] !== 'Draft' && p['Status'] !== 'Retired') {
+                    p['Status'] = calcStatus(p);
+                }
+            });
+
+            const total = policies.length;
+            const current = policies.filter(p => p['Status'] === 'Current').length;
+            const dueSoon = policies.filter(p => p['Status'] === 'Due Soon').length;
+            const overdue = policies.filter(p => p['Status'] === 'Overdue').length;
+            const annual = policies.filter(p => p['Review Frequency'] === 'Annual').length;
+            const biannual = policies.filter(p => p['Review Frequency'] === 'BiAnnual').length;
+
+            document.getElementById('statsBar').innerHTML = `
+                <div class="stat-card"><div class="stat-value" style="color:#667eea;">${total}</div><div class="stat-label">Total Policies</div></div>
+                <div class="stat-card"><div class="stat-value" style="color:#28a745;">${current}</div><div class="stat-label">Current</div></div>
+                <div class="stat-card"><div class="stat-value" style="color:#ffc107;">${dueSoon}</div><div class="stat-label">Due Soon</div></div>
+                <div class="stat-card"><div class="stat-value" style="color:#dc3545;">${overdue}</div><div class="stat-label">Overdue</div></div>
+                <div class="stat-card"><div class="stat-value" style="color:#3949ab;">${annual}</div><div class="stat-label">Annual</div></div>
+                <div class="stat-card"><div class="stat-value" style="color:#c62828;">${biannual}</div><div class="stat-label">BiAnnual</div></div>
+            `;
+        }
+
+        function getFiltered() {
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            const fStatus = document.getElementById('filterStatus').value;
+            const fFreq = document.getElementById('filterFrequency').value;
+            const fOwner = document.getElementById('filterOwner').value;
+
+            let filtered = policies.filter(p => {
+                if (search && !FIELDS.some(f => (p[f] || '').toLowerCase().includes(search))) return false;
+                if (fStatus !== 'all' && p['Status'] !== fStatus) return false;
+                if (fFreq !== 'all' && p['Review Frequency'] !== fFreq) return false;
+                if (fOwner !== 'all' && (p['Owner'] || '') !== fOwner) return false;
+                return true;
+            });
+
+            if (sortColumn) {
+                filtered.sort((a, b) => {
+                    let va = a[sortColumn] || '';
+                    let vb = b[sortColumn] || '';
+
+                    // Date sort for date fields
+                    if (['Last Reviewed', 'Next Review', 'Effective Date'].includes(sortColumn)) {
+                        const da = parseFlexDate(va);
+                        const db = parseFlexDate(vb);
+                        return sortAsc ? da - db : db - da;
+                    }
+
+                    va = va.toLowerCase();
+                    vb = vb.toLowerCase();
+                    if (va < vb) return sortAsc ? -1 : 1;
+                    if (va > vb) return sortAsc ? 1 : -1;
+                    return 0;
+                });
+            }
+
+            return filtered;
+        }
+
+        function parseFlexDate(str) {
+            if (!str || !str.trim()) return 0;
+            str = str.trim();
+            const slashMatch = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+            if (slashMatch) return new Date(slashMatch[3], slashMatch[1] - 1, slashMatch[2]).getTime() || 0;
+            const dashMatch = str.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+            if (dashMatch) return new Date(dashMatch[1], dashMatch[2] - 1, dashMatch[3]).getTime() || 0;
+            const d = new Date(str);
+            return isNaN(d.getTime()) ? 0 : d.getTime();
+        }
+
+        function renderTable() {
+            const container = document.getElementById('tableContainer');
+
+            if (policies.length === 0) {
+                container.innerHTML = '<div class="empty-state"><h2>No Policies Loaded</h2><p>Import a CSV file or add a policy to get started.</p></div>';
+                return;
+            }
+
+            const filtered = getFiltered();
+            const displayCols = [
+                'Policy Name', 'Policy ID', 'Category', 'Review Frequency',
+                'Status', 'Last Reviewed', 'Next Review', 'Owner', 'Policy URL', 'Notes'
+            ];
+
+            const sortArrow = (col) => {
+                if (sortColumn === col) return sortAsc ? ' &#9650;' : ' &#9660;';
+                return ' &#8597;';
+            };
+
+            let html = '<table><thead><tr>';
+            displayCols.forEach(col => {
+                const short = col.replace('Policy ', '').replace('Review ', 'Rev. ');
+                html += `<th onclick="handleSort('${col}')" class="${sortColumn === col ? 'sorted' : ''}">${short}<span class="sort-indicator">${sortArrow(col)}</span></th>`;
+            });
+            html += '<th>Actions</th></tr></thead><tbody>';
+
+            if (filtered.length === 0) {
+                html += `<tr><td colspan="${displayCols.length + 1}" style="text-align:center; padding:40px; color:#6c757d;">No matching policies found.</td></tr>`;
+            }
+
+            filtered.forEach(p => {
+                const origIdx = policies.indexOf(p);
+                const status = p['Status'] || '';
+                const statusClass = status.toLowerCase().replace(' ', '-');
+
+                html += `<tr class="status-${statusClass}" ondblclick="editPolicy(${origIdx})" title="Double-click to edit">`;
+                displayCols.forEach(col => {
+                    const val = p[col] || '';
+                    if (col === 'Status') {
+                        html += `<td><span class="badge badge-${statusClass}">${esc(val)}</span></td>`;
+                    } else if (col === 'Review Frequency') {
+                        const freqClass = val === 'BiAnnual' ? 'biannual' : 'annual';
+                        html += `<td><span class="badge badge-${freqClass}">${esc(val)}</span></td>`;
+                    } else if (col === 'Policy URL') {
+                        if (val) {
+                            const display = val.length > 35 ? val.substring(0, 35) + '...' : val;
+                            html += `<td class="link-cell"><a href="${esc(val)}" target="_blank" rel="noopener">${esc(display)}</a></td>`;
+                        } else {
+                            html += '<td></td>';
+                        }
+                    } else if (col === 'Policy Name') {
+                        html += `<td><strong style="cursor:pointer; color:#667eea;" onclick="viewDetail(${origIdx})">${esc(val)}</strong></td>`;
+                    } else if (col === 'Notes') {
+                        html += `<td class="notes-cell"><div class="notes-preview">${esc(val)}</div></td>`;
+                    } else {
+                        html += `<td>${esc(val)}</td>`;
+                    }
+                });
+
+                html += `<td style="white-space:nowrap;">
+                    <button class="action-btn edit-btn" onclick="editPolicy(${origIdx})">&#9998; Edit</button>
+                    <button class="action-btn" onclick="viewDetail(${origIdx})">View</button>
+                    <button class="action-btn delete" onclick="deletePolicy(${origIdx})">Delete</button>
+                </td></tr>`;
+            });
+
+            html += '</tbody></table>';
+            html += `<div style="padding:12px 0; font-size:13px; color:#6c757d;">Showing ${filtered.length} of ${policies.length} policies</div>`;
+            container.innerHTML = html;
+        }
+
+        function esc(str) {
+            if (!str) return '';
+            return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        }
+
+        function handleSort(col) {
+            if (sortColumn === col) sortAsc = !sortAsc;
+            else { sortColumn = col; sortAsc = true; }
+            renderTable();
+        }
+
+        function populateFilters() {
+            const owners = [...new Set(policies.map(p => p['Owner']).filter(Boolean))].sort();
+            const sel = document.getElementById('filterOwner');
+            sel.innerHTML = '<option value="all">All Owners</option>' +
+                owners.map(o => `<option value="${esc(o)}">${esc(o)}</option>`).join('');
+        }
+
+        // ==================== MODAL / CRUD ====================
+        function openModal(index = -1) {
+            editingIndex = index;
+            document.getElementById('policyForm').reset();
+
+            if (index >= 0) {
+                document.getElementById('modalTitle').textContent = 'Edit Policy';
+                const p = policies[index];
+                document.getElementById('fName').value = p['Policy Name'] || '';
+                document.getElementById('fPolicyId').value = p['Policy ID'] || '';
+                document.getElementById('fDescription').value = p['Description'] || '';
+                document.getElementById('fUrl').value = p['Policy URL'] || '';
+                document.getElementById('fCategory').value = p['Category'] || '';
+                document.getElementById('fFramework').value = p['Compliance Framework'] || '';
+                document.getElementById('fFrequency').value = p['Review Frequency'] || 'Annual';
+                document.getElementById('fStatus').value = p['Status'] || 'Current';
+                document.getElementById('fLastReview').value = toDateInputVal(p['Last Reviewed']);
+                document.getElementById('fNextReview').value = toDateInputVal(p['Next Review']);
+                document.getElementById('fEffectiveDate').value = toDateInputVal(p['Effective Date']);
+                document.getElementById('fVersion').value = p['Version'] || '';
+                document.getElementById('fOwner').value = p['Owner'] || '';
+                document.getElementById('fApprover').value = p['Approver'] || '';
+                document.getElementById('fNotes').value = p['Notes'] || '';
+            } else {
+                document.getElementById('modalTitle').textContent = 'Add Policy';
+            }
+
+            document.getElementById('policyModal').classList.add('active');
+        }
+
+        // Convert various date formats to YYYY-MM-DD for date inputs
+        function toDateInputVal(str) {
+            if (!str) return '';
+            str = str.trim();
+            // Already YYYY-MM-DD
+            if (/^\d{4}-\d{1,2}-\d{1,2}$/.test(str)) return str;
+            // M/D/YYYY
+            const m = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+            if (m) return `${m[3]}-${m[1].padStart(2,'0')}-${m[2].padStart(2,'0')}`;
+            // Try Date parse
+            const d = new Date(str);
+            if (!isNaN(d.getTime())) return d.toISOString().split('T')[0];
+            return str;
+        }
+
+        function closeModal() {
+            document.getElementById('policyModal').classList.remove('active');
+            editingIndex = -1;
+        }
+
+        function handleSubmit(e) {
+            e.preventDefault();
+            const p = {
+                'Policy Name': document.getElementById('fName').value,
+                'Policy ID': document.getElementById('fPolicyId').value,
+                'Description': document.getElementById('fDescription').value,
+                'Policy URL': document.getElementById('fUrl').value,
+                'Category': document.getElementById('fCategory').value,
+                'Compliance Framework': document.getElementById('fFramework').value,
+                'Review Frequency': document.getElementById('fFrequency').value,
+                'Status': document.getElementById('fStatus').value,
+                'Last Reviewed': document.getElementById('fLastReview').value,
+                'Next Review': document.getElementById('fNextReview').value,
+                'Effective Date': document.getElementById('fEffectiveDate').value,
+                'Version': document.getElementById('fVersion').value,
+                'Owner': document.getElementById('fOwner').value,
+                'Approver': document.getElementById('fApprover').value,
+                'Notes': document.getElementById('fNotes').value
+            };
+
+            // Auto-calc status if not manually set to Draft/Retired
+            if (p['Status'] !== 'Draft' && p['Status'] !== 'Retired') {
+                p['Status'] = calcStatus(p);
+            }
+
+            if (editingIndex >= 0) {
+                policies[editingIndex] = p;
+            } else {
+                policies.push(p);
+            }
+
+            closeModal();
+            populateFilters();
+            renderAll();
+        }
+
+        function editPolicy(idx) { openModal(idx); }
+
+        function deletePolicy(idx) {
+            if (confirm(`Delete "${policies[idx]['Policy Name']}"?`)) {
+                policies.splice(idx, 1);
+                populateFilters();
+                renderAll();
+            }
+        }
+
+        function deleteAll() {
+            if (policies.length === 0) return;
+            if (confirm(`Delete all ${policies.length} policies? This cannot be undone.`)) {
+                policies = [];
+                populateFilters();
+                renderAll();
+            }
+        }
+
+        // ==================== DETAIL VIEW ====================
+        function viewDetail(idx) {
+            const p = policies[idx];
+            document.getElementById('detailTitle').textContent = p['Policy Name'] || 'Policy Details';
+            document.getElementById('detailEditBtn').onclick = () => { closeDetailModal(); editPolicy(idx); };
+
+            let html = '<div style="display:grid; gap:12px;">';
+            FIELDS.forEach(f => {
+                const val = p[f] || '';
+                if (!val) return;
+                if (f === 'Policy URL') {
+                    html += `<div style="border-bottom:1px solid #e9ecef; padding-bottom:10px;">
+                        <div style="font-weight:600; font-size:12px; color:#667eea; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px;">${f}</div>
+                        <div style="font-size:14px;"><a href="${esc(val)}" target="_blank" rel="noopener" style="color:#667eea;">${esc(val)}</a></div>
+                    </div>`;
+                } else {
+                    html += `<div style="border-bottom:1px solid #e9ecef; padding-bottom:10px;">
+                        <div style="font-weight:600; font-size:12px; color:#667eea; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px;">${f}</div>
+                        <div style="font-size:14px; color:#212529; white-space:pre-wrap;">${esc(val)}</div>
+                    </div>`;
+                }
+            });
+            html += '</div>';
+
+            document.getElementById('detailBody').innerHTML = html;
+            document.getElementById('detailModal').classList.add('active');
+        }
+
+        function closeDetailModal() {
+            document.getElementById('detailModal').classList.remove('active');
+        }
+
+        // ========== Workbook Integration (postMessage API) ==========
+        window.addEventListener('message', function(event) {
+            if (event.data && event.data.type === 'getDataForExport') {
+                const exportData = policies.map(p => {
+                    const row = {};
+                    FIELDS.forEach(f => { row[f] = p[f] || ''; });
+                    return row;
+                });
+                event.source.postMessage({
+                    type: 'exportData',
+                    module: 'policies',
+                    data: exportData,
+                    headers: FIELDS
+                }, '*');
+            }
+            if (event.data && event.data.type === 'importDataFromWorkbook' && event.data.module === 'policies') {
+                const rows = event.data.data || [];
+                if (rows.length === 0) return;
+                rows.forEach(r => {
+                    const policy = {};
+                    FIELDS.forEach(f => { policy[f] = r[f] || ''; });
+                    // Also try mapped headers
+                    Object.keys(r).forEach(key => {
+                        const mapped = FIELD_MAP[key.toLowerCase().trim()];
+                        if (mapped && !policy[mapped]) policy[mapped] = r[key];
+                    });
+                    policies.push(policy);
+                });
+                populateFilters();
+                renderAll();
+                event.source.postMessage({ type: 'importComplete', module: 'policies', count: rows.length }, '*');
+            }
+        });
+    </script>
+</body>
+</html>

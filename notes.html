@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Operations Notes</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f8f9fa;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            min-height: calc(100vh - 40px);
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        header h1 { font-size: 2em; margin-bottom: 10px; font-weight: 700; }
+        header .subtitle { font-size: 1em; opacity: 0.9; }
+
+        /* Toolbar */
+        .toolbar {
+            padding: 10px 20px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .toolbar-group {
+            display: flex;
+            gap: 2px;
+            align-items: center;
+            padding-right: 10px;
+            margin-right: 6px;
+            border-right: 1px solid #dee2e6;
+        }
+
+        .toolbar-group:last-child {
+            border-right: none;
+            margin-left: auto;
+        }
+
+        .tool-btn {
+            width: 34px;
+            height: 34px;
+            border: 1px solid transparent;
+            background: transparent;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            color: #495057;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s;
+        }
+
+        .tool-btn:hover {
+            background: #e9ecef;
+            border-color: #ced4da;
+        }
+
+        .tool-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .tool-select {
+            padding: 5px 8px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 13px;
+            background: white;
+            color: #495057;
+            cursor: pointer;
+            height: 34px;
+        }
+
+        .tool-select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .tool-color {
+            width: 28px;
+            height: 28px;
+            border: 2px solid #ced4da;
+            border-radius: 4px;
+            cursor: pointer;
+            padding: 0;
+            background: none;
+        }
+
+        .tool-color::-webkit-color-swatch-wrapper { padding: 1px; }
+        .tool-color::-webkit-color-swatch { border: none; border-radius: 2px; }
+
+        .save-status {
+            font-size: 12px;
+            color: #6c757d;
+            font-style: italic;
+            padding: 0 8px;
+            white-space: nowrap;
+        }
+
+        .save-status.saved { color: #28a745; }
+        .save-status.saving { color: #ffc107; }
+
+        .status-btn {
+            padding: 6px 14px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .btn-clear {
+            background: #dc3545;
+            color: white;
+        }
+        .btn-clear:hover { background: #c82333; }
+
+        /* Editor */
+        .editor-wrapper {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        .editor {
+            flex: 1;
+            padding: 30px 40px;
+            outline: none;
+            font-size: 15px;
+            line-height: 1.8;
+            color: #212529;
+            overflow-y: auto;
+            min-height: 400px;
+        }
+
+        .editor:empty::before {
+            content: 'Start typing your notes here...\A\AUse the toolbar above to format text with bold, italic, headings, lists, and more.\AYour notes are automatically saved to your browser.';
+            white-space: pre-wrap;
+            color: #adb5bd;
+            pointer-events: none;
+        }
+
+        .editor h1 { font-size: 1.8em; margin: 16px 0 8px; color: #212529; font-weight: 700; }
+        .editor h2 { font-size: 1.4em; margin: 14px 0 6px; color: #495057; font-weight: 600; }
+        .editor h3 { font-size: 1.15em; margin: 12px 0 4px; color: #495057; font-weight: 600; }
+        .editor p { margin-bottom: 8px; }
+        .editor ul, .editor ol { margin: 8px 0; padding-left: 24px; }
+        .editor li { margin-bottom: 4px; }
+        .editor blockquote {
+            border-left: 4px solid #667eea;
+            padding: 8px 16px;
+            margin: 12px 0;
+            background: #f8f9fa;
+            color: #495057;
+            border-radius: 0 6px 6px 0;
+        }
+        .editor hr {
+            border: none;
+            border-top: 2px solid #dee2e6;
+            margin: 20px 0;
+        }
+        .editor a { color: #667eea; }
+        .editor table {
+            border-collapse: collapse;
+            margin: 12px 0;
+            width: auto;
+        }
+        .editor table td, .editor table th {
+            border: 1px solid #dee2e6;
+            padding: 6px 12px;
+            min-width: 60px;
+        }
+        .editor table th {
+            background: #f8f9fa;
+            font-weight: 600;
+        }
+        .editor pre {
+            background: #2d2d2d;
+            color: #e6e6e6;
+            padding: 14px 18px;
+            border-radius: 6px;
+            font-family: 'SFMono-Regular', Consolas, monospace;
+            font-size: 13px;
+            overflow-x: auto;
+            margin: 12px 0;
+        }
+        .editor code {
+            background: #e9ecef;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'SFMono-Regular', Consolas, monospace;
+            font-size: 0.9em;
+        }
+        .editor pre code {
+            background: none;
+            padding: 0;
+        }
+
+        /* Footer */
+        .footer-bar {
+            padding: 8px 20px;
+            background: #f8f9fa;
+            border-top: 1px solid #dee2e6;
+            font-size: 12px;
+            color: #6c757d;
+            display: flex;
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            body { padding: 10px; }
+            header h1 { font-size: 1.5em; }
+            .editor { padding: 20px; font-size: 14px; }
+            .toolbar { padding: 8px 12px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>&#x1F4DD; Operations Notes</h1>
+            <p class="subtitle">Security operations notepad</p>
+        </header>
+
+        <div class="toolbar">
+            <div class="toolbar-group">
+                <select class="tool-select" onchange="formatBlock(this.value); this.selectedIndex=0;" title="Text style">
+                    <option value="" disabled selected>Style</option>
+                    <option value="p">Paragraph</option>
+                    <option value="h1">Heading 1</option>
+                    <option value="h2">Heading 2</option>
+                    <option value="h3">Heading 3</option>
+                    <option value="blockquote">Quote</option>
+                    <option value="pre">Code Block</option>
+                </select>
+                <select class="tool-select" onchange="changeFontSize(this.value); this.selectedIndex=0;" title="Font size">
+                    <option value="" disabled selected>Size</option>
+                    <option value="1">Small</option>
+                    <option value="3">Normal</option>
+                    <option value="4">Medium</option>
+                    <option value="5">Large</option>
+                    <option value="6">X-Large</option>
+                </select>
+            </div>
+
+            <div class="toolbar-group">
+                <button class="tool-btn" onclick="execCmd('bold')" title="Bold (Ctrl+B)"><strong>B</strong></button>
+                <button class="tool-btn" onclick="execCmd('italic')" title="Italic (Ctrl+I)"><em>I</em></button>
+                <button class="tool-btn" onclick="execCmd('underline')" title="Underline (Ctrl+U)"><u>U</u></button>
+                <button class="tool-btn" onclick="execCmd('strikeThrough')" title="Strikethrough"><s>S</s></button>
+            </div>
+
+            <div class="toolbar-group">
+                <input type="color" class="tool-color" value="#000000" onchange="execCmdVal('foreColor', this.value)" title="Text color">
+                <input type="color" class="tool-color" value="#ffff00" onchange="execCmdVal('hiliteColor', this.value)" title="Highlight">
+            </div>
+
+            <div class="toolbar-group">
+                <button class="tool-btn" onclick="execCmd('justifyLeft')" title="Align left">&#8676;</button>
+                <button class="tool-btn" onclick="execCmd('justifyCenter')" title="Align center">&#8596;</button>
+                <button class="tool-btn" onclick="execCmd('justifyRight')" title="Align right">&#8677;</button>
+            </div>
+
+            <div class="toolbar-group">
+                <button class="tool-btn" onclick="execCmd('insertUnorderedList')" title="Bullet list">&#8226;</button>
+                <button class="tool-btn" onclick="execCmd('insertOrderedList')" title="Numbered list">1.</button>
+                <button class="tool-btn" onclick="execCmd('indent')" title="Indent">&#8594;</button>
+                <button class="tool-btn" onclick="execCmd('outdent')" title="Outdent">&#8592;</button>
+            </div>
+
+            <div class="toolbar-group">
+                <button class="tool-btn" onclick="insertHR()" title="Horizontal line">&mdash;</button>
+                <button class="tool-btn" onclick="insertLink()" title="Insert link">&#128279;</button>
+                <button class="tool-btn" onclick="insertTable()" title="Insert table">&#9638;</button>
+                <button class="tool-btn" onclick="insertCheckbox()" title="Insert checkbox">&#9744;</button>
+            </div>
+
+            <div class="toolbar-group">
+                <button class="tool-btn" onclick="execCmd('undo')" title="Undo (Ctrl+Z)">&#8630;</button>
+                <button class="tool-btn" onclick="execCmd('redo')" title="Redo (Ctrl+Y)">&#8631;</button>
+                <button class="tool-btn" onclick="execCmd('removeFormat')" title="Clear formatting">&#10006;</button>
+            </div>
+
+            <div class="toolbar-group">
+                <span class="save-status" id="saveStatus">Saved</span>
+                <button class="status-btn btn-clear" onclick="clearAll()" title="Clear all content">Clear All</button>
+            </div>
+        </div>
+
+        <div class="editor-wrapper">
+            <div class="editor" id="editor" contenteditable="true" spellcheck="true"></div>
+        </div>
+
+        <div class="footer-bar">
+            <span id="wordCount">0 words</span>
+            <span id="charCount">0 characters</span>
+            <span id="lastSaved"></span>
+        </div>
+    </div>
+
+    <script>
+        const STORAGE_KEY = 'cybersec_notes_pad';
+        const editor = document.getElementById('editor');
+        let saveTimeout = null;
+
+        // ========== Init ==========
+        document.addEventListener('DOMContentLoaded', function() {
+            loadContent();
+            editor.addEventListener('input', onEditorChange);
+            editor.addEventListener('keydown', handleKeyboard);
+            updateCounts();
+        });
+
+        // ========== Formatting Commands ==========
+        function execCmd(cmd) {
+            document.execCommand(cmd, false, null);
+            editor.focus();
+        }
+
+        function execCmdVal(cmd, val) {
+            document.execCommand(cmd, false, val);
+            editor.focus();
+        }
+
+        function formatBlock(tag) {
+            if (tag) {
+                document.execCommand('formatBlock', false, '<' + tag + '>');
+            }
+            editor.focus();
+        }
+
+        function changeFontSize(size) {
+            document.execCommand('fontSize', false, size);
+            editor.focus();
+        }
+
+        function insertHR() {
+            document.execCommand('insertHTML', false, '<hr>');
+            editor.focus();
+        }
+
+        function insertLink() {
+            const url = prompt('Enter URL:');
+            if (url) {
+                document.execCommand('createLink', false, url);
+            }
+            editor.focus();
+        }
+
+        function insertTable() {
+            const html = '<table><tr><th>Header 1</th><th>Header 2</th><th>Header 3</th></tr>' +
+                '<tr><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>' +
+                '<tr><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr></table><p>&nbsp;</p>';
+            document.execCommand('insertHTML', false, html);
+            editor.focus();
+        }
+
+        function insertCheckbox() {
+            const id = 'cb_' + Date.now();
+            const html = '<label style="cursor:pointer;"><input type="checkbox" id="' + id + '" onclick="scheduleSave()"> <span>Task item</span></label><br>';
+            document.execCommand('insertHTML', false, html);
+            editor.focus();
+        }
+
+        function handleKeyboard(e) {
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                document.execCommand('insertHTML', false, '&nbsp;&nbsp;&nbsp;&nbsp;');
+            }
+        }
+
+        // ========== Persistence ==========
+        function loadContent() {
+            try {
+                const saved = localStorage.getItem(STORAGE_KEY);
+                if (saved) {
+                    const data = JSON.parse(saved);
+                    editor.innerHTML = data.content || '';
+                    if (data.lastSaved) {
+                        document.getElementById('lastSaved').textContent = 'Last saved: ' + new Date(data.lastSaved).toLocaleString();
+                    }
+                }
+            } catch (e) {
+                console.error('Error loading notes:', e);
+            }
+        }
+
+        function saveContent() {
+            try {
+                const data = {
+                    content: editor.innerHTML,
+                    lastSaved: new Date().toISOString()
+                };
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+
+                const status = document.getElementById('saveStatus');
+                status.textContent = 'Saved';
+                status.className = 'save-status saved';
+                document.getElementById('lastSaved').textContent = 'Last saved: ' + new Date().toLocaleString();
+            } catch (e) {
+                console.error('Error saving notes:', e);
+                document.getElementById('saveStatus').textContent = 'Save failed';
+            }
+        }
+
+        function scheduleSave() {
+            const status = document.getElementById('saveStatus');
+            status.textContent = 'Saving...';
+            status.className = 'save-status saving';
+            clearTimeout(saveTimeout);
+            saveTimeout = setTimeout(saveContent, 800);
+        }
+
+        function onEditorChange() {
+            updateCounts();
+            scheduleSave();
+        }
+
+        function updateCounts() {
+            const text = editor.innerText || '';
+            const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+            const chars = text.length;
+            document.getElementById('wordCount').textContent = words + ' word' + (words !== 1 ? 's' : '');
+            document.getElementById('charCount').textContent = chars.toLocaleString() + ' character' + (chars !== 1 ? 's' : '');
+        }
+
+        function clearAll() {
+            if (!editor.innerHTML.trim()) return;
+            if (!confirm('Clear all notes? This cannot be undone.')) return;
+            editor.innerHTML = '';
+            saveContent();
+            updateCounts();
+        }
+
+        // ========== Workbook Integration (postMessage API) ==========
+        window.addEventListener('message', function(event) {
+            if (event.data && event.data.type === 'getDataForExport') {
+                const text = editor.innerText || '';
+                const exportData = [{ 'Notes Content': text }];
+                event.source.postMessage({
+                    type: 'exportData',
+                    module: 'notes',
+                    data: exportData,
+                    headers: ['Notes Content']
+                }, '*');
+            }
+            if (event.data && event.data.type === 'importDataFromWorkbook' && event.data.module === 'notes') {
+                const rows = event.data.data || [];
+                if (rows.length === 0) return;
+                const content = rows.map(r => {
+                    return r['Notes Content'] || r['notes content'] || r['Content'] || r['content'] || Object.values(r).join(' ');
+                }).join('\n\n');
+                if (content.trim()) {
+                    if (editor.innerHTML.trim()) {
+                        editor.innerHTML += '<hr><p>' + escapeHtml(content).replace(/\n/g, '<br>') + '</p>';
+                    } else {
+                        editor.innerHTML = '<p>' + escapeHtml(content).replace(/\n/g, '<br>') + '</p>';
+                    }
+                    saveContent();
+                    updateCounts();
+                }
+                event.source.postMessage({ type: 'importComplete', module: 'notes', count: rows.length }, '*');
+            }
+        });
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+    </script>
+</body>
+</html>
