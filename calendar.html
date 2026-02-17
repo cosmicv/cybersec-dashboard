@@ -55,16 +55,6 @@
             align-items: center;
         }
 
-        .file-input-wrapper {
-            position: relative;
-            overflow: hidden;
-            display: inline-block;
-        }
-
-        .file-input-wrapper input[type=file] {
-            position: absolute;
-            left: -9999px;
-        }
 
         .btn {
             padding: 10px 20px;
@@ -97,15 +87,6 @@
             transform: translateY(-2px);
         }
 
-        .btn-success {
-            background: #28a745;
-            color: white;
-        }
-
-        .btn-success:hover {
-            background: #218838;
-            transform: translateY(-2px);
-        }
 
         .btn-warning {
             background: #ffc107;
@@ -490,13 +471,12 @@
         </header>
 
         <div class="controls">
-            
             <button class="btn" id="addEventBtn" class="btn btn-warning">+ Add Event</button>
 
             <div class="nav-controls">
-                <button class="nav-btn" id="prevMonth">&#9664; Prev</button>
+                <button class="nav-btn" id="prevMonth">â—€ Prev</button>
                 <span class="current-month" id="currentMonth"></span>
-                <button class="nav-btn" id="nextMonth">Next &#9654;</button>
+                <button class="nav-btn" id="nextMonth">Next â–¶</button>
                 <button class="nav-btn" id="todayBtn">Today</button>
             </div>
         </div>
@@ -605,8 +585,6 @@
 
         // Event Listeners
         function setupEventListeners() {
-            document.getElementById('csvFile').addEventListener('change', handleFileUpload);
-            document.getElementById('exportBtn').addEventListener('click', exportTemplate);
             document.getElementById('addEventBtn').addEventListener('click', openAddEventModal);
             document.getElementById('prevMonth').addEventListener('click', () => changeMonth(-1));
             document.getElementById('nextMonth').addEventListener('click', () => changeMonth(1));
@@ -747,7 +725,7 @@
             if (operations.length === 0) {
                 container.innerHTML = `
                     <div class="empty-state">
-                        <p>No operations scheduled. Import a CSV file to get started.</p>
+                        <p>No operations scheduled. Click "+ Add Event" to get started, or use the workbook import from the main dashboard.</p>
                     </div>
                 `;
                 return;
@@ -791,14 +769,14 @@
                 html += `
                     <tr>
                         <td>${formattedDate}</td>
-                        <td><strong>${op.task}</strong>${op.isRecurring ? ' <span style="color: #667eea; font-size: 12px;">&#128257;</span>' : ''}</td>
+                        <td><strong>${op.task}</strong>${op.isRecurring ? ' <span style="color: #667eea; font-size: 12px;">ðŸ”</span>' : ''}</td>
                         <td>${op.category}</td>
                         <td><span class="status-badge status-${op.priority.toLowerCase()}">${op.priority}</span></td>
                         <td>${op.owner}</td>
                         <td>${op.notes}</td>
                         <td>
-                            <button class="action-btn" onclick="editEvent(${originalIndex})">&#9998;&#65039; Edit</button>
-                            <button class="action-btn delete" onclick="deleteEvent(${originalIndex})">&#128465;&#65039; Delete</button>
+                            <button class="action-btn" onclick="editEvent(${originalIndex})">âœï¸ Edit</button>
+                            <button class="action-btn delete" onclick="deleteEvent(${originalIndex})">ðŸ—‘ï¸ Delete</button>
                         </td>
                     </tr>
                 `;
@@ -1245,41 +1223,6 @@
             const minutes = String(date.getMinutes()).padStart(2, '0');
             return `${year}-${month}-${day}T${hours}:${minutes}`;
         }
-        // ========== Workbook Integration (postMessage API) ==========
-        window.addEventListener('message', function(event) {
-            if (event.data && event.data.type === 'getDataForExport') {
-                const exportData = operations.map(op => ({
-                    'Date': op.date || '',
-                    'Task': op.task || '',
-                    'Category': op.category || '',
-                    'Priority': op.priority || '',
-                    'Owner': op.owner || '',
-                    'Notes': op.notes || ''
-                }));
-                event.source.postMessage({
-                    type: 'exportData',
-                    module: 'calendar',
-                    data: exportData,
-                    headers: ['Date','Task','Category','Priority','Owner','Notes']
-                }, '*');
-            }
-            if (event.data && event.data.type === 'importDataFromWorkbook' && event.data.module === 'calendar') {
-                const rows = event.data.data || [];
-                if (rows.length === 0) return;
-                operations = rows.map(r => ({
-                    date: r['Date'] || r['date'] || '',
-                    task: r['Task'] || r['task'] || '',
-                    category: r['Category'] || r['category'] || 'General',
-                    priority: r['Priority'] || r['priority'] || 'Normal',
-                    owner: r['Owner'] || r['owner'] || 'Unassigned',
-                    notes: r['Notes'] || r['notes'] || ''
-                }));
-                renderCalendar();
-                updateMonthDisplay();
-                renderTable();
-                event.source.postMessage({ type: 'importComplete', module: 'calendar', count: operations.length }, '*');
-            }
-        });
     </script>
 </body>
 </html>
