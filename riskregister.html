@@ -1294,6 +1294,12 @@
                 renderAll();
                 event.source.postMessage({ type: 'importComplete', module: 'risks', count: rows.length }, '*');
             }
+            if (event.data && event.data.type === 'clearAllData') {
+                risks = [];
+                localStorage.removeItem('riskRegisterData');
+                localStorage.removeItem('riskRegisterPeople');
+                renderAll();
+            }
         });
     </script>
 </body>

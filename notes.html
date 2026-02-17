@@ -491,6 +491,11 @@
                 }
                 event.source.postMessage({ type: 'importComplete', module: 'notes', count: rows.length }, '*');
             }
+            if (event.data && event.data.type === 'clearAllData') {
+                editor.innerHTML = '';
+                localStorage.removeItem('notesEditorContent');
+                updateCounts();
+            }
         });
 
         function escapeHtml(str) {

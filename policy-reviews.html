@@ -1051,6 +1051,11 @@
                 renderAll();
                 event.source.postMessage({ type: 'importComplete', module: 'policies', count: rows.length }, '*');
             }
+            if (event.data && event.data.type === 'clearAllData') {
+                policies = [];
+                populateFilters();
+                renderAll();
+            }
         });
     </script>
 </body>

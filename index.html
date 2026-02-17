@@ -248,6 +248,7 @@
             <button onclick="exportWorkbook()" style="padding:8px 18px;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;background:#667eea;color:white;transition:all 0.3s;">Export .xlsx</button>
             <label for="wbImportFile" style="padding:8px 18px;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;background:#28a745;color:white;">Import .xlsx</label>
             <input type="file" id="wbImportFile" accept=".xlsx,.xls" onchange="importWorkbook(event)" style="display:none;">
+            <button onclick="clearAllData()" style="padding:8px 18px;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;background:#dc3545;color:white;transition:all 0.3s;">Clear All Data</button>
             <span id="wbStatus" style="margin-left:auto;font-size:13px;color:#6c757d;font-style:italic;">All module data in one Excel file</span>
         </div>
 
@@ -338,7 +339,7 @@
                             <li><strong>Add vendors</strong> &mdash; Record vendor name, classification, risk tier, and review status.</li>
                             <li><strong>Annual reviews</strong> &mdash; Track due dates for vendor security assessments and SOC reports.</li>
                             <li><strong>Risk tiers</strong> &mdash; Classify vendors by data access level and criticality to operations.</li>
-                            <li><strong>Import/Export</strong> &mdash; Use CSV to bulk-load or back up your vendor inventory.</li>
+                            <li><strong>Import/Export</strong> &mdash; Use the workbook export/import to bulk-load or back up vendor data.</li>
                         </ul>
                     </div>
                     <div class="info-section">
@@ -348,7 +349,7 @@
                             <li><strong>Add policies</strong> &mdash; Document policy name, owner, review frequency, and approval status.</li>
                             <li><strong>Review tracking</strong> &mdash; Monitor upcoming and overdue policy reviews at a glance.</li>
                             <li><strong>Version control</strong> &mdash; Record last review date and next scheduled review.</li>
-                            <li><strong>Import/Export</strong> &mdash; CSV support for bulk policy management.</li>
+                            <li><strong>Import/Export</strong> &mdash; Use the workbook export/import for bulk policy management.</li>
                         </ul>
                     </div>
                 </div>
@@ -362,30 +363,9 @@
                             <li><strong>Categories</strong> &mdash; General, Incident, Meeting, Audit, Compliance, Project, or Other.</li>
                             <li><strong>Card &amp; Table views</strong> &mdash; Toggle between a visual card layout and a sortable table view.</li>
                             <li><strong>Search &amp; filter</strong> &mdash; Filter by category, priority, or free-text search across all fields.</li>
-                            <li><strong>Import/Export</strong> &mdash; Full CSV round-trip support with merge or replace on import.</li>
+                            <li><strong>Import/Export</strong> &mdash; Auto-saves to browser storage. Included in workbook export/import.</li>
                         </ul>
                     </div>
-                </div>
-
-                <div class="info-section">
-                    <h3>&#x1F4E5; Importing Data (CSV)</h3>
-                    <p>All modules support CSV import. Click the <span class="kbd">Import CSV</span> button in any module to upload data.</p>
-
-                    <p><strong>Calendar CSV format:</strong></p>
-                    <div class="csv-format">Date,Task,Category,Priority,Owner,Notes<br>2026-03-15,Firewall Review,Network Security,Critical,Network Team,Quarterly review</div>
-                    <p style="margin-top: 8px; font-size: 13px; color: #6c757d;">The calendar also accepts event-style CSVs with columns: <code>Title, Start, End, Color</code></p>
-
-                    <p style="margin-top: 14px;"><strong>Risk Register CSV format:</strong></p>
-                    <div class="csv-format">Title,Description,Category,Probability,Impact,Status,Owner,Notes<br>Data Breach,Unauthorized access to PII,Cybersecurity,7,9,Open,Security Team,Review quarterly</div>
-
-                    <p style="margin-top: 14px;"><strong>Vendor Tracking CSV format:</strong></p>
-                    <div class="csv-format">Vendor Name,Service Type,Classification,Risk Tier,Review Status,Last Review,Next Review,Owner,Notes<br>Acme Cloud,Cloud Hosting,Critical,Tier 1,Complete,2025-09-15,2026-09-15,Security Team,SOC 2 report on file</div>
-
-                    <p style="margin-top: 14px;"><strong>Policy Reviews CSV format:</strong></p>
-                    <div class="csv-format">Policy Name,Category,Owner,Review Frequency,Last Review,Next Review,Status,Version,Notes<br>Acceptable Use Policy,IT Security,CISO,Annual,2025-06-01,2026-06-01,Current,3.1,Updated for remote work</div>
-
-                    <p style="margin-top: 14px;"><strong>Notes CSV format:</strong></p>
-                    <div class="csv-format">Title,Date,Category,Priority,Author,Content,Tags<br>Firewall Change Review,2026-02-10,Meeting,Medium,Security Team,Reviewed proposed changes,firewall,change-mgmt</div>
                 </div>
 
                 <div class="info-section">
@@ -393,15 +373,31 @@
                     <p>Use the <span class="kbd">Export .xlsx</span> and <span class="kbd">Import .xlsx</span> buttons at the top of the dashboard to save or load all module data in a single Excel workbook.</p>
                     <ul>
                         <li>The workbook contains one sheet per module: <strong>Calendar</strong>, <strong>Risk Register</strong>, <strong>Vendors</strong>, <strong>Policy Reviews</strong>, and <strong>Notes</strong>.</li>
-                        <li>Each module also retains its own <strong>CSV import/export</strong> for individual module data.</li>
                         <li>On import, existing data in each module is <strong>replaced</strong> by the workbook contents. Only sheets present in the file are updated.</li>
-                        <li>File is auto-named with the current date (e.g., <code>CyberSec_Dashboard_2026-02-16.xlsx</code>).</li>
+                        <li>File is auto-named with the current date (e.g., <code>CyberSec_Dashboard_2026-02-17.xlsx</code>).</li>
+                        <li>Click through each tab at least once before exporting to ensure all modules are loaded.</li>
                     </ul>
                 </div>
 
                 <div class="info-section">
-                    <h3>&#x1F4E4; Exporting Data</h3>
-                    <p>Click <span class="kbd">Export CSV</span> in any module to download all current data as a CSV file. Exported files are fully compatible with re-import, so you can use them for backups, sharing with colleagues, or editing in Excel/Google Sheets.</p>
+                    <h3>&#x1F4CB; Workbook Sheet Formats</h3>
+                    <p>Each sheet in the workbook uses the following column headers:</p>
+
+                    <p><strong>Calendar:</strong></p>
+                    <div class="csv-format">Date | Task | Category | Priority | Status | Owner | Notes</div>
+                    <p style="margin-top: 4px; font-size: 13px; color: #6c757d;">Status values: Not Started, In Progress, Completed. Dates in YYYY-MM-DD format.</p>
+
+                    <p style="margin-top: 14px;"><strong>Risk Register:</strong></p>
+                    <div class="csv-format">Title | Description | Category | Probability | Impact | Severity Score | Severity Level | Status | Owner | Mitigation Plan | Notes | Date Created | Date Modified</div>
+
+                    <p style="margin-top: 14px;"><strong>Vendors:</strong></p>
+                    <div class="csv-format">Vendor Name | Vendor Type | Business Purpose | SavvyFi Information | Information Classification | Risk Rating | Information Security Review | Current | Notes | Contact Information | Review Date | Type Review | Vendor Technical Contact | Responsible Team | Administration Portal Link | SavvyFi App Dependency | Integration Type | Administration Responsibilities | Administration Notes</div>
+
+                    <p style="margin-top: 14px;"><strong>Policy Reviews:</strong></p>
+                    <div class="csv-format">Policy Name | Policy ID | Description | Policy URL | Category | Compliance Framework | Review Frequency | Status | Last Reviewed | Next Review | Effective Date | Version | Owner | Approver | Notes</div>
+
+                    <p style="margin-top: 14px;"><strong>Notes:</strong></p>
+                    <div class="csv-format">Notes Content</div>
                 </div>
 
                 <div class="info-columns">
@@ -420,7 +416,7 @@
                         <ul>
                             <li>Data is stored in your <strong>browser&rsquo;s local storage</strong>. Clearing browser data will remove saved risks.</li>
                             <li>Calendar events are session-based &mdash; <strong>export before closing</strong> to preserve them.</li>
-                            <li>CSV files should use <strong>UTF-8 encoding</strong> for best compatibility.</li>
+                            <li>Workbook files should use <strong>UTF-8 encoding</strong> for best compatibility.</li>
                             <li>Dates should be in <strong>YYYY-MM-DD</strong> format for reliable import.</li>
                         </ul>
                     </div>
@@ -447,6 +443,10 @@
                         <tr style="border-bottom: 1px solid #dee2e6;">
                             <td style="padding: 8px; font-weight: 600;">Risk Statuses</td>
                             <td style="padding: 8px;">Open &rarr; Monitoring &rarr; Mitigated &rarr; Closed &rarr; Archived</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid #dee2e6;">
+                            <td style="padding: 8px; font-weight: 600;">Task Status</td>
+                            <td style="padding: 8px;"><span style="background:#6c757d;color:white;padding:2px 8px;border-radius:10px;font-size:11px;">Not Started</span> &nbsp; <span style="background:#007bff;color:white;padding:2px 8px;border-radius:10px;font-size:11px;">In Progress</span> &nbsp; <span style="background:#28a745;color:white;padding:2px 8px;border-radius:10px;font-size:11px;">Completed</span></td>
                         </tr>
                         <tr style="border-bottom: 1px solid #dee2e6;">
                             <td style="padding: 8px; font-weight: 600;">Severity Scoring</td>
@@ -582,7 +582,7 @@
 
         function getDefaultHeaders(mod) {
             const defaults = {
-                calendar: ['Date','Task','Category','Priority','Owner','Notes'],
+                calendar: ['Date','Task','Category','Priority','Status','Owner','Notes'],
                 risks: ['Title','Description','Category','Probability','Impact','Severity Score','Severity Level','Status','Owner','Mitigation Plan','Notes','Date Created','Date Modified'],
                 vendors: ['Vendor Name','Vendor Type','Business Purpose','SavvyFi Information','Information Classification','Risk Rating','Information Security Review','Current','Notes','Contact Information','Review Date','Type Review','Vendor Technical Contact','Responsible Team','Administration Portal Link','SavvyFi App Dependency','Integration Type','Administration Responsibilities','Administration Notes'],
                 policies: ['Policy Name','Policy ID','Description','Policy URL','Category','Compliance Framework','Review Frequency','Status','Last Reviewed','Next Review','Effective Date','Version','Owner','Approver','Notes'],
@@ -667,6 +667,32 @@
 
             // Reset file input
             event.target.value = '';
+        }
+
+        // ========== Clear All Data ==========
+        function clearAllData() {
+            if (!confirm('Are you sure you want to clear ALL data from every module?\n\nThis will remove all calendar events, risks, vendors, policies, and notes.\n\nThis action cannot be undone.')) {
+                return;
+            }
+
+            setStatus('Clearing all module data...');
+            let cleared = 0;
+
+            Object.keys(MODULE_CONFIG).forEach(mod => {
+                const iframe = document.getElementById(MODULE_CONFIG[mod].iframe);
+                if (iframe && iframe.contentWindow) {
+                    iframe.contentWindow.postMessage({ type: 'clearAllData', module: mod }, '*');
+                    cleared++;
+                }
+            });
+
+            // Also clear localStorage items used by modules
+            localStorage.removeItem('riskRegisterData');
+            localStorage.removeItem('riskRegisterPeople');
+            localStorage.removeItem('notesEditorContent');
+
+            setStatus(`Cleared data from ${cleared} module(s).`);
+            alert('All module data has been cleared.');
         }
     </script>
 </body>

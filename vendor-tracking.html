@@ -1234,6 +1234,11 @@
                 renderAll();
                 e.source.postMessage({ type: 'importComplete', module: 'vendors', count: rows.length }, '*');
             }
+            if (e.data && e.data.type === 'clearAllData') {
+                vendors = [];
+                populateFilters();
+                renderAll();
+            }
         });
     </script>
 </body>

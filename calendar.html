@@ -98,6 +98,35 @@
             transform: translateY(-2px);
         }
 
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .filter-group label {
+            font-size: 14px;
+            font-weight: 500;
+            color: #495057;
+        }
+
+        .filter-group select {
+            padding: 8px 12px;
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            font-size: 14px;
+            color: #495057;
+            background: white;
+            cursor: pointer;
+            transition: border-color 0.3s;
+        }
+
+        .filter-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
         .nav-controls {
             display: flex;
             gap: 10px;
@@ -208,6 +237,19 @@
             z-index: 10;
         }
 
+        .day-event .status-dot {
+            display: inline-block;
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            margin-right: 3px;
+            vertical-align: middle;
+        }
+
+        .day-event .status-dot.dot-not-started { background: #adb5bd; }
+        .day-event .status-dot.dot-in-progress { background: #66b3ff; }
+        .day-event .status-dot.dot-completed { background: #90ee90; }
+
         .day-event.critical {
             background: #dc3545;
         }
@@ -284,6 +326,21 @@
         }
 
         .status-normal {
+            background: #28a745;
+            color: white;
+        }
+
+        .status-not-started {
+            background: #6c757d;
+            color: white;
+        }
+
+        .status-in-progress {
+            background: #007bff;
+            color: white;
+        }
+
+        .status-completed {
             background: #28a745;
             color: white;
         }
@@ -462,7 +519,6 @@
         }
     </style>
 </head>
-</head>
 <body>
     <div class="container">
         <header>
@@ -473,10 +529,20 @@
         <div class="controls">
             <button class="btn" id="addEventBtn" class="btn btn-warning">+ Add Event</button>
 
+            <div class="filter-group">
+                <label for="statusFilter">Status:</label>
+                <select id="statusFilter" onchange="renderCalendar()">
+                    <option value="all">All</option>
+                    <option value="Not Started">Not Started</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="Completed">Completed</option>
+                </select>
+            </div>
+
             <div class="nav-controls">
-                <button class="nav-btn" id="prevMonth">â—€ Prev</button>
+                <button class="nav-btn" id="prevMonth">&#9664; Prev</button>
                 <span class="current-month" id="currentMonth"></span>
-                <button class="nav-btn" id="nextMonth">Next â–¶</button>
+                <button class="nav-btn" id="nextMonth">Next &#9654;</button>
                 <button class="nav-btn" id="todayBtn">Today</button>
             </div>
         </div>
@@ -528,6 +594,14 @@
                         </select>
                     </div>
                     <div class="form-group">
+                        <label>Status:</label>
+                        <select id="statusInput">
+                            <option value="Not Started">Not Started</option>
+                            <option value="In Progress">In Progress</option>
+                            <option value="Completed">Completed</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
                         <label>Owner:</label>
                         <input type="text" id="ownerInput" placeholder="Team or person responsible">
                     </div>
@@ -568,19 +642,21 @@
         // State management
         let currentDate = new Date();
         let operations = [];
-        let editingIndex = -1; // -1 means adding new, >= 0 means editing existing
+        let editingIndex = -1;
+
+        function getFilteredOperations() {
+            const statusFilter = document.getElementById('statusFilter').value;
+            if (statusFilter === 'all') return operations;
+            return operations.filter(op => op.status === statusFilter);
+        }
 
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('Calendar initializing...');
-            console.log('Calendar element exists:', !!document.getElementById('calendar'));
-            console.log('Current month element exists:', !!document.getElementById('currentMonth'));
             
             renderCalendar();
             updateMonthDisplay();
             setupEventListeners();
             
-            console.log('Calendar initialized successfully');
         });
 
         // Event Listeners
@@ -602,14 +678,56 @@
                     closeModal();
                 }
             });
+
+            // Workbook integration via postMessage
+            window.addEventListener('message', (e) => {
+                if (e.data && e.data.type === 'getDataForExport') {
+                    const exportData = operations.map(op => ({
+                        'Date': op.date ? op.date.split('T')[0] : '',
+                        'Task': op.task || '',
+                        'Category': op.category || '',
+                        'Priority': op.priority || 'Normal',
+                        'Status': op.status || 'Not Started',
+                        'Owner': op.owner || '',
+                        'Notes': op.notes || ''
+                    }));
+                    e.source.postMessage({
+                        type: 'exportData',
+                        module: 'calendar',
+                        data: exportData,
+                        headers: ['Date', 'Task', 'Category', 'Priority', 'Status', 'Owner', 'Notes']
+                    }, '*');
+                }
+                if (e.data && e.data.type === 'importDataFromWorkbook' && e.data.module === 'calendar') {
+                    const rows = e.data.data || [];
+                    if (rows.length === 0) return;
+                    operations = [];
+                    rows.forEach(r => {
+                        operations.push({
+                            date: r['Date'] || r['date'] || '',
+                            task: r['Task'] || r['task'] || '',
+                            category: r['Category'] || r['category'] || 'General',
+                            priority: r['Priority'] || r['priority'] || 'Normal',
+                            status: r['Status'] || r['status'] || 'Not Started',
+                            owner: r['Owner'] || r['owner'] || 'Unassigned',
+                            notes: r['Notes'] || r['notes'] || ''
+                        });
+                    });
+                    renderCalendar();
+                    updateMonthDisplay();
+                    e.source.postMessage({ type: 'importComplete', module: 'calendar', count: rows.length }, '*');
+                }
+                if (e.data && e.data.type === 'clearAllData') {
+                    operations = [];
+                    renderCalendar();
+                    renderTable();
+                }
+            });
         }
 
         // Calendar rendering
         function renderCalendar() {
-            console.log('=== renderCalendar called ===');
-            console.log('Total operations:', operations.length);
             operations.forEach((op, idx) => {
-                console.log(`Op ${idx}:`, op.task, '| Date:', op.date);
             });
             
             const calendar = document.getElementById('calendar');
@@ -650,23 +768,18 @@
                 
                 // Add events for this day
                 const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
-                const dayOperations = operations.filter(op => {
-                    // Extract just the date part from the op.date (which might be datetime)
+                const filtered = getFilteredOperations();
+                const dayOperations = filtered.filter(op => {
                     const opDateOnly = op.date.split('T')[0];
-                    const matches = opDateOnly === dateStr;
-                    if (matches) {
-                        console.log(`Found event for ${dateStr}:`, op.task, '| op.date:', op.date, '| opDateOnly:', opDateOnly);
-                    }
-                    return matches;
+                    return opDateOnly === dateStr;
                 });
-                
-                console.log(`Date ${dateStr}: ${dayOperations.length} events`);
                 
                 dayOperations.forEach(op => {
                     const event = document.createElement('div');
                     event.className = `day-event ${op.priority.toLowerCase()}`;
-                    event.textContent = op.task;
-                    event.title = `${op.task} - ${op.category}`;
+                    const statusClass = (op.status || 'Not Started').toLowerCase().replace(/\s+/g, '-');
+                    event.innerHTML = `<span class="status-dot dot-${statusClass}"></span>${op.task}`;
+                    event.title = `${op.task} - ${op.category} [${op.status || 'Not Started'}]`;
                     day.appendChild(event);
                 });
                 
@@ -718,9 +831,7 @@
 
         // Table rendering
         function renderTable() {
-            console.log('renderTable called, operations.length:', operations.length);
             const container = document.getElementById('tableContainer');
-            console.log('tableContainer found:', !!container);
             
             if (operations.length === 0) {
                 container.innerHTML = `
@@ -731,9 +842,19 @@
                 return;
             }
 
-            // Sort operations by date
-            const sortedOps = [...operations].sort((a, b) => new Date(a.date) - new Date(b.date));
-            console.log('sortedOps:', sortedOps);
+            const filtered = getFilteredOperations();
+            
+            if (filtered.length === 0) {
+                const statusFilter = document.getElementById('statusFilter').value;
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <p>No operations match the "${statusFilter}" filter.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const sortedOps = [...filtered].sort((a, b) => new Date(a.date) - new Date(b.date));
 
             let html = `
                 <table>
@@ -743,6 +864,7 @@
                             <th>Task</th>
                             <th>Category</th>
                             <th>Priority</th>
+                            <th>Status</th>
                             <th>Owner</th>
                             <th>Notes</th>
                             <th>Actions</th>
@@ -769,114 +891,101 @@
                 html += `
                     <tr>
                         <td>${formattedDate}</td>
-                        <td><strong>${op.task}</strong>${op.isRecurring ? ' <span style="color: #667eea; font-size: 12px;">ðŸ”</span>' : ''}</td>
+                        <td><strong>${op.task}</strong>${op.isRecurring ? ' <span style="color: #667eea; font-size: 12px;">&#x1F504;</span>' : ''}</td>
                         <td>${op.category}</td>
                         <td><span class="status-badge status-${op.priority.toLowerCase()}">${op.priority}</span></td>
+                        <td><span class="status-badge status-${(op.status || 'Not Started').toLowerCase().replace(/\s+/g, '-')}">${op.status || 'Not Started'}</span></td>
                         <td>${op.owner}</td>
                         <td>${op.notes}</td>
                         <td>
-                            <button class="action-btn" onclick="editEvent(${originalIndex})">âœï¸ Edit</button>
-                            <button class="action-btn delete" onclick="deleteEvent(${originalIndex})">ðŸ—‘ï¸ Delete</button>
+                            <button class="action-btn" onclick="editEvent(${originalIndex})">&#x270F;&#xFE0F; Edit</button>
+                            <button class="action-btn delete" onclick="deleteEvent(${originalIndex})">&#x1F5D1;&#xFE0F; Delete</button>
                         </td>
                     </tr>
                 `;
             });
 
             html += '</tbody></table>';
-            console.log('Setting innerHTML, html length:', html.length);
             container.innerHTML = html;
-            console.log('innerHTML set successfully');
         }
 
-        // CSV handling
+        // Data parsing (used by workbook integration)
         function handleFileUpload(event) {
             const file = event.target.files[0];
             if (!file) return;
-
             const reader = new FileReader();
             reader.onload = function(e) {
-                const csv = e.target.result;
-                parseCSV(csv);
+                parseCSV(e.target.result);
             };
             reader.readAsText(file);
         }
 
         function parseCSV(csv) {
             const lines = csv.split('\n').filter(line => line.trim());
-            console.log('Total lines found:', lines.length);
             
-            if (lines.length < 2) {
-                alert('CSV file appears to be empty or invalid.');
-                return;
-            }
+            if (lines.length < 2) return;
 
             operations = [];
-            
-            // Get header to detect format
             const headerLine = lines[0].toLowerCase();
             const isEventFormat = headerLine.includes('title') && headerLine.includes('start');
-            console.log('Detected format:', isEventFormat ? 'Event format (title,start,end,color)' : 'Task format (date,task,category,etc)');
+            const hasStatus = headerLine.includes('status');
             
-            // Skip header row, process data rows
             for (let i = 1; i < lines.length; i++) {
-                const line = lines[i];
-                const values = parseCSVLine(line);
-                console.log('Line', i, 'parsed values:', values, 'length:', values.length);
+                const values = parseCSVLine(lines[i]);
                 
                 if (isEventFormat) {
-                    // Format: title, start, end, color
                     if (values.length >= 2 && values[0] && values[1]) {
                         const startDate = new Date(values[1]);
                         const endDate = values[2] ? new Date(values[2]) : startDate;
                         const color = values[3] || 'blue';
-                        
-                        // Extract just the date portion (YYYY-MM-DD)
                         const dateStr = startDate.toISOString().split('T')[0];
-                        
-                        // Format time range for notes
                         const startTime = startDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
                         const endTime = endDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
                         const timeRange = startDate.toDateString() === endDate.toDateString() 
                             ? `${startTime} - ${endTime}`
                             : `${startDate.toLocaleDateString()} ${startTime} - ${endDate.toLocaleDateString()} ${endTime}`;
-                        
                         operations.push({
                             date: dateStr,
-                            task: values[0], // title
-                            category: color.charAt(0).toUpperCase() + color.slice(1), // capitalize color
+                            task: values[0],
+                            category: color.charAt(0).toUpperCase() + color.slice(1),
                             priority: 'Normal',
+                            status: 'Not Started',
                             owner: 'Scheduled',
                             notes: timeRange
                         });
                     }
-                } else {
-                    // Original format: date, task, category, priority, owner, notes
+                } else if (hasStatus) {
+                    // Format: date, task, category, priority, status, owner, notes
                     if (values.length >= 2 && values[0] && values[1]) {
                         operations.push({
                             date: values[0],
                             task: values[1],
                             category: values[2] || 'General',
                             priority: values[3] || 'Normal',
+                            status: values[4] || 'Not Started',
+                            owner: values[5] || 'Unassigned',
+                            notes: values[6] || ''
+                        });
+                    }
+                } else {
+                    // Legacy format without status: date, task, category, priority, owner, notes
+                    if (values.length >= 2 && values[0] && values[1]) {
+                        operations.push({
+                            date: values[0],
+                            task: values[1],
+                            category: values[2] || 'General',
+                            priority: values[3] || 'Normal',
+                            status: 'Not Started',
                             owner: values[4] || 'Unassigned',
                             notes: values[5] || ''
                         });
-                    } else {
-                        console.log('Skipping line', i, '- insufficient data');
                     }
                 }
             }
 
-            console.log('Parsed operations:', operations);
             renderCalendar();
             updateMonthDisplay();
             renderTable();
-            
-            // Show success message
-            if (operations.length > 0) {
-                alert(`Successfully imported ${operations.length} operation(s)!`);
-            } else {
-                alert('No valid operations found in CSV file. Please check the format.');
-            }
         }
 
         // Helper function to properly parse CSV lines with quoted fields
@@ -919,62 +1028,13 @@
             const month = today.getMonth();
 
             operations = [
-                {
-                    date: `${year}-${String(month + 1).padStart(2, '0')}-05`,
-                    task: 'Quarterly Firewall Review',
-                    category: 'Network Security',
-                    priority: 'Critical',
-                    owner: 'Network Team',
-                    notes: 'Review and update firewall rules quarterly'
-                },
-                {
-                    date: `${year}-${String(month + 1).padStart(2, '0')}-10`,
-                    task: 'User Access Review',
-                    category: 'Identity & Access',
-                    priority: 'Critical',
-                    owner: 'IAM Team',
-                    notes: 'Review all user access permissions'
-                },
-                {
-                    date: `${year}-${String(month + 1).padStart(2, '0')}-15`,
-                    task: 'Vulnerability Scan',
-                    category: 'Vulnerability Management',
-                    priority: 'Normal',
-                    owner: 'Security Team',
-                    notes: 'Monthly vulnerability assessment'
-                },
-                {
-                    date: `${year}-${String(month + 1).padStart(2, '0')}-20`,
-                    task: 'Patch Management Review',
-                    category: 'System Maintenance',
-                    priority: 'Warning',
-                    owner: 'IT Operations',
-                    notes: 'Review and deploy critical patches'
-                },
-                {
-                    date: `${year}-${String(month + 1).padStart(2, '0')}-25`,
-                    task: 'Security Awareness Training',
-                    category: 'Training & Awareness',
-                    priority: 'Normal',
-                    owner: 'HR & Security',
-                    notes: 'Monthly phishing simulation and training'
-                },
-                {
-                    date: `${year}-${String(month + 1).padStart(2, '0')}-28`,
-                    task: 'Backup Verification',
-                    category: 'Data Protection',
-                    priority: 'Critical',
-                    owner: 'Infrastructure Team',
-                    notes: 'Verify backup integrity and test restoration'
-                },
-                {
-                    date: `${year}-${String(month + 2).padStart(2, '0')}-01`,
-                    task: 'Incident Response Drill',
-                    category: 'Incident Response',
-                    priority: 'Warning',
-                    owner: 'Security Team',
-                    notes: 'Quarterly incident response tabletop exercise'
-                }
+                { date: `${year}-${String(month + 1).padStart(2, '0')}-05`, task: 'Quarterly Firewall Review', category: 'Network Security', priority: 'Critical', status: 'In Progress', owner: 'Network Team', notes: 'Review and update firewall rules quarterly' },
+                { date: `${year}-${String(month + 1).padStart(2, '0')}-10`, task: 'User Access Review', category: 'Identity & Access', priority: 'Critical', status: 'Not Started', owner: 'IAM Team', notes: 'Review all user access permissions' },
+                { date: `${year}-${String(month + 1).padStart(2, '0')}-15`, task: 'Vulnerability Scan', category: 'Vulnerability Management', priority: 'Normal', status: 'Completed', owner: 'Security Team', notes: 'Monthly vulnerability assessment' },
+                { date: `${year}-${String(month + 1).padStart(2, '0')}-20`, task: 'Patch Management Review', category: 'System Maintenance', priority: 'Warning', status: 'In Progress', owner: 'IT Operations', notes: 'Review and deploy critical patches' },
+                { date: `${year}-${String(month + 1).padStart(2, '0')}-25`, task: 'Security Awareness Training', category: 'Training & Awareness', priority: 'Normal', status: 'Not Started', owner: 'HR & Security', notes: 'Monthly phishing simulation and training' },
+                { date: `${year}-${String(month + 1).padStart(2, '0')}-28`, task: 'Backup Verification', category: 'Data Protection', priority: 'Critical', status: 'Not Started', owner: 'Infrastructure Team', notes: 'Verify backup integrity and test restoration' },
+                { date: `${year}-${String(month + 2).padStart(2, '0')}-01`, task: 'Incident Response Drill', category: 'Incident Response', priority: 'Warning', status: 'Not Started', owner: 'Security Team', notes: 'Quarterly incident response tabletop exercise' }
             ];
 
             renderCalendar();
@@ -982,15 +1042,10 @@
         }
 
         function exportTemplate() {
-            if (operations.length === 0) {
-                alert('No data to export. Please import or add some events first.');
-                return;
-            }
+            if (operations.length === 0) return;
 
-            let csv = 'Date,Task,Category,Priority,Owner,Notes\n';
-            
+            let csv = 'Date,Task,Category,Priority,Status,Owner,Notes\n';
             operations.forEach(op => {
-                // Escape quotes and wrap fields with commas in quotes
                 const escape = (str) => {
                     if (str === undefined || str === null) return '';
                     str = String(str);
@@ -999,8 +1054,7 @@
                     }
                     return str;
                 };
-                
-                csv += `${escape(op.date)},${escape(op.task)},${escape(op.category)},${escape(op.priority)},${escape(op.owner)},${escape(op.notes)}\n`;
+                csv += `${escape(op.date)},${escape(op.task)},${escape(op.category)},${escape(op.priority)},${escape(op.status || 'Not Started')},${escape(op.owner)},${escape(op.notes)}\n`;
             });
 
             const blob = new Blob([csv], { type: 'text/csv' });
@@ -1011,8 +1065,6 @@
             a.download = `cybersec_operations_${timestamp}.csv`;
             a.click();
             window.URL.revokeObjectURL(url);
-            
-            alert(`Successfully exported ${operations.length} operation(s)!`);
         }
 
         // Modal functions
@@ -1050,6 +1102,7 @@
             document.getElementById('taskInput').value = op.task || '';
             document.getElementById('categoryInput').value = op.category || 'blue';
             document.getElementById('priorityInput').value = op.priority || 'Normal';
+            document.getElementById('statusInput').value = op.status || 'Not Started';
             document.getElementById('ownerInput').value = op.owner || '';
             document.getElementById('notesInput').value = op.notes || '';
             
@@ -1165,6 +1218,7 @@
             const task = document.getElementById('taskInput').value;
             const category = document.getElementById('categoryInput').value;
             const priority = document.getElementById('priorityInput').value;
+            const status = document.getElementById('statusInput').value;
             const owner = document.getElementById('ownerInput').value;
             const notes = document.getElementById('notesInput').value;
             const repeatType = document.getElementById('repeatInput').value;
@@ -1182,6 +1236,7 @@
                 task: task,
                 category: category,
                 priority: priority,
+                status: status,
                 owner: owner,
                 notes: notes
             };
