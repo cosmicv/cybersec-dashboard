@@ -799,6 +799,7 @@ global.rawInflate=inflate;
                             <option value="daily">Daily</option>
                             <option value="weekly">Weekly</option>
                             <option value="monthly">Monthly</option>
+                            <option value="quarterly">Quarterly</option>
                             <option value="yearly">Yearly</option>
                         </select>
                     </div>
@@ -1468,6 +1469,9 @@ global.rawInflate=inflate;
                         break;
                     case 'monthly':
                         currentDate.setMonth(currentDate.getMonth() + 1);
+                        break;
+                    case 'quarterly':
+                        currentDate.setMonth(currentDate.getMonth() + 3);
                         break;
                     case 'yearly':
                         currentDate.setFullYear(currentDate.getFullYear() + 1);
