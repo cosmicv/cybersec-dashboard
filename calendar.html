@@ -569,6 +569,7 @@
                             <option value="daily">Daily</option>
                             <option value="weekly">Weekly</option>
                             <option value="monthly">Monthly</option>
+                            <option value="quarterly">Quarterly</option>
                             <option value="yearly">Yearly</option>
                         </select>
                     </div>
@@ -692,10 +693,16 @@
                 console.log(`Date ${dateStr}: ${dayOperations.length} events`);
                 
                 dayOperations.forEach(op => {
+                    const originalIndex = operations.indexOf(op);
                     const event = document.createElement('div');
                     event.className = `day-event ${op.priority.toLowerCase()}`;
                     event.textContent = op.task;
-                    event.title = `${op.task} - ${op.category}`;
+                    event.title = `${op.task} - ${op.category} (click to edit)`;
+                    event.style.cursor = 'pointer';
+                    event.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        editEvent(originalIndex);
+                    });
                     day.appendChild(event);
                 });
                 
@@ -1065,23 +1072,30 @@
         function editEvent(index) {
             editingIndex = index;
             const op = operations[index];
-            
+
             document.getElementById('modalTitle').textContent = 'Edit Event';
-            
+
             // Parse the date to get start time (we're storing it as date field)
             document.getElementById('startTime').value = formatDateTimeLocal(new Date(op.date));
-            
+
             // For end time, we don't have it stored separately, so set it 1 hour after start
             const startDate = new Date(op.date);
             const endDate = new Date(startDate.getTime() + 60 * 60 * 1000);
             document.getElementById('endTime').value = formatDateTimeLocal(endDate);
-            
+
             document.getElementById('taskInput').value = op.task || '';
             document.getElementById('categoryInput').value = op.category || 'blue';
             document.getElementById('priorityInput').value = op.priority || 'Normal';
             document.getElementById('ownerInput').value = op.owner || '';
             document.getElementById('notesInput').value = op.notes || '';
-            
+
+            // Restore repeat fields (default to none for one-off events)
+            const repeatInput = document.getElementById('repeatInput');
+            repeatInput.value = 'none';
+            document.getElementById('repeatUntilInput').value = '';
+            document.getElementById('repeatCountInput').value = '';
+            document.getElementById('repeatOptions').style.display = 'none';
+
             document.getElementById('eventModal').style.display = 'block';
         }
 
@@ -1171,6 +1185,9 @@
                         break;
                     case 'monthly':
                         currentDate.setMonth(currentDate.getMonth() + 1);
+                        break;
+                    case 'quarterly':
+                        currentDate.setMonth(currentDate.getMonth() + 3);
                         break;
                     case 'yearly':
                         currentDate.setFullYear(currentDate.getFullYear() + 1);
