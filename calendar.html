@@ -632,6 +632,15 @@
                     closeModal();
                 }
             });
+
+            // Handle postMessage from parent (index.html)
+            window.addEventListener('message', (e) => {
+                if (e.data && e.data.type === 'clearAllData') {
+                    operations = [];
+                    renderCalendar();
+                    renderTable();
+                }
+            });
         }
 
         // Calendar rendering
