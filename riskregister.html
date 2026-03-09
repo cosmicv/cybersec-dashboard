@@ -401,6 +401,60 @@
             margin-bottom: 6px;
         }
 
+        /* ===== Controls Category Sections ===== */
+        .controls-category {
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 14px 16px;
+            margin-bottom: 15px;
+        }
+
+        .controls-category-header {
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid;
+        }
+
+        .controls-category.before .controls-category-header {
+            color: #dc3545;
+            border-color: #dc3545;
+        }
+
+        .controls-category.after .controls-category-header {
+            color: #28a745;
+            border-color: #28a745;
+        }
+
+        .controls-category.before { background: #fff8f8; }
+        .controls-category.after  { background: #f8fff8; }
+
+        /* ===== Before/After badge pairs on cards ===== */
+        .severity-pair {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .severity-pair .arrow {
+            color: #6c757d;
+            font-size: 13px;
+        }
+
+        .badge-after {
+            border: 2px solid currentColor;
+            background: white !important;
+        }
+
+        .badge-after.badge-critical { color: #dc3545; background: white !important; }
+        .badge-after.badge-high     { color: #fd7e14; background: white !important; }
+        .badge-after.badge-medium   { color: #856404; background: white !important; }
+        .badge-after.badge-low      { color: #28a745; background: white !important; }
+
         .person-item button {
             background: none;
             border: none;
@@ -516,17 +570,35 @@
                         <option value="Reputational">
                     </datalist>
                 </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Probability (1-10) *</label>
-                        <input type="number" id="riskProbability" min="1" max="10" value="5" required oninput="updateScorePreview()">
+                <div class="controls-category before">
+                    <div class="controls-category-header">Before Controls</div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Probability (1-10) *</label>
+                            <input type="number" id="riskProbability" min="1" max="10" value="5" required oninput="updateScorePreview()">
+                        </div>
+                        <div class="form-group">
+                            <label>Impact (1-10) *</label>
+                            <input type="number" id="riskImpact" min="1" max="10" value="5" required oninput="updateScorePreview()">
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label>Impact (1-10) *</label>
-                        <input type="number" id="riskImpact" min="1" max="10" value="5" required oninput="updateScorePreview()">
-                    </div>
+                    <div class="score-display" id="scorePreview">Severity Score: 25 (Medium)</div>
                 </div>
-                <div class="score-display" id="scorePreview">Severity Score: 25 (Medium)</div>
+
+                <div class="controls-category after">
+                    <div class="controls-category-header">After Controls</div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Probability (1-10)</label>
+                            <input type="number" id="riskProbabilityAfter" min="1" max="10" value="5" oninput="updateScorePreview()">
+                        </div>
+                        <div class="form-group">
+                            <label>Impact (1-10)</label>
+                            <input type="number" id="riskImpactAfter" min="1" max="10" value="5" oninput="updateScorePreview()">
+                        </div>
+                    </div>
+                    <div class="score-display" id="scorePreviewAfter">Severity Score: 25 (Medium)</div>
+                </div>
                 <div class="form-row">
                     <div class="form-group">
                         <label>Status *</label>
@@ -759,6 +831,11 @@
                 const sev = calcSeverity(r.probability, r.impact);
                 const sevClass = sev.label.toLowerCase();
 
+                const probAfter = r.probabilityAfter != null ? r.probabilityAfter : r.probability;
+                const impactAfter = r.impactAfter != null ? r.impactAfter : r.impact;
+                const sevAfter = calcSeverity(probAfter, impactAfter);
+                const sevAfterClass = sevAfter.label.toLowerCase();
+
                 return `
                     <div class="risk-card">
                         <div class="severity-stripe severity-${sevClass}"></div>
@@ -770,7 +847,13 @@
                             <p>${escapeHtml(r.description).substring(0, 150)}${r.description.length > 150 ? '...' : ''}</p>
                         </div>
                         <div class="card-meta">
-                            <span class="badge badge-${sevClass}">${sev.label} (${sev.score})</span>
+                            <div class="severity-pair">
+                                <span style="font-size:10px;color:#6c757d;font-weight:600;text-transform:uppercase;">Before:</span>
+                                <span class="badge badge-${sevClass}">${sev.label} (${sev.score})</span>
+                                <span class="arrow">&#8594;</span>
+                                <span style="font-size:10px;color:#6c757d;font-weight:600;text-transform:uppercase;">After:</span>
+                                <span class="badge badge-after badge-${sevAfterClass}">${sevAfter.label} (${sevAfter.score})</span>
+                            </div>
                             ${r.category ? `<span class="badge" style="background:#e9ecef; color:#495057;">${escapeHtml(r.category)}</span>` : ''}
                             ${r.owner ? `<span class="badge" style="background:#e8eaf6; color:#3949ab;">${escapeHtml(r.owner)}</span>` : ''}
                         </div>
@@ -862,6 +945,8 @@
             document.getElementById('riskForm').reset();
             document.getElementById('riskProbability').value = 5;
             document.getElementById('riskImpact').value = 5;
+            document.getElementById('riskProbabilityAfter').value = 5;
+            document.getElementById('riskImpactAfter').value = 5;
             populateOwnerSelects();
             updateScorePreview();
             document.getElementById('addModal').classList.add('active');
@@ -881,6 +966,9 @@
             document.getElementById('riskCategory').value = r.category || '';
             document.getElementById('riskProbability').value = r.probability || 5;
             document.getElementById('riskImpact').value = r.impact || 5;
+            // After controls - fall back to before values if not set
+            document.getElementById('riskProbabilityAfter').value = r.probabilityAfter != null ? r.probabilityAfter : (r.probability || 5);
+            document.getElementById('riskImpactAfter').value = r.impactAfter != null ? r.impactAfter : (r.impact || 5);
             document.getElementById('riskStatus').value = r.status || 'Open';
             populateOwnerSelects();
             document.getElementById('riskOwner').value = r.owner || '';
@@ -898,6 +986,8 @@
                 category: document.getElementById('riskCategory').value,
                 probability: parseInt(document.getElementById('riskProbability').value) || 5,
                 impact: parseInt(document.getElementById('riskImpact').value) || 5,
+                probabilityAfter: parseInt(document.getElementById('riskProbabilityAfter').value) || 5,
+                impactAfter: parseInt(document.getElementById('riskImpactAfter').value) || 5,
                 status: document.getElementById('riskStatus').value,
                 owner: document.getElementById('riskOwner').value,
                 mitigation: document.getElementById('riskMitigation').value,
@@ -935,30 +1025,54 @@
             const r = risks[idx];
             const sev = calcSeverity(r.probability, r.impact);
 
+            const probAfter = r.probabilityAfter != null ? r.probabilityAfter : r.probability;
+            const impactAfter = r.impactAfter != null ? r.impactAfter : r.impact;
+            const sevAfter = calcSeverity(probAfter, impactAfter);
+
             document.getElementById('detailTitle').textContent = r.title;
             document.getElementById('detailEditBtn').onclick = () => { closeDetailModal(); editRisk(idx); };
 
-            const fields = [
-                { label: 'Description', value: r.description },
-                { label: 'Category', value: r.category },
-                { label: 'Probability', value: r.probability + ' / 10' },
-                { label: 'Impact', value: r.impact + ' / 10' },
-                { label: 'Severity', value: `${sev.label} (Score: ${sev.score})` },
-                { label: 'Status', value: r.status },
-                { label: 'Assigned To', value: r.owner || 'Unassigned' },
-                { label: 'Mitigation Plan', value: r.mitigation },
-                { label: 'Notes', value: r.notes },
-                { label: 'Date Created', value: r.dateCreated },
-                { label: 'Last Modified', value: r.dateModified }
-            ];
-
-            document.getElementById('detailBody').innerHTML = '<div style="display:grid; gap:12px;">' +
-                fields.filter(f => f.value).map(f => `
+            function fieldHtml(label, value, accentColor) {
+                if (!value) return '';
+                return `
                     <div style="border-bottom:1px solid #e9ecef; padding-bottom:10px;">
-                        <div style="font-weight:600; font-size:12px; color:#667eea; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px;">${f.label}</div>
-                        <div style="font-size:14px; color:#212529; white-space:pre-wrap;">${escapeHtml(f.value)}</div>
+                        <div style="font-weight:600; font-size:12px; color:${accentColor || '#667eea'}; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px;">${label}</div>
+                        <div style="font-size:14px; color:#212529; white-space:pre-wrap;">${escapeHtml(String(value))}</div>
+                    </div>`;
+            }
+
+            const beforeColor = '#dc3545';
+            const afterColor  = '#28a745';
+
+            document.getElementById('detailBody').innerHTML = `
+                <div style="display:grid; gap:12px;">
+                    ${fieldHtml('Description', r.description)}
+                    ${fieldHtml('Category', r.category)}
+                    ${fieldHtml('Status', r.status)}
+                    ${fieldHtml('Assigned To', r.owner || 'Unassigned')}
+
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; border:1px solid #dee2e6; border-radius:8px; overflow:hidden;">
+                        <div style="padding:12px; background:#fff8f8; border-right:1px solid #dee2e6;">
+                            <div style="font-weight:700; font-size:12px; color:${beforeColor}; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:10px; padding-bottom:6px; border-bottom:2px solid ${beforeColor};">Before Controls</div>
+                            <div style="margin-bottom:6px;"><span style="font-size:11px;font-weight:600;color:#6c757d;">Probability</span><div style="font-size:14px;color:#212529;">${r.probability} / 10</div></div>
+                            <div style="margin-bottom:6px;"><span style="font-size:11px;font-weight:600;color:#6c757d;">Impact</span><div style="font-size:14px;color:#212529;">${r.impact} / 10</div></div>
+                            <div style="margin-bottom:2px;"><span style="font-size:11px;font-weight:600;color:#6c757d;">Severity Score</span><div style="font-size:14px;color:#212529;">${sev.score} / 100</div></div>
+                            <div><span style="font-size:11px;font-weight:600;color:#6c757d;">Severity Level</span><div style="margin-top:4px;"><span class="badge badge-${sev.label.toLowerCase()}">${sev.label}</span></div></div>
+                        </div>
+                        <div style="padding:12px; background:#f8fff8;">
+                            <div style="font-weight:700; font-size:12px; color:${afterColor}; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:10px; padding-bottom:6px; border-bottom:2px solid ${afterColor};">After Controls</div>
+                            <div style="margin-bottom:6px;"><span style="font-size:11px;font-weight:600;color:#6c757d;">Probability</span><div style="font-size:14px;color:#212529;">${probAfter} / 10</div></div>
+                            <div style="margin-bottom:6px;"><span style="font-size:11px;font-weight:600;color:#6c757d;">Impact</span><div style="font-size:14px;color:#212529;">${impactAfter} / 10</div></div>
+                            <div style="margin-bottom:2px;"><span style="font-size:11px;font-weight:600;color:#6c757d;">Severity Score</span><div style="font-size:14px;color:#212529;">${sevAfter.score} / 100</div></div>
+                            <div><span style="font-size:11px;font-weight:600;color:#6c757d;">Severity Level</span><div style="margin-top:4px;"><span class="badge badge-${sevAfter.label.toLowerCase()}">${sevAfter.label}</span></div></div>
+                        </div>
                     </div>
-                `).join('') + '</div>';
+
+                    ${fieldHtml('Mitigation Plan', r.mitigation)}
+                    ${fieldHtml('Notes', r.notes)}
+                    ${fieldHtml('Date Created', r.dateCreated)}
+                    ${fieldHtml('Last Modified', r.dateModified)}
+                </div>`;
 
             document.getElementById('detailModal').classList.add('active');
         }
@@ -968,6 +1082,7 @@
         }
 
         function updateScorePreview() {
+            // Before controls
             const prob = parseInt(document.getElementById('riskProbability').value) || 1;
             const impact = parseInt(document.getElementById('riskImpact').value) || 1;
             const sev = calcSeverity(prob, impact);
@@ -976,6 +1091,16 @@
             el.style.background = severityColor(sev.label) + '20';
             el.style.color = severityColor(sev.label);
             el.style.border = `2px solid ${severityColor(sev.label)}`;
+
+            // After controls
+            const probAfter = parseInt(document.getElementById('riskProbabilityAfter').value) || 1;
+            const impactAfter = parseInt(document.getElementById('riskImpactAfter').value) || 1;
+            const sevAfter = calcSeverity(probAfter, impactAfter);
+            const elAfter = document.getElementById('scorePreviewAfter');
+            elAfter.textContent = `Severity Score: ${sevAfter.score} (${sevAfter.label})`;
+            elAfter.style.background = severityColor(sevAfter.label) + '20';
+            elAfter.style.color = severityColor(sevAfter.label);
+            elAfter.style.border = `2px solid ${severityColor(sevAfter.label)}`;
         }
 
         // ==================== PEOPLE ====================
@@ -1059,14 +1184,23 @@
                 return v;
             };
 
-            const headers = ['Title','Description','Category','Probability','Impact','Severity Score','Severity Level','Status','Owner','Mitigation Plan','Notes','Date Created','Date Modified'];
+            const headers = [
+                'Title','Description','Category',
+                'Probability (Before)','Impact (Before)','Severity Score (Before)','Severity Level (Before)',
+                'Probability (After)','Impact (After)','Severity Score (After)','Severity Level (After)',
+                'Status','Owner','Mitigation Plan','Notes','Date Created','Date Modified'
+            ];
             let csv = headers.join(',') + '\r\n';
 
             risks.forEach(r => {
                 const sev = calcSeverity(r.probability, r.impact);
+                const probAfter = r.probabilityAfter != null ? r.probabilityAfter : r.probability;
+                const impactAfter = r.impactAfter != null ? r.impactAfter : r.impact;
+                const sevAfter = calcSeverity(probAfter, impactAfter);
                 csv += [
                     esc(r.title), esc(r.description), esc(r.category),
                     r.probability, r.impact, sev.score, esc(sev.label),
+                    probAfter, impactAfter, sevAfter.score, esc(sevAfter.label),
                     esc(r.status), esc(r.owner), esc(r.mitigation), esc(r.notes),
                     esc(r.dateCreated), esc(r.dateModified)
                 ].join(',') + '\r\n';
@@ -1120,8 +1254,10 @@
                     title: ['title', 'risk title', 'risk name', 'name'],
                     description: ['description', 'desc', 'risk description'],
                     category: ['category', 'risk category', 'type'],
-                    probability: ['probability', 'prob', 'likelihood'],
-                    impact: ['impact', 'consequence'],
+                    probability: ['probability (before)', 'probability', 'prob', 'likelihood'],
+                    impact: ['impact (before)', 'impact', 'consequence'],
+                    probabilityAfter: ['probability (after)', 'probability after', 'prob after', 'residual probability'],
+                    impactAfter: ['impact (after)', 'impact after', 'residual impact'],
                     status: ['status', 'risk status', 'state'],
                     owner: ['owner', 'assigned to', 'assigned', 'risk owner', 'responsible'],
                     mitigation: ['mitigation plan', 'mitigation', 'treatment', 'response'],
@@ -1163,12 +1299,19 @@
                         impact = Math.min(10, Math.max(1, rawImpact));
                     }
 
+                    const rawProbAfter = getVal(r, 'probabilityAfter');
+                    const rawImpactAfter = getVal(r, 'impactAfter');
+                    const probAfter = rawProbAfter ? Math.min(10, Math.max(1, parseInt(rawProbAfter) || prob)) : prob;
+                    const impactAfter = rawImpactAfter ? Math.min(10, Math.max(1, parseInt(rawImpactAfter) || impact)) : impact;
+
                     imported.push({
                         title: title,
                         description: getVal(r, 'description'),
                         category: getVal(r, 'category'),
                         probability: Math.min(10, Math.max(1, prob)),
                         impact: Math.min(10, Math.max(1, impact)),
+                        probabilityAfter: probAfter,
+                        impactAfter: impactAfter,
                         status: getVal(r, 'status') || 'Open',
                         owner: getVal(r, 'owner'),
                         mitigation: getVal(r, 'mitigation'),
@@ -1249,14 +1392,21 @@
             if (event.data && event.data.type === 'getDataForExport') {
                 const exportData = risks.map(r => {
                     const sev = calcSeverity(r.probability, r.impact);
+                    const probAfter = r.probabilityAfter != null ? r.probabilityAfter : r.probability;
+                    const impactAfter = r.impactAfter != null ? r.impactAfter : r.impact;
+                    const sevAfter = calcSeverity(probAfter, impactAfter);
                     return {
                         'Title': r.title || '',
                         'Description': r.description || '',
                         'Category': r.category || '',
-                        'Probability': r.probability || 0,
-                        'Impact': r.impact || 0,
-                        'Severity Score': sev.score,
-                        'Severity Level': sev.label,
+                        'Probability (Before)': r.probability || 0,
+                        'Impact (Before)': r.impact || 0,
+                        'Severity Score (Before)': sev.score,
+                        'Severity Level (Before)': sev.label,
+                        'Probability (After)': probAfter,
+                        'Impact (After)': impactAfter,
+                        'Severity Score (After)': sevAfter.score,
+                        'Severity Level (After)': sevAfter.label,
                         'Status': r.status || '',
                         'Owner': r.owner || '',
                         'Mitigation Plan': r.mitigation || '',
@@ -1269,20 +1419,26 @@
                     type: 'exportData',
                     module: 'risks',
                     data: exportData,
-                    headers: ['Title','Description','Category','Probability','Impact','Severity Score','Severity Level','Status','Owner','Mitigation Plan','Notes','Date Created','Date Modified']
+                    headers: ['Title','Description','Category','Probability (Before)','Impact (Before)','Severity Score (Before)','Severity Level (Before)','Probability (After)','Impact (After)','Severity Score (After)','Severity Level (After)','Status','Owner','Mitigation Plan','Notes','Date Created','Date Modified']
                 }, '*');
             }
             if (event.data && event.data.type === 'importDataFromWorkbook' && event.data.module === 'risks') {
                 const rows = event.data.data || [];
                 if (rows.length === 0) return;
                 rows.forEach(r => {
+                    const prob = parseInt(r['Probability (Before)'] || r['Probability'] || r['probability']) || 5;
+                    const impact = parseInt(r['Impact (Before)'] || r['Impact'] || r['impact']) || 5;
+                    const rawProbAfter = r['Probability (After)'] || r['probabilityAfter'];
+                    const rawImpactAfter = r['Impact (After)'] || r['impactAfter'];
                     risks.push({
                         id: 'r_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
                         title: r['Title'] || r['title'] || '',
                         description: r['Description'] || r['description'] || '',
                         category: r['Category'] || r['category'] || '',
-                        probability: parseInt(r['Probability'] || r['probability']) || 5,
-                        impact: parseInt(r['Impact'] || r['impact']) || 5,
+                        probability: prob,
+                        impact: impact,
+                        probabilityAfter: rawProbAfter != null ? (parseInt(rawProbAfter) || prob) : prob,
+                        impactAfter: rawImpactAfter != null ? (parseInt(rawImpactAfter) || impact) : impact,
                         status: r['Status'] || r['status'] || 'Open',
                         owner: r['Owner'] || r['owner'] || '',
                         mitigation: r['Mitigation Plan'] || r['mitigation'] || '',
