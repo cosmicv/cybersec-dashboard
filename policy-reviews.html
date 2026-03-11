@@ -373,7 +373,7 @@
                 </div>
                 <div class="form-group">
                     <label>Policy Document URL</label>
-                    <input type="url" id="fUrl" placeholder="https://...">
+                    <input type="text" id="fUrl" placeholder="https://... or SharePoint path">
                 </div>
                 <div class="form-row">
                     <div class="form-group">
@@ -627,67 +627,6 @@
             }
             if (field || row.length > 0) { row.push(field.trim()); rows.push(row); }
             return rows;
-        }
-
-        function handleImport(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const rows = parseCSVContent(e.target.result);
-
-                // Find header row
-                let headerIdx = -1;
-                for (let i = 0; i < rows.length; i++) {
-                    if (rows[i].some(c => {
-                        const lc = c.toLowerCase().trim();
-                        return lc.includes('policy') || lc === 'name' || lc === 'title';
-                    })) {
-                        headerIdx = i;
-                        break;
-                    }
-                }
-
-                if (headerIdx === -1) {
-                    alert('Could not find header row. Ensure a column contains "Policy Name", "Name", or "Title".');
-                    return;
-                }
-
-                const headers = rows[headerIdx];
-                const colMap = {};
-                headers.forEach((h, idx) => {
-                    const normalized = h.toLowerCase().trim();
-                    if (FIELD_MAP[normalized]) colMap[FIELD_MAP[normalized]] = idx;
-                });
-
-                const imported = [];
-                for (let i = headerIdx + 1; i < rows.length; i++) {
-                    const row = rows[i];
-                    const name = colMap['Policy Name'] !== undefined ? (row[colMap['Policy Name']] || '').trim() : '';
-                    if (!name) continue;
-
-                    const policy = {};
-                    FIELDS.forEach(f => {
-                        const idx = colMap[f];
-                        policy[f] = (idx !== undefined && idx < row.length) ? row[idx] : '';
-                    });
-
-                    // Auto-calculate status if not provided or not manually set
-                    if (!policy['Status'] || (policy['Status'] !== 'Draft' && policy['Status'] !== 'Retired')) {
-                        policy['Status'] = calcStatus(policy);
-                    }
-
-                    imported.push(policy);
-                }
-
-                policies = imported;
-                populateFilters();
-                renderAll();
-                alert(`Successfully imported ${policies.length} policy(ies)!`);
-            };
-            reader.readAsText(file);
-            event.target.value = '';
         }
 
         // ==================== CSV EXPORT ====================
