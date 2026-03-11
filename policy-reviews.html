@@ -855,8 +855,20 @@
 
         // Convert various date formats to YYYY-MM-DD for date inputs
         function toDateInputVal(str) {
+            if (!str && str !== 0) return '';
+            // Handle Date objects (SheetJS returns these for Excel date cells)
+            if (str instanceof Date) {
+                if (isNaN(str.getTime())) return '';
+                return str.toISOString().split('T')[0];
+            }
+            // Handle Excel numeric serial dates (rare, but possible)
+            if (typeof str === 'number') {
+                const d = new Date(Math.round((str - 25569) * 86400 * 1000));
+                if (!isNaN(d.getTime())) return d.toISOString().split('T')[0];
+                return '';
+            }
+            str = String(str).trim();
             if (!str) return '';
-            str = str.trim();
             // Already YYYY-MM-DD
             if (/^\d{4}-\d{1,2}-\d{1,2}$/.test(str)) return str;
             // M/D/YYYY
@@ -978,11 +990,17 @@
                 if (rows.length === 0) return;
                 rows.forEach(r => {
                     const policy = {};
-                    FIELDS.forEach(f => { policy[f] = r[f] || ''; });
+                    // Normalize values: convert Date objects and numbers to strings at import time
+                    const normalize = (v) => {
+                        if (v === undefined || v === null) return '';
+                        if (v instanceof Date) return isNaN(v.getTime()) ? '' : v.toISOString().split('T')[0];
+                        return v;
+                    };
+                    FIELDS.forEach(f => { policy[f] = normalize(r[f]); });
                     // Also try mapped headers
                     Object.keys(r).forEach(key => {
                         const mapped = FIELD_MAP[key.toLowerCase().trim()];
-                        if (mapped && !policy[mapped]) policy[mapped] = r[key];
+                        if (mapped && !policy[mapped]) policy[mapped] = normalize(r[key]);
                     });
                     policies.push(policy);
                 });
