@@ -124,6 +124,14 @@
             margin-left: auto;
         }
 
+        .workbook-status {
+            font-size: 12px;
+            color: #6c757d;
+            font-style: italic;
+            min-height: 16px;
+            white-space: nowrap;
+        }
+
         .nav-btn {
             padding: 8px 16px;
             background: white;
@@ -499,6 +507,7 @@
             
             <button class="btn" id="exportBtn" class="btn btn-secondary">Export CSV</button>
             <button class="btn" id="addEventBtn" class="btn btn-warning">+ Add Event</button>
+            <span id="workbookStatus" class="workbook-status">Workbook status: ready</span>
 
             <div class="nav-controls">
                 <button class="nav-btn" id="prevMonth">&#9664; Prev</button>
@@ -598,6 +607,96 @@
         let operations = [];
         let editingIndex = -1; // -1 means adding new, >= 0 means editing existing
 
+        function formatDateForStorage(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            const hasTime = hours !== '00' || minutes !== '00';
+            return hasTime ? `${year}-${month}-${day}T${hours}:${minutes}` : `${year}-${month}-${day}`;
+        }
+
+        function normalizeImportedDate(value) {
+            if (value === undefined || value === null || value === '') return '';
+
+            const asNumber = Number(value);
+            if (!Number.isNaN(asNumber) && Number.isFinite(asNumber)) {
+                // Excel serial date number using 1899-12-30 epoch.
+                const excelEpochMs = Date.UTC(1899, 11, 30);
+                const parsedFromSerial = new Date(excelEpochMs + Math.round(asNumber * 86400000));
+                if (!Number.isNaN(parsedFromSerial.getTime())) {
+                    return formatDateForStorage(parsedFromSerial);
+                }
+            }
+
+            const parsed = new Date(value);
+            if (!Number.isNaN(parsed.getTime())) {
+                return formatDateForStorage(parsed);
+            }
+
+            return String(value).trim();
+        }
+
+        function setWorkbookStatus(message, isError = false) {
+            const el = document.getElementById('workbookStatus');
+            if (!el) return;
+            el.textContent = `Workbook status: ${message}`;
+            el.style.color = isError ? '#dc3545' : '#6c757d';
+        }
+
+        function normalizeRowKeys(row) {
+            const normalized = {};
+            Object.keys(row || {}).forEach((key) => {
+                const normalizedKey = String(key)
+                    .trim()
+                    .toLowerCase()
+                    .replace(/[\s_-]+/g, '');
+                normalized[normalizedKey] = row[key];
+            });
+            return normalized;
+        }
+
+        function getFieldValue(normalizedRow, aliases, fallback = '') {
+            for (const alias of aliases) {
+                if (normalizedRow[alias] !== undefined && normalizedRow[alias] !== null && normalizedRow[alias] !== '') {
+                    return normalizedRow[alias];
+                }
+            }
+            return fallback;
+        }
+
+        function toDateKey(value) {
+            if (value === undefined || value === null) return '';
+            const raw = String(value).trim();
+            if (!raw) return '';
+
+            // Already in canonical date formats used by this app.
+            if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+            if (/^\d{4}-\d{2}-\d{2}T/.test(raw)) return raw.slice(0, 10);
+
+            // Support "YYYY-MM-DD HH:mm[:ss]" style values.
+            const spaceDateMatch = raw.match(/^(\d{4}-\d{2}-\d{2})\s+\d{1,2}:\d{2}/);
+            if (spaceDateMatch) return spaceDateMatch[1];
+
+            const parsed = new Date(raw);
+            if (!Number.isNaN(parsed.getTime())) {
+                return formatDateForStorage(parsed).slice(0, 10);
+            }
+
+            return '';
+        }
+
+        function getVisualPriorityClass(op) {
+            const priorityText = String(op?.priority || '').trim().toLowerCase();
+            const statusText = String(op?.status || '').trim().toLowerCase();
+            const combined = `${priorityText} ${statusText}`.replace(/\s+/g, '');
+
+            if (/(critical|high|urgent|severe|blocker|p1)/.test(combined)) return 'critical';
+            if (/(warning|warn|medium|moderate|p2|inprogress)/.test(combined)) return 'warning';
+            return 'normal';
+        }
+
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
             console.log('Calendar initializing...');
@@ -607,6 +706,7 @@
             renderCalendar();
             updateMonthDisplay();
             setupEventListeners();
+            setWorkbookStatus('ready');
             
             console.log('Calendar initialized successfully');
         });
@@ -635,10 +735,81 @@
 
             // Handle postMessage from parent (index.html)
             window.addEventListener('message', (e) => {
+                if (e.data && e.data.type === 'getDataForExport') {
+                    const exportData = operations.map(op => ({
+                        Date: op.date || '',
+                        Task: op.task || '',
+                        Category: op.category || 'General',
+                        Priority: op.priority || 'Normal',
+                        Status: op.status || 'Not Started',
+                        Owner: op.owner || 'Unassigned',
+                        Notes: op.notes || ''
+                    }));
+
+                    e.source.postMessage({
+                        type: 'exportData',
+                        module: 'calendar',
+                        data: exportData,
+                        headers: ['Date', 'Task', 'Category', 'Priority', 'Status', 'Owner', 'Notes']
+                    }, '*');
+                    setWorkbookStatus(`exported ${exportData.length} row(s)`);
+                }
+
+                if (e.data && e.data.type === 'importDataFromWorkbook' && e.data.module === 'calendar') {
+                    const rows = Array.isArray(e.data.data) ? e.data.data : [];
+                    const beforeCount = rows.length;
+
+                    operations = rows.map(row => {
+                        const r = normalizeRowKeys(row);
+                        const rawDate = getFieldValue(r, ['date', 'start', 'startdate', 'eventdate']);
+                        const rawTask = getFieldValue(r, ['task', 'title', 'event', 'taskname', 'description']);
+
+                        return {
+                            date: normalizeImportedDate(rawDate),
+                            task: String(rawTask || '').trim(),
+                            category: getFieldValue(r, ['category', 'type'], 'General'),
+                            priority: getFieldValue(r, ['priority', 'severity'], 'Normal'),
+                            status: getFieldValue(r, ['status', 'state'], 'Not Started'),
+                            owner: getFieldValue(r, ['owner', 'assignee', 'assignedto'], 'Unassigned'),
+                            notes: getFieldValue(r, ['notes', 'note', 'details', 'comments'], '')
+                        };
+                    }).filter(op => op.date && op.task);
+
+                    const importedCount = operations.length;
+                    const skippedCount = beforeCount - importedCount;
+
+                    if (importedCount > 0) {
+                        const firstDate = new Date(operations[0].date);
+                        if (!Number.isNaN(firstDate.getTime())) {
+                            // Jump to imported data month so users immediately see imported events.
+                            currentDate = new Date(firstDate.getFullYear(), firstDate.getMonth(), 1);
+                        }
+                    }
+
+                    renderCalendar();
+                    updateMonthDisplay();
+                    renderTable();
+
+                    e.source.postMessage({
+                        type: 'importComplete',
+                        module: 'calendar',
+                        count: importedCount
+                    }, '*');
+
+                    if (beforeCount === 0) {
+                        setWorkbookStatus('import received 0 rows');
+                    } else if (skippedCount > 0) {
+                        setWorkbookStatus(`imported ${importedCount}/${beforeCount} row(s), skipped ${skippedCount}`);
+                    } else {
+                        setWorkbookStatus(`imported ${importedCount} row(s)`);
+                    }
+                }
+
                 if (e.data && e.data.type === 'clearAllData') {
                     operations = [];
                     renderCalendar();
                     renderTable();
+                    setWorkbookStatus('cleared all data');
                 }
             });
         }
@@ -690,8 +861,8 @@
                 // Add events for this day
                 const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
                 const dayOperations = operations.filter(op => {
-                    // Extract just the date part from the op.date (which might be datetime)
-                    const opDateOnly = op.date.split('T')[0];
+                    // Normalize imported/manual date variants into a comparable YYYY-MM-DD key.
+                    const opDateOnly = toDateKey(op.date);
                     const matches = opDateOnly === dateStr;
                     if (matches) {
                         console.log(`Found event for ${dateStr}:`, op.task, '| op.date:', op.date, '| opDateOnly:', opDateOnly);
@@ -704,7 +875,7 @@
                 dayOperations.forEach(op => {
                     const originalIndex = operations.indexOf(op);
                     const event = document.createElement('div');
-                    event.className = `day-event ${op.priority.toLowerCase()}`;
+                    event.className = `day-event ${getVisualPriorityClass(op)}`;
                     event.textContent = op.task;
                     event.title = `${op.task} - ${op.category} (click to edit)`;
                     event.style.cursor = 'pointer';
@@ -816,7 +987,7 @@
                         <td>${formattedDate}</td>
                         <td><strong>${op.task}</strong>${op.isRecurring ? ' <span style="color: #667eea; font-size: 12px;">&#128260;</span>' : ''}</td>
                         <td>${op.category}</td>
-                        <td><span class="status-badge status-${op.priority.toLowerCase()}">${op.priority}</span></td>
+                        <td><span class="status-badge status-${getVisualPriorityClass(op)}">${op.priority}</span></td>
                         <td>${op.owner}</td>
                         <td>${op.notes}</td>
                         <td>
