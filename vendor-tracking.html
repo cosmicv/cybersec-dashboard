@@ -946,7 +946,7 @@
                 if (search && !COLUMNS.some(c => (v[c] || '').toLowerCase().includes(search))) return false;
                 if (fType !== 'all' && v['Vendor Type'] !== fType) return false;
                 if (fClass !== 'all' && v['Information Classification'] !== fClass) return false;
-                if (fRisk !== 'all' && v['Risk Rating'] !== fRisk) return false;
+                if (fRisk !== 'all' && String(v['Risk Rating']) !== String(fRisk)) return false;
                 if (fCurrent !== 'all' && v['Current'] !== fCurrent) return false;
                 if (fReview !== 'all' && v['Information Security Review'] !== fReview) return false;
                 return true;
