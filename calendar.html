@@ -247,6 +247,18 @@
             background: #28a745;
         }
 
+        .day-event.closed {
+            background: #6c757d;
+            color: #f8f9fa;
+            opacity: 0.65;
+            cursor: default;
+        }
+
+        .day-event.closed:hover {
+            transform: none;
+            z-index: auto;
+        }
+
         .table-wrapper {
             padding: 30px;
             background: white;
@@ -313,6 +325,16 @@
         .status-normal {
             background: #28a745;
             color: white;
+        }
+
+        .status-closed {
+            background: #6c757d;
+            color: #f8f9fa;
+            opacity: 0.9;
+        }
+
+        .operation-row.closed {
+            opacity: 0.65;
         }
 
         .empty-state {
@@ -564,6 +586,13 @@
                         </select>
                     </div>
                     <div class="form-group">
+                        <label>Status:</label>
+                        <select id="statusInput">
+                            <option value="Open">Open</option>
+                            <option value="Closed">Closed</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
                         <label>Owner:</label>
                         <input type="text" id="ownerInput" placeholder="Team or person responsible">
                     </div>
@@ -690,10 +719,11 @@
         function getVisualPriorityClass(op) {
             const priorityText = String(op?.priority || '').trim().toLowerCase();
             const statusText = String(op?.status || '').trim().toLowerCase();
-            const combined = `${priorityText} ${statusText}`.replace(/\s+/g, '');
 
-            if (/(critical|high|urgent|severe|blocker|p1)/.test(combined)) return 'critical';
-            if (/(warning|warn|medium|moderate|p2|inprogress)/.test(combined)) return 'warning';
+            if (/(closed|complete(d)?|done)/.test(statusText)) return 'closed';
+
+            if (/(critical|high|urgent|severe|blocker|p1)/.test(priorityText)) return 'critical';
+            if (/(warning|warn|medium|moderate|p2)/.test(priorityText)) return 'warning';
             return 'normal';
         }
 
@@ -741,7 +771,7 @@
                         Task: op.task || '',
                         Category: op.category || 'General',
                         Priority: op.priority || 'Normal',
-                        Status: op.status || 'Not Started',
+                        Status: op.status || 'Open',
                         Owner: op.owner || 'Unassigned',
                         Notes: op.notes || ''
                     }));
@@ -769,7 +799,7 @@
                             task: String(rawTask || '').trim(),
                             category: getFieldValue(r, ['category', 'type'], 'General'),
                             priority: getFieldValue(r, ['priority', 'severity'], 'Normal'),
-                            status: getFieldValue(r, ['status', 'state'], 'Not Started'),
+                            status: getFieldValue(r, ['status', 'state'], 'Open'),
                             owner: getFieldValue(r, ['owner', 'assignee', 'assignedto'], 'Unassigned'),
                             notes: getFieldValue(r, ['notes', 'note', 'details', 'comments'], '')
                         };
@@ -875,10 +905,11 @@
                 dayOperations.forEach(op => {
                     const originalIndex = operations.indexOf(op);
                     const event = document.createElement('div');
-                    event.className = `day-event ${getVisualPriorityClass(op)}`;
+                    const visualClass = getVisualPriorityClass(op);
+                    event.className = `day-event ${visualClass}`;
                     event.textContent = op.task;
-                    event.title = `${op.task} - ${op.category} (click to edit)`;
-                    event.style.cursor = 'pointer';
+                    event.title = `${op.task} - ${op.category} - Status: ${op.status || 'Open'} (click to edit)`;
+                    event.style.cursor = visualClass === 'closed' ? 'default' : 'pointer';
                     event.addEventListener('click', (e) => {
                         e.stopPropagation();
                         editEvent(originalIndex);
@@ -959,6 +990,7 @@
                             <th>Task</th>
                             <th>Category</th>
                             <th>Priority</th>
+                            <th>Status</th>
                             <th>Owner</th>
                             <th>Notes</th>
                             <th>Actions</th>
@@ -981,13 +1013,15 @@
                 
                 // Find the original index in operations array
                 const originalIndex = operations.indexOf(op);
+                const isClosed = getVisualPriorityClass(op) === 'closed';
                 
                 html += `
-                    <tr>
+                    <tr class="${isClosed ? 'operation-row closed' : 'operation-row'}">
                         <td>${formattedDate}</td>
                         <td><strong>${op.task}</strong>${op.isRecurring ? ' <span style="color: #667eea; font-size: 12px;">&#128260;</span>' : ''}</td>
                         <td>${op.category}</td>
                         <td><span class="status-badge status-${getVisualPriorityClass(op)}">${op.priority}</span></td>
+                        <td><span class="status-badge status-${getVisualPriorityClass(op)}">${op.status || 'Open'}</span></td>
                         <td>${op.owner}</td>
                         <td>${op.notes}</td>
                         <td>
@@ -1031,6 +1065,7 @@
             // Get header to detect format
             const headerLine = lines[0].toLowerCase();
             const isEventFormat = headerLine.includes('title') && headerLine.includes('start');
+            const hasStatusColumn = headerLine.includes('status');
             console.log('Detected format:', isEventFormat ? 'Event format (title,start,end,color)' : 'Task format (date,task,category,etc)');
             
             // Skip header row, process data rows
@@ -1062,19 +1097,27 @@
                             category: color.charAt(0).toUpperCase() + color.slice(1), // capitalize color
                             priority: 'Normal',
                             owner: 'Scheduled',
-                            notes: timeRange
+                            notes: timeRange,
+                            status: 'Open'
                         });
                     }
                 } else {
-                    // Original format: date, task, category, priority, owner, notes
+                    // Task format variants:
+                    // - date, task, category, priority, owner, notes
+                    // - date, task, category, priority, status, owner, notes
                     if (values.length >= 2 && values[0] && values[1]) {
+                        const statusVal = hasStatusColumn ? (values[4] || 'Open') : (values[6] || 'Open');
+                        const ownerVal = hasStatusColumn ? (values[5] || 'Unassigned') : (values[4] || 'Unassigned');
+                        const notesVal = hasStatusColumn ? (values[6] || '') : (values[5] || '');
+
                         operations.push({
                             date: values[0],
                             task: values[1],
                             category: values[2] || 'General',
                             priority: values[3] || 'Normal',
-                            owner: values[4] || 'Unassigned',
-                            notes: values[5] || ''
+                            owner: ownerVal,
+                            notes: notesVal,
+                            status: statusVal
                         });
                     } else {
                         console.log('Skipping line', i, '- insufficient data');
@@ -1203,7 +1246,7 @@
                 return;
             }
 
-            let csv = 'Date,Task,Category,Priority,Owner,Notes\n';
+            let csv = 'Date,Task,Category,Priority,Status,Owner,Notes\n';
             
             operations.forEach(op => {
                 // Escape quotes and wrap fields with commas in quotes
@@ -1216,7 +1259,7 @@
                     return str;
                 };
                 
-                csv += `${escape(op.date)},${escape(op.task)},${escape(op.category)},${escape(op.priority)},${escape(op.owner)},${escape(op.notes)}\n`;
+                csv += `${escape(op.date)},${escape(op.task)},${escape(op.category)},${escape(op.priority)},${escape(op.status || 'Open')},${escape(op.owner)},${escape(op.notes)}\n`;
             });
 
             const blob = new Blob([csv], { type: 'text/csv' });
@@ -1236,6 +1279,8 @@
             editingIndex = -1;
             document.getElementById('modalTitle').textContent = 'Add New Event';
             document.getElementById('eventForm').reset();
+            const statusInput = document.getElementById('statusInput');
+            if (statusInput) statusInput.value = 'Open';
             
             // Set default start time to now
             const now = new Date();
@@ -1266,6 +1311,7 @@
             document.getElementById('taskInput').value = op.task || '';
             document.getElementById('categoryInput').value = op.category || 'blue';
             document.getElementById('priorityInput').value = op.priority || 'Normal';
+            document.getElementById('statusInput').value = op.status || 'Open';
             document.getElementById('ownerInput').value = op.owner || '';
             document.getElementById('notesInput').value = op.notes || '';
 
@@ -1391,6 +1437,7 @@
             const task = document.getElementById('taskInput').value;
             const category = document.getElementById('categoryInput').value;
             const priority = document.getElementById('priorityInput').value;
+            const status = document.getElementById('statusInput')?.value || 'Open';
             const owner = document.getElementById('ownerInput').value;
             const notes = document.getElementById('notesInput').value;
             const repeatType = document.getElementById('repeatInput').value;
@@ -1408,6 +1455,7 @@
                 task: task,
                 category: category,
                 priority: priority,
+                status: status,
                 owner: owner,
                 notes: notes
             };
