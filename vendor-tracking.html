@@ -532,12 +532,12 @@
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Risk Rating (1-4)</label>
+                        <label>Risk Rating</label>
                         <select id="fRiskRating">
-                            <option value="1">1 - Low</option>
-                            <option value="2">2 - Medium</option>
-                            <option value="3" selected>3 - High</option>
-                            <option value="4">4 - Critical</option>
+                            <option value="Low">Low</option>
+                            <option value="Medium">Medium</option>
+                            <option value="High" selected>High</option>
+                            <option value="Critical">Critical</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -867,7 +867,7 @@
             const total = vendors.length;
             const current = vendors.filter(v => v['Current'] === 'Yes').length;
             const notCurrent = vendors.filter(v => v['Current'] === 'No').length;
-            const highRisk = vendors.filter(v => parseInt(v['Risk Rating']) >= 3).length;
+            const highRisk = vendors.filter(v => v['Risk Rating'] === 'High' || v['Risk Rating'] === 'Critical').length;
             const noReview = vendors.filter(v => v['Current'] === 'N/A' || v['Information Security Review'] === 'No').length;
 
             document.getElementById('statsBar').innerHTML = `
@@ -956,10 +956,11 @@
                 filtered.sort((a, b) => {
                     let va = a[sortColumn] || '';
                     let vb = b[sortColumn] || '';
-                    // Try numeric sort for Risk Rating
+                    // Ordered sort for Risk Rating strings
                     if (sortColumn === 'Risk Rating') {
-                        va = parseInt(va) || 0;
-                        vb = parseInt(vb) || 0;
+                        const order = { 'Low': 1, 'Medium': 2, 'High': 3, 'Critical': 4 };
+                        va = order[va] || 0;
+                        vb = order[vb] || 0;
                         return sortAsc ? va - vb : vb - va;
                     }
                     // Date sort for Review Date (handles M/D/YYYY, MM/DD/YYYY, YYYY-MM-DD)
@@ -1102,7 +1103,7 @@
                 document.getElementById('fBusinessPurpose').value = v['Business Purpose'] || '';
                 document.getElementById('fInformation').value = v['SavvyFi Information'] || '';
                 document.getElementById('fClassification').value = v['Information Classification'] || '';
-                document.getElementById('fRiskRating').value = v['Risk Rating'] || '3';
+                document.getElementById('fRiskRating').value = v['Risk Rating'] || 'High';
                 document.getElementById('fReviewFreq').value = v['Information Security Review'] || 'No';
                 document.getElementById('fCurrent').value = v['Current'] || 'N/A';
                 document.getElementById('fNotes').value = v['Notes'] || '';
