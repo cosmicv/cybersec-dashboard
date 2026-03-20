@@ -641,9 +641,10 @@
                 return v;
             };
 
+            const DATE_FIELDS_CSV = new Set(['Last Reviewed', 'Next Review', 'Effective Date']);
             let csv = FIELDS.join(',') + '\r\n';
             policies.forEach(p => {
-                csv += FIELDS.map(f => esc(p[f] || '')).join(',') + '\r\n';
+                csv += FIELDS.map(f => esc(DATE_FIELDS_CSV.has(f) ? (toDateInputVal(p[f]) || '') : (p[f] || ''))).join(',') + '\r\n';
             });
 
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -975,9 +976,12 @@
         // ========== Workbook Integration (postMessage API) ==========
         window.addEventListener('message', function(event) {
             if (event.data && event.data.type === 'getDataForExport') {
+                const DATE_FIELDS = new Set(['Last Reviewed', 'Next Review', 'Effective Date']);
                 const exportData = policies.map(p => {
                     const row = {};
-                    FIELDS.forEach(f => { row[f] = p[f] || ''; });
+                    FIELDS.forEach(f => {
+                        row[f] = DATE_FIELDS.has(f) ? (toDateInputVal(p[f]) || '') : (p[f] || '');
+                    });
                     return row;
                 });
                 event.source.postMessage({
