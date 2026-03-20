@@ -206,9 +206,9 @@ function _writeXLSX(wb, filename) {
           const val = row[h]??'';
           const ref = _colLetter(ci)+(ri+2);
           if(val===''){ return; }
-          const num = typeof val==='number' ? val : parseFloat(val);
-          if(!isNaN(num) && val!==''){
-            xml+=`<c r="${ref}"><v>${num}</v></c>`;
+          const isNumeric = typeof val==='number' || (typeof val==='string' && /^-?\d+(\.\d+)?$/.test(val.trim()));
+          if(isNumeric){
+            xml+=`<c r="${ref}"><v>${typeof val==='number'?val:parseFloat(val)}</v></c>`;
           } else {
             xml+=`<c r="${ref}" t="s"><v>${getSSIdx(val)}</v></c>`;
           }
