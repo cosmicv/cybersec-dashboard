@@ -644,7 +644,7 @@
             const DATE_FIELDS_CSV = new Set(['Last Reviewed', 'Next Review', 'Effective Date']);
             let csv = FIELDS.join(',') + '\r\n';
             policies.forEach(p => {
-                csv += FIELDS.map(f => esc(DATE_FIELDS_CSV.has(f) ? (toDateInputVal(p[f]) || '') : (p[f] || ''))).join(',') + '\r\n';
+                csv += FIELDS.map(f => esc(DATE_FIELDS_CSV.has(f) ? (formatDateUS(p[f]) || '') : (p[f] || ''))).join(',') + '\r\n';
             });
 
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -775,7 +775,7 @@
                     if (col === 'Status') {
                         html += `<td><span class="badge badge-${statusClass}">${esc(val)}</span></td>`;
                     } else if (col === 'Last Reviewed' || col === 'Next Review' || col === 'Effective Date') {
-                        html += `<td>${esc(toDateInputVal(val))}</td>`;
+                        html += `<td>${esc(formatDateUS(val))}</td>`;
                     } else if (col === 'Review Frequency') {
                         const freqClass = val === 'BiAnnual' ? 'biannual' : 'annual';
                         html += `<td><span class="badge badge-${freqClass}">${esc(val)}</span></td>`;
@@ -854,6 +854,24 @@
             }
 
             document.getElementById('policyModal').classList.add('active');
+        }
+
+        // Format any date value as MM/DD/YYYY for display and export
+        function formatDateUS(val) {
+            if (!val && val !== 0) return '';
+            if (typeof val === 'number') {
+                const d = new Date(Math.round((val - 25569) * 86400 * 1000));
+                if (isNaN(d.getTime())) return '';
+                return `${d.getUTCMonth()+1}/${d.getUTCDate()}/${d.getUTCFullYear()}`;
+            }
+            const str = String(val).trim();
+            if (!str) return '';
+            if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(str)) return str;
+            const dash = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
+            if (dash) return `${parseInt(dash[2])}/${parseInt(dash[3])}/${dash[1]}`;
+            const d = new Date(str);
+            if (!isNaN(d.getTime())) return `${d.getMonth()+1}/${d.getDate()}/${d.getFullYear()}`;
+            return str;
         }
 
         // Convert various date formats to YYYY-MM-DD for date inputs
@@ -980,7 +998,7 @@
                 const exportData = policies.map(p => {
                     const row = {};
                     FIELDS.forEach(f => {
-                        row[f] = DATE_FIELDS.has(f) ? (toDateInputVal(p[f]) || '') : (p[f] || '');
+                        row[f] = DATE_FIELDS.has(f) ? (formatDateUS(p[f]) || '') : (p[f] || '');
                     });
                     return row;
                 });

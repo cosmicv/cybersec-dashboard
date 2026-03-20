@@ -639,6 +639,20 @@
         let operations = [];
         let editingIndex = -1; // -1 means adding new, >= 0 means editing existing
 
+        function formatDateUS(val) {
+            if (!val && val !== 0) return '';
+            const str = String(val).trim();
+            if (!str) return '';
+            // Already MM/DD/YYYY
+            if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(str)) return str;
+            // YYYY-MM-DD (optionally with time)
+            const dash = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
+            if (dash) return `${parseInt(dash[2])}/${parseInt(dash[3])}/${dash[1]}`;
+            const d = new Date(str);
+            if (!isNaN(d.getTime())) return `${d.getMonth()+1}/${d.getDate()}/${d.getFullYear()}`;
+            return str;
+        }
+
         function formatDateForStorage(date) {
             const year = date.getFullYear();
             const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -770,7 +784,7 @@
             window.addEventListener('message', (e) => {
                 if (e.data && e.data.type === 'getDataForExport') {
                     const exportData = operations.map(op => ({
-                        Date: op.date || '',
+                        Date: formatDateUS(op.date),
                         Task: op.task || '',
                         Category: op.category || 'General',
                         Priority: op.priority || 'Normal',
@@ -1008,11 +1022,7 @@
                 const [year, month, day] = dateStr.split('-');
                 const date = new Date(year, month - 1, day); // Create date in local timezone
                 
-                const formattedDate = date.toLocaleDateString('en-US', { 
-                    month: 'short', 
-                    day: 'numeric', 
-                    year: 'numeric' 
-                });
+                const formattedDate = formatDateUS(op.date);
                 
                 // Find the original index in operations array
                 const originalIndex = operations.indexOf(op);

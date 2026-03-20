@@ -680,6 +680,18 @@
         let statusChartInstance = null;
 
         // ==================== SEVERITY CALC ====================
+        function formatDateUS(val) {
+            if (!val) return '';
+            const str = String(val).trim();
+            if (!str) return '';
+            if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(str)) return str;
+            const dash = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
+            if (dash) return `${parseInt(dash[2])}/${parseInt(dash[3])}/${dash[1]}`;
+            const d = new Date(str);
+            if (!isNaN(d.getTime())) return `${d.getMonth()+1}/${d.getDate()}/${d.getFullYear()}`;
+            return str;
+        }
+
         function calcSeverity(prob, impact) {
             const score = prob * impact;
             if (score >= 70) return { label: 'Critical', score };
@@ -1070,8 +1082,8 @@
 
                     ${fieldHtml('Mitigation Plan', r.mitigation)}
                     ${fieldHtml('Notes', r.notes)}
-                    ${fieldHtml('Date Created', r.dateCreated)}
-                    ${fieldHtml('Last Modified', r.dateModified)}
+                    ${fieldHtml('Date Created', formatDateUS(r.dateCreated))}
+                    ${fieldHtml('Last Modified', formatDateUS(r.dateModified))}
                 </div>`;
 
             document.getElementById('detailModal').classList.add('active');
@@ -1202,7 +1214,7 @@
                     r.probability, r.impact, sev.score, esc(sev.label),
                     probAfter, impactAfter, sevAfter.score, esc(sevAfter.label),
                     esc(r.status), esc(r.owner), esc(r.mitigation), esc(r.notes),
-                    esc(r.dateCreated), esc(r.dateModified)
+                    esc(formatDateUS(r.dateCreated)), esc(formatDateUS(r.dateModified))
                 ].join(',') + '\r\n';
             });
 
@@ -1411,8 +1423,8 @@
                         'Owner': r.owner || '',
                         'Mitigation Plan': r.mitigation || '',
                         'Notes': r.notes || '',
-                        'Date Created': r.dateCreated || '',
-                        'Date Modified': r.dateModified || ''
+                        'Date Created': formatDateUS(r.dateCreated) || '',
+                        'Date Modified': formatDateUS(r.dateModified) || ''
                     };
                 });
                 event.source.postMessage({
