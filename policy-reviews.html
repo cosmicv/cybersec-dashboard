@@ -588,7 +588,7 @@
             const nextReview = policy['Next Review'];
             if (!nextReview) return policy['Status'] || 'Draft';
 
-            const next = new Date(nextReview);
+            const next = new Date(toDateInputVal(nextReview));
             const today = new Date();
             today.setHours(0, 0, 0, 0);
 
@@ -773,6 +773,8 @@
                     const val = p[col] || '';
                     if (col === 'Status') {
                         html += `<td><span class="badge badge-${statusClass}">${esc(val)}</span></td>`;
+                    } else if (col === 'Last Reviewed' || col === 'Next Review' || col === 'Effective Date') {
+                        html += `<td>${esc(toDateInputVal(val))}</td>`;
                     } else if (col === 'Review Frequency') {
                         const freqClass = val === 'BiAnnual' ? 'biannual' : 'annual';
                         html += `<td><span class="badge badge-${freqClass}">${esc(val)}</span></td>`;

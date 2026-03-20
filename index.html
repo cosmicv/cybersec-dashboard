@@ -5,6 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CyberSec Operations Dashboard</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+    /* Clear all module data before any iframes start loading */
+    (function(){
+        var keys = ['riskRegisterData','riskRegisterPeople','notesEditorContent','cybersec_notes_pad'];
+        keys.forEach(function(k){ localStorage.removeItem(k); });
+    })();
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script>
 /* Inline XLSX reader - no CDN required. Uses browser DecompressionStream. */
@@ -58,9 +65,18 @@ const XLSX = (() => {
       for (const cm of rm[2].matchAll(/<c\b r="([A-Z]+)\d+"([^>]*)>([\s\S]*?)<\/c>/g)) {
         const col=colToIdx(cm[1]);
         const t=(cm[2].match(/\bt="([^"]+)"/)??[])[1]??'';
-        const v=(cm[3].match(/<v>([^<]*)<\/v>/)??[])[1];
-        if(v===undefined) continue;
-        rows[rn][col] = t==='s'?(ss[+v]??defval) : t==='str'?v : (isNaN(parseFloat(v))?v:parseFloat(v));
+        let v;
+        if (t === 'inlineStr') {
+          // openpyxl saves strings as inlineStr: value lives in <is><t>...</t></is>, not <v>
+          const isMatch = cm[3].match(/<is>([\s\S]*?)<\/is>/);
+          if (!isMatch) continue;
+          v = [...isMatch[1].matchAll(/<t(?:\s[^>]*)?>([^<]*)<\/t>/g)].map(m=>m[1]).join('');
+          v = v.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"');
+        } else {
+          v = (cm[3].match(/<v>([^<]*)<\/v>/)??[])[1];
+          if (v === undefined) continue;
+        }
+        rows[rn][col] = t==='s'?(ss[+v]??defval) : (t==='str'||t==='inlineStr')?v : (isNaN(parseFloat(v))?v:parseFloat(v));
       }
     }
     const nums=Object.keys(rows).map(Number).sort((a,b)=>a-b);
@@ -1002,6 +1018,20 @@ function _buildZip(files) {
             setStatus(`Cleared data from ${cleared} module(s).`);
             alert('All module data has been cleared.');
         }
+
+        // ========== Auto-clear on page load ==========
+        // localStorage already wiped in <head> before iframes parsed.
+        // Send clearAllData postMessage to each iframe after it loads
+        // to reset any in-memory state (calendar events, etc.)
+        document.addEventListener('DOMContentLoaded', () => {
+            Object.values(MODULE_CONFIG).forEach(cfg => {
+                const iframe = document.getElementById(cfg.iframe);
+                if (!iframe) return;
+                iframe.addEventListener('load', () => {
+                    iframe.contentWindow.postMessage({ type: 'clearAllData' }, '*');
+                }, { once: true });
+            });
+        });
     </script>
 </body>
 </html>

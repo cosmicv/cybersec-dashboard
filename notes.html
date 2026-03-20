@@ -335,7 +335,8 @@
 
         // ========== Init ==========
         document.addEventListener('DOMContentLoaded', function() {
-            loadContent();
+            // Do not restore saved content on load — start each session fresh.
+            // (loadContent() intentionally omitted)
             editor.addEventListener('input', onEditorChange);
             editor.addEventListener('keydown', handleKeyboard);
             updateCounts();
