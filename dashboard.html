@@ -333,8 +333,8 @@
                 return d && d < today;
             }).length;
 
-            const vendorsCurrent    = vendors.filter(v => (v['Current'] || '').trim() === 'Yes').length;
-            const vendorsNotCurrent = vendors.filter(v => (v['Current'] || '').trim() === 'No').length;
+            const vendorsCurrent    = vendors.filter(v => (v['Current'] || '').trim() === 'Current').length;
+            const vendorsNotCurrent = vendors.filter(v => (v['Current'] || '').trim() === 'Not Current').length;
 
             setKPI('kpi-open-risks',          openRisks);
             setKPI('kpi-policies-due',        policiesDue);

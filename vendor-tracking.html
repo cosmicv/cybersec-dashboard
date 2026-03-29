@@ -473,8 +473,8 @@
                 </select>
                 <select id="filterCurrent" onchange="renderTable()">
                     <option value="all">All Status</option>
-                    <option value="Yes">Current</option>
-                    <option value="No">Not Current</option>
+                    <option value="Current">Current</option>
+                    <option value="Not Current">Not Current</option>
                     <option value="N/A">N/A</option>
                 </select>
                 <select id="filterReview" onchange="renderTable()">
@@ -549,10 +549,10 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label>Current (Review Up To Date)</label>
-                        <input type="text" id="fCurrent" list="currentList" placeholder="Yes, No, or N/A">
+                        <input type="text" id="fCurrent" list="currentList" placeholder="Current, Not Current, or N/A">
                         <datalist id="currentList">
-                            <option value="Yes">
-                            <option value="No">
+                            <option value="Current">
+                            <option value="Not Current">
                             <option value="N/A">
                         </datalist>
                     </div>
@@ -845,8 +845,8 @@
 
         function renderStats() {
             const total = vendors.length;
-            const current = vendors.filter(v => v['Current'] === 'Yes').length;
-            const notCurrent = vendors.filter(v => v['Current'] === 'No').length;
+            const current = vendors.filter(v => v['Current'] === 'Current').length;
+            const notCurrent = vendors.filter(v => v['Current'] === 'Not Current').length;
             const highRisk = vendors.filter(v => v['Risk Rating'] === 'High' || v['Risk Rating'] === 'Critical').length;
             const noReview = vendors.filter(v => v['Current'] === 'N/A' || v['Information Security Review'] === 'No').length;
 
@@ -1010,7 +1010,7 @@
                     } else if (col === 'Information Classification') {
                         html += `<td><span class="badge badge-classification-${classification}">${val}</span></td>`;
                     } else if (col === 'Current') {
-                        const cls = currentVal === 'Yes' ? 'yes' : (currentVal === 'No' ? 'no' : 'na');
+                        const cls = currentVal === 'Current' ? 'yes' : (currentVal === 'Not Current' ? 'no' : 'na');
                         html += val ? `<td><span class="badge badge-current-${cls}">${val}</span></td>` : `<td></td>`;
                     } else if (col === 'Review Date') {
                         html += `<td>${escapeHtml(toDateInputVal(val))}</td>`;
@@ -1243,7 +1243,7 @@
                     // Fallback: compute Current from Review Date if formula cell had no cached value
                     if (!vendor['Current'] && vendor['Review Date']) {
                         const ts = parseFlexDate(vendor['Review Date']);
-                        if (ts) vendor['Current'] = ts >= Date.now() ? 'Yes' : 'No';
+                        if (ts) vendor['Current'] = ts >= Date.now() ? 'Current' : 'Not Current';
                     }
                     vendors.push(vendor);
                 });
