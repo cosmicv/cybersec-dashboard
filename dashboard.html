@@ -333,8 +333,18 @@
                 return d && d < today;
             }).length;
 
-            const vendorsCurrent    = vendors.filter(v => (v['Current'] || '').trim() === 'Current').length;
-            const vendorsNotCurrent = vendors.filter(v => (v['Current'] || '').trim() === 'Not Current').length;
+            // Normalize Current field: raw Excel may have Yes/No, empty (formula), or Current/Not Current
+            const resolveVendorCurrent = v => {
+                const raw = (v['Current'] || '').trim();
+                if (raw === 'Current' || raw === 'Yes') return 'Current';
+                if (raw === 'Not Current' || raw === 'No') return 'Not Current';
+                // Fallback: compute from Review Date
+                const ts = parseDate(v['Review Date']);
+                if (ts) return ts >= new Date() ? 'Current' : 'Not Current';
+                return '';
+            };
+            const vendorsCurrent    = vendors.filter(v => resolveVendorCurrent(v) === 'Current').length;
+            const vendorsNotCurrent = vendors.filter(v => resolveVendorCurrent(v) === 'Not Current').length;
 
             setKPI('kpi-open-risks',          openRisks);
             setKPI('kpi-policies-due',        policiesDue);
