@@ -1026,6 +1026,10 @@
                         const mapped = FIELD_MAP[key.toLowerCase().trim()];
                         if (mapped && !policy[mapped]) policy[mapped] = normalize(r[key]);
                     });
+                    // Fallback: recompute Status from Next Review date if formula cell had no cached value
+                    if (!policy['Status'] && policy['Next Review']) {
+                        policy['Status'] = calcStatus(policy);
+                    }
                     policies.push(policy);
                 });
                 populateFilters();

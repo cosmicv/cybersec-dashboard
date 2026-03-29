@@ -1240,6 +1240,11 @@
                         const mapped = exact || fuzzy;
                         if (mapped && !vendor[mapped]) vendor[mapped] = r[key];
                     });
+                    // Fallback: compute Current from Review Date if formula cell had no cached value
+                    if (!vendor['Current'] && vendor['Review Date']) {
+                        const ts = parseFlexDate(vendor['Review Date']);
+                        if (ts) vendor['Current'] = ts >= Date.now() ? 'Yes' : 'No';
+                    }
                     vendors.push(vendor);
                 });
                 populateFilters();
