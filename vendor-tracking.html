@@ -517,10 +517,6 @@
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Information Handled</label>
-                        <input type="text" id="fInformation" placeholder="e.g., Customer Financial">
-                    </div>
-                    <div class="form-group">
                         <label>Information Classification</label>
                         <input type="text" id="fClassification" list="classificationList" placeholder="e.g., Confidential, Private, Public">
                         <datalist id="classificationList">
@@ -590,16 +586,6 @@
                         <label>Administration Portal Link</label>
                         <input type="text" id="fAdminPortal" placeholder="https://...">
                     </div>
-                    <div class="form-group">
-                        <label>App Dependency</label>
-                        <input type="text" id="fAppDependency" list="dependencyList" placeholder="e.g., Yes - Integration, No">
-                        <datalist id="dependencyList">
-                            <option value="Yes - Integration">
-                            <option value="Yes - Hosting">
-                            <option value="Yes - Client Script">
-                            <option value="No">
-                        </datalist>
-                    </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
@@ -644,12 +630,11 @@
     <script>
         // ==================== DATA ====================
         const COLUMNS = [
-            'Vendor Name', 'Vendor Type', 'Business Purpose', 'SavvyFi Information',
+            'Vendor Name', 'Vendor Type', 'Business Purpose',
             'Information Classification', 'Risk Rating', 'Information Security Review',
             'Current', 'Notes', 'Contact Information', 'Review Date', 'Type Review',
             'Vendor Technical Contact', 'Responsible Team', 'Administration Portal Link',
-            'SavvyFi App Dependency', 'Integration Type', 'Administration Responsibilities',
-            'Administration Notes'
+            'Integration Type', 'Administration Responsibilities', 'Administration Notes'
         ];
 
         // Maps CSV header variations to our clean column names
@@ -657,8 +642,6 @@
             'vendor name': 'Vendor Name',
             'vendor type': 'Vendor Type',
             'business purpose': 'Business Purpose',
-            'savvyfi information': 'SavvyFi Information',
-            'savvyfi information ': 'SavvyFi Information',
             'information classification': 'Information Classification',
             'risk rating': 'Risk Rating',
             'risk rating\n1-4': 'Risk Rating',
@@ -672,8 +655,6 @@
             'responsible team': 'Responsible Team',
             'administration portal\nlink': 'Administration Portal Link',
             'administration portal link': 'Administration Portal Link',
-            'savvyfi app\ndependency': 'SavvyFi App Dependency',
-            'savvyfi app dependency': 'SavvyFi App Dependency',
             'integration type': 'Integration Type',
             'administration\nresponsibilities': 'Administration Responsibilities',
             'administration responsibilities': 'Administration Responsibilities',
@@ -833,12 +814,11 @@
 
             // Use the original CSV header names (with newlines in some headers)
             const csvHeaders = [
-                'Vendor Name', 'Vendor Type', 'Business Purpose', 'SavvyFi Information ',
-                'Information Classification', '"Risk Rating\n1-4"', 'Information Security Review',
+                'Vendor Name', 'Vendor Type', 'Business Purpose',
+                'Information Classification', 'Risk Rating', 'Information Security Review',
                 'Current', 'Notes', 'Contact Information', 'Review Date', 'Type Review',
-                'Vendor Technical Contact', 'Responsible Team', '"Administration Portal\nLink"',
-                '"SavvyFi App\nDependency"', 'Integration Type', '"Administration\nResponsibilities"',
-                'Administration Notes'
+                'Vendor Technical Contact', 'Responsible Team', 'Administration Portal Link',
+                'Integration Type', 'Administration Responsibilities', 'Administration Notes'
             ];
 
             let csv = csvHeaders.join(',') + '\r\n';
@@ -998,7 +978,7 @@
             const displayCols = [
                 'Vendor Name', 'Vendor Type', 'Information Classification', 'Risk Rating',
                 'Information Security Review', 'Current', 'Review Date', 'Type Review',
-                'Responsible Team', 'SavvyFi App Dependency', 'Notes'
+                'Responsible Team', 'Notes'
             ];
 
             const sortArrow = (col) => {
@@ -1103,7 +1083,6 @@
                 document.getElementById('fVendorName').value = v['Vendor Name'] || '';
                 document.getElementById('fVendorType').value = v['Vendor Type'] || '';
                 document.getElementById('fBusinessPurpose').value = v['Business Purpose'] || '';
-                document.getElementById('fInformation').value = v['SavvyFi Information'] || '';
                 document.getElementById('fClassification').value = v['Information Classification'] || '';
                 document.getElementById('fRiskRating').value = v['Risk Rating'] || 'High';
                 document.getElementById('fReviewFreq').value = v['Information Security Review'] || 'No';
@@ -1115,7 +1094,6 @@
                 document.getElementById('fTechContact').value = v['Vendor Technical Contact'] || '';
                 document.getElementById('fResponsibleTeam').value = v['Responsible Team'] || '';
                 document.getElementById('fAdminPortal').value = v['Administration Portal Link'] || '';
-                document.getElementById('fAppDependency').value = v['SavvyFi App Dependency'] || '';
                 document.getElementById('fIntegrationType').value = v['Integration Type'] || '';
                 document.getElementById('fAdminResp').value = v['Administration Responsibilities'] || '';
                 document.getElementById('fAdminNotes').value = v['Administration Notes'] || '';
@@ -1137,7 +1115,6 @@
                 'Vendor Name': document.getElementById('fVendorName').value,
                 'Vendor Type': document.getElementById('fVendorType').value,
                 'Business Purpose': document.getElementById('fBusinessPurpose').value,
-                'SavvyFi Information': document.getElementById('fInformation').value,
                 'Information Classification': document.getElementById('fClassification').value,
                 'Risk Rating': document.getElementById('fRiskRating').value,
                 'Information Security Review': document.getElementById('fReviewFreq').value,
@@ -1149,7 +1126,6 @@
                 'Vendor Technical Contact': document.getElementById('fTechContact').value,
                 'Responsible Team': document.getElementById('fResponsibleTeam').value,
                 'Administration Portal Link': document.getElementById('fAdminPortal').value,
-                'SavvyFi App Dependency': document.getElementById('fAppDependency').value,
                 'Integration Type': document.getElementById('fIntegrationType').value,
                 'Administration Responsibilities': document.getElementById('fAdminResp').value,
                 'Administration Notes': document.getElementById('fAdminNotes').value
