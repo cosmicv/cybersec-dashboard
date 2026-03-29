@@ -582,7 +582,10 @@ function _buildZip(files) {
         </div>
 
         <div class="tab-navigation">
-            <button class="tab-button active" onclick="switchTab('notes')">
+            <button class="tab-button active" onclick="switchTab('dashboard')">
+                &#x1F4CA; Dashboard
+            </button>
+            <button class="tab-button" onclick="switchTab('notes')">
                 &#x1F4DD; Notes
             </button>
             <button class="tab-button" onclick="switchTab('calendar')">
@@ -602,7 +605,13 @@ function _buildZip(files) {
             </button>
         </div>
 
-        <div id="notes-tab" class="tab-content active">
+        <div id="dashboard-tab" class="tab-content active">
+            <div class="iframe-container">
+                <iframe id="dashboard-iframe" src="dashboard.html"></iframe>
+            </div>
+        </div>
+
+        <div id="notes-tab" class="tab-content">
             <div class="iframe-container">
                 <iframe id="notes-iframe" src="notes.html"></iframe>
             </div>
@@ -805,7 +814,7 @@ function _buildZip(files) {
             if (tabEl) tabEl.classList.add('active');
 
             const buttons = document.querySelectorAll('.tab-button');
-            const tabIndex = { notes: 0, calendar: 1, risks: 2, vendors: 3, policies: 4, info: 5 };
+            const tabIndex = { dashboard: 0, notes: 1, calendar: 2, risks: 3, vendors: 4, policies: 5, info: 6 };
             if (buttons[tabIndex[tabName]]) {
                 buttons[tabIndex[tabName]].classList.add('active');
             }

@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #f0f2f5;
+            color: #333;
+            padding: 24px;
+        }
+
+        h2 {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1a1a2e;
+            margin-bottom: 20px;
+        }
+
+        /* KPI Cards */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+
+        .kpi-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            border-left: 4px solid #667eea;
+        }
+
+        .kpi-card.red    { border-left-color: #dc3545; }
+        .kpi-card.yellow { border-left-color: #ffc107; }
+        .kpi-card.green  { border-left-color: #28a745; }
+        .kpi-card.blue   { border-left-color: #667eea; }
+
+        .kpi-label {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #6c757d;
+            margin-bottom: 8px;
+        }
+
+        .kpi-value {
+            font-size: 36px;
+            font-weight: 700;
+            color: #1a1a2e;
+            line-height: 1;
+        }
+
+        .kpi-sub {
+            font-size: 12px;
+            color: #6c757d;
+            margin-top: 6px;
+        }
+
+        /* Charts grid */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+            gap: 20px;
+        }
+
+        .chart-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+
+        .chart-card h3 {
+            font-size: 14px;
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 16px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .chart-wrapper {
+            position: relative;
+            height: 220px;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>Security Operations Overview</h2>
+
+    <!-- KPI Cards -->
+    <div class="kpi-grid">
+        <div class="kpi-card red">
+            <div class="kpi-label">Open Risks</div>
+            <div class="kpi-value" id="kpi-open-risks">--</div>
+            <div class="kpi-sub">Requiring attention</div>
+        </div>
+        <div class="kpi-card yellow">
+            <div class="kpi-label">Policies Due</div>
+            <div class="kpi-value" id="kpi-policies-due">--</div>
+            <div class="kpi-sub">Within 30 days</div>
+        </div>
+        <div class="kpi-card blue">
+            <div class="kpi-label">Total Vendors</div>
+            <div class="kpi-value" id="kpi-vendors">--</div>
+            <div class="kpi-sub">Tracked</div>
+        </div>
+        <div class="kpi-card green">
+            <div class="kpi-label">Compliant Policies</div>
+            <div class="kpi-value" id="kpi-compliant">--</div>
+            <div class="kpi-sub">Up to date</div>
+        </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="charts-grid">
+        <div class="chart-card">
+            <h3>Risk by Severity</h3>
+            <div class="chart-wrapper">
+                <canvas id="riskSeverityChart"></canvas>
+            </div>
+        </div>
+
+        <div class="chart-card">
+            <h3>Policy Review Status</h3>
+            <div class="chart-wrapper">
+                <canvas id="policyStatusChart"></canvas>
+            </div>
+        </div>
+
+        <div class="chart-card">
+            <h3>Vendor Risk Tier</h3>
+            <div class="chart-wrapper">
+                <canvas id="vendorRiskChart"></canvas>
+            </div>
+        </div>
+
+        <div class="chart-card">
+            <h3>Risk Status Breakdown</h3>
+            <div class="chart-wrapper">
+                <canvas id="riskStatusChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ── Chart defaults ─────────────────────────────────────────
+        Chart.defaults.font.family = "'Inter', sans-serif";
+        Chart.defaults.plugins.legend.position = 'bottom';
+
+        const COLORS = {
+            red:    '#dc3545',
+            orange: '#fd7e14',
+            yellow: '#ffc107',
+            green:  '#28a745',
+            blue:   '#667eea',
+            teal:   '#20c997',
+            gray:   '#adb5bd',
+        };
+
+        // ── Placeholder charts (replace data when wired to modules) ─
+        const riskSeverityChart = new Chart(
+            document.getElementById('riskSeverityChart'),
+            {
+                type: 'bar',
+                data: {
+                    labels: ['Critical', 'High', 'Medium', 'Low'],
+                    datasets: [{
+                        label: 'Risks',
+                        data: [0, 0, 0, 0],
+                        backgroundColor: [COLORS.red, COLORS.orange, COLORS.yellow, COLORS.green],
+                        borderRadius: 4,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+                }
+            }
+        );
+
+        const policyStatusChart = new Chart(
+            document.getElementById('policyStatusChart'),
+            {
+                type: 'doughnut',
+                data: {
+                    labels: ['Current', 'Due Soon', 'Overdue'],
+                    datasets: [{
+                        data: [0, 0, 0],
+                        backgroundColor: [COLORS.green, COLORS.yellow, COLORS.red],
+                        borderWidth: 2,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom' } }
+                }
+            }
+        );
+
+        const vendorRiskChart = new Chart(
+            document.getElementById('vendorRiskChart'),
+            {
+                type: 'doughnut',
+                data: {
+                    labels: ['High', 'Medium', 'Low'],
+                    datasets: [{
+                        data: [0, 0, 0],
+                        backgroundColor: [COLORS.red, COLORS.yellow, COLORS.green],
+                        borderWidth: 2,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom' } }
+                }
+            }
+        );
+
+        const riskStatusChart = new Chart(
+            document.getElementById('riskStatusChart'),
+            {
+                type: 'bar',
+                data: {
+                    labels: ['Open', 'In Progress', 'Mitigated', 'Accepted', 'Closed'],
+                    datasets: [{
+                        label: 'Risks',
+                        data: [0, 0, 0, 0, 0],
+                        backgroundColor: [COLORS.red, COLORS.blue, COLORS.teal, COLORS.gray, COLORS.green],
+                        borderRadius: 4,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+                }
+            }
+        );
+
+        // ── Listen for data pushed from parent (index.html) ─────────
+        window.addEventListener('message', function(e) {
+            const { type, data } = e.data || {};
+            if (type === 'dashboardData') updateDashboard(data);
+        });
+
+        function updateDashboard(data) {
+            if (!data) return;
+
+            const risks    = data.risks    || [];
+            const policies = data.policies || [];
+            const vendors  = data.vendors  || [];
+
+            // ── KPIs ──
+            const openRisks = risks.filter(r => {
+                const s = (r['Status'] || r['Risk Status'] || '').toLowerCase();
+                return s === 'open' || s === 'in progress';
+            }).length;
+
+            const today = new Date();
+            const in30  = new Date(today); in30.setDate(today.getDate() + 30);
+
+            const policiesDue = policies.filter(p => {
+                const d = parseDate(p['Next Review Date'] || p['Review Date'] || '');
+                return d && d >= today && d <= in30;
+            }).length;
+
+            const compliantPolicies = policies.filter(p => {
+                const s = (p['Status'] || '').toLowerCase();
+                return s === 'current' || s === 'compliant' || s === 'approved';
+            }).length;
+
+            setKPI('kpi-open-risks',    openRisks);
+            setKPI('kpi-policies-due',  policiesDue);
+            setKPI('kpi-vendors',       vendors.length);
+            setKPI('kpi-compliant',     compliantPolicies);
+
+            // ── Risk Severity chart ──
+            const sevCounts = { Critical: 0, High: 0, Medium: 0, Low: 0 };
+            risks.forEach(r => {
+                const sev = capitalize(r['Severity'] || r['Risk Level'] || '');
+                if (sev in sevCounts) sevCounts[sev]++;
+            });
+            riskSeverityChart.data.datasets[0].data = Object.values(sevCounts);
+            riskSeverityChart.update();
+
+            // ── Policy Status chart ──
+            const polCounts = { Current: 0, 'Due Soon': 0, Overdue: 0 };
+            policies.forEach(p => {
+                const d = parseDate(p['Next Review Date'] || p['Review Date'] || '');
+                if (!d) return;
+                if (d < today)       polCounts['Overdue']++;
+                else if (d <= in30)  polCounts['Due Soon']++;
+                else                 polCounts['Current']++;
+            });
+            policyStatusChart.data.datasets[0].data = Object.values(polCounts);
+            policyStatusChart.update();
+
+            // ── Vendor Risk Tier chart ──
+            const venCounts = { High: 0, Medium: 0, Low: 0 };
+            vendors.forEach(v => {
+                const tier = capitalize(v['Risk Tier'] || v['Risk Level'] || v['Tier'] || '');
+                if (tier in venCounts) venCounts[tier]++;
+            });
+            vendorRiskChart.data.datasets[0].data = Object.values(venCounts);
+            vendorRiskChart.update();
+
+            // ── Risk Status chart ──
+            const stCounts = { Open: 0, 'In Progress': 0, Mitigated: 0, Accepted: 0, Closed: 0 };
+            risks.forEach(r => {
+                const st = (r['Status'] || r['Risk Status'] || '').trim();
+                if (st in stCounts) stCounts[st]++;
+            });
+            riskStatusChart.data.datasets[0].data = Object.values(stCounts);
+            riskStatusChart.update();
+        }
+
+        function setKPI(id, val) {
+            const el = document.getElementById(id);
+            if (el) el.textContent = val;
+        }
+
+        function capitalize(s) {
+            return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : '';
+        }
+
+        function parseDate(s) {
+            if (!s) return null;
+            const d = new Date(s);
+            return isNaN(d) ? null : d;
+        }
+    </script>
+</body>
+</html>
