@@ -96,7 +96,10 @@
 </head>
 <body>
 
-    <h2>Security Operations Overview</h2>
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
+        <h2 style="margin-bottom:0;">Security Operations Overview</h2>
+        <button id="refreshBtn" onclick="requestRefresh()" style="padding:8px 18px;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;background:#667eea;color:white;">&#x21BB; Refresh</button>
+    </div>
 
     <!-- KPI Cards -->
     <div class="kpi-grid">
@@ -216,10 +219,10 @@
             {
                 type: 'doughnut',
                 data: {
-                    labels: ['High', 'Medium', 'Low'],
+                    labels: ['Critical', 'High', 'Medium', 'Low'],
                     datasets: [{
-                        data: [0, 0, 0],
-                        backgroundColor: [COLORS.red, COLORS.yellow, COLORS.green],
+                        data: [0, 0, 0, 0],
+                        backgroundColor: [COLORS.red, COLORS.orange, COLORS.yellow, COLORS.green],
                         borderWidth: 2,
                     }]
                 },
@@ -254,10 +257,27 @@
         );
 
         // ── Listen for data pushed from parent (index.html) ─────────
+        let lastData = null;
+
         window.addEventListener('message', function(e) {
             const { type, data } = e.data || {};
-            if (type === 'dashboardData') updateDashboard(data);
+            if (type === 'dashboardData') {
+                lastData = data;
+                updateDashboard(data);
+            }
+            if (type === 'refreshResponse') {
+                lastData = data;
+                updateDashboard(data);
+            }
         });
+
+        function requestRefresh() {
+            if (lastData) {
+                updateDashboard(lastData);
+            } else {
+                window.parent.postMessage({ type: 'requestDashboardData' }, '*');
+            }
+        }
 
         function updateDashboard(data) {
             if (!data) return;
@@ -312,9 +332,11 @@
             policyStatusChart.update();
 
             // ── Vendor Risk Tier chart ──
-            const venCounts = { High: 0, Medium: 0, Low: 0 };
+            const venCounts = { Critical: 0, High: 0, Medium: 0, Low: 0 };
             vendors.forEach(v => {
-                const tier = capitalize(v['Risk Rating'] || '');
+                // Excel column header may include newline/suffix variants
+                const raw = v['Risk Rating'] || v['Risk Rating\n1-4'] || v['Risk Rating 1-4'] || '';
+                const tier = capitalize(raw);
                 if (tier in venCounts) venCounts[tier]++;
             });
             vendorRiskChart.data.datasets[0].data = Object.values(venCounts);

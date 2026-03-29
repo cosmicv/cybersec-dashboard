@@ -983,6 +983,7 @@ function _buildZip(files) {
                         if (dashKey) dashboardData[dashKey] = rows;
                     });
 
+                    _lastDashboardData = dashboardData;
                     const dashIframe = document.getElementById('dashboard-iframe');
                     if (dashIframe && dashIframe.contentWindow) {
                         dashIframe.contentWindow.postMessage({ type: 'dashboardData', data: dashboardData }, '*');
@@ -1055,6 +1056,19 @@ function _buildZip(files) {
                     iframe.contentWindow.postMessage({ type: 'clearAllData' }, '*');
                 }, { once: true });
             });
+        });
+
+        // ========== Dashboard Refresh ==========
+        // Store last imported raw data so the dashboard refresh button can re-use it
+        let _lastDashboardData = null;
+
+        window.addEventListener('message', function(e) {
+            if (e.data && e.data.type === 'requestDashboardData') {
+                const dashIframe = document.getElementById('dashboard-iframe');
+                if (dashIframe && dashIframe.contentWindow && _lastDashboardData) {
+                    dashIframe.contentWindow.postMessage({ type: 'refreshResponse', data: _lastDashboardData }, '*');
+                }
+            }
         });
     </script>
 </body>
