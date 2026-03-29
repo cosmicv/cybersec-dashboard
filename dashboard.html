@@ -98,7 +98,10 @@
 
     <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
         <h2 style="margin-bottom:0;">Security Operations Overview</h2>
-        <button id="refreshBtn" onclick="requestRefresh()" style="padding:8px 18px;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;background:#667eea;color:white;">&#x21BB; Refresh</button>
+        <div style="display:flex; align-items:center; gap:12px;">
+            <span id="lastRefresh" style="font-size:12px;color:#6c757d;font-style:italic;"></span>
+            <button id="refreshBtn" onclick="requestRefresh()" style="padding:8px 18px;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;background:#667eea;color:white;">&#x21BB; Refresh</button>
+        </div>
     </div>
 
     <!-- KPI Cards -->
@@ -282,6 +285,11 @@
         function updateDashboard(data) {
             if (!data) return;
 
+            const now = new Date();
+            const ts = now.toLocaleDateString() + ' ' + now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+            const el = document.getElementById('lastRefresh');
+            if (el) el.textContent = 'Last updated: ' + ts;
+
             const risks    = data.risks    || [];
             const policies = data.policies || [];
             const vendors  = data.vendors  || [];
@@ -334,9 +342,9 @@
             // ── Vendor Risk Tier chart ──
             const venCounts = { Critical: 0, High: 0, Medium: 0, Low: 0 };
             vendors.forEach(v => {
-                // Excel column header may include newline/suffix variants
-                const raw = v['Risk Rating'] || v['Risk Rating\n1-4'] || v['Risk Rating 1-4'] || '';
-                const tier = capitalize(raw);
+                // Fuzzy key match — find whichever key contains "risk rating"
+                const key = Object.keys(v).find(k => k.toLowerCase().replace(/[^a-z ]/g, '').trim() === 'risk rating');
+                const tier = capitalize(key ? String(v[key]) : '');
                 if (tier in venCounts) venCounts[tier]++;
             });
             vendorRiskChart.data.datasets[0].data = Object.values(venCounts);
