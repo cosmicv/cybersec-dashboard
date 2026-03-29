@@ -1011,7 +1011,7 @@
                         html += `<td><span class="badge badge-classification-${classification}">${val}</span></td>`;
                     } else if (col === 'Current') {
                         const cls = currentVal === 'Yes' ? 'yes' : (currentVal === 'No' ? 'no' : 'na');
-                        html += `<td><span class="badge badge-current-${cls}">${val || 'N/A'}</span></td>`;
+                        html += val ? `<td><span class="badge badge-current-${cls}">${val}</span></td>` : `<td></td>`;
                     } else if (col === 'Review Date') {
                         html += `<td>${escapeHtml(toDateInputVal(val))}</td>`;
                     } else if (col === 'Notes') {

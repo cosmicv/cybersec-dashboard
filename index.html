@@ -74,7 +74,8 @@ const XLSX = (() => {
           v = v.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"');
         } else {
           v = (cm[3].match(/<v>([^<]*)<\/v>/)??[])[1];
-          if (v === undefined) continue;
+          // Formula cells with no cached value: skip (leave as defval via headers)
+          if (v === undefined) { rows[rn][col] = defval; continue; }
         }
         rows[rn][col] = t==='e'?defval : t==='s'?(ss[+v]??defval) : (t==='str'||t==='inlineStr')?v : (isNaN(parseFloat(v))?v:parseFloat(v));
       }
