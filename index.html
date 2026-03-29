@@ -76,7 +76,7 @@ const XLSX = (() => {
           v = (cm[3].match(/<v>([^<]*)<\/v>/)??[])[1];
           if (v === undefined) continue;
         }
-        rows[rn][col] = t==='s'?(ss[+v]??defval) : (t==='str'||t==='inlineStr')?v : (isNaN(parseFloat(v))?v:parseFloat(v));
+        rows[rn][col] = t==='e'?defval : t==='s'?(ss[+v]??defval) : (t==='str'||t==='inlineStr')?v : (isNaN(parseFloat(v))?v:parseFloat(v));
       }
     }
     const nums=Object.keys(rows).map(Number).sort((a,b)=>a-b);
