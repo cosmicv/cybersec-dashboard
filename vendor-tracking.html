@@ -1246,14 +1246,22 @@
             if (e.data && e.data.type === 'importDataFromWorkbook' && e.data.module === 'vendors') {
                 const rows = e.data.data || [];
                 if (rows.length === 0) return;
+
+                // Build a fuzzy lookup: strip all non-alpha/space chars, lowercase
+                function fuzzyKey(s) { return String(s).toLowerCase().replace(/[^a-z ]/g, '').trim(); }
+                const fuzzyHeaderMap = {};
+                Object.keys(HEADER_MAP).forEach(k => { fuzzyHeaderMap[fuzzyKey(k)] = HEADER_MAP[k]; });
+
                 rows.forEach(r => {
                     const vendor = {};
                     COLUMNS.forEach(col => {
                         vendor[col] = r[col] || '';
                     });
-                    // Also try mapped headers
+                    // Try exact HEADER_MAP match, then fuzzy match
                     Object.keys(r).forEach(key => {
-                        const mapped = HEADER_MAP[key.toLowerCase().trim()];
+                        const exact  = HEADER_MAP[key.toLowerCase().trim()];
+                        const fuzzy  = fuzzyHeaderMap[fuzzyKey(key)];
+                        const mapped = exact || fuzzy;
                         if (mapped && !vendor[mapped]) vendor[mapped] = r[key];
                     });
                     vendors.push(vendor);

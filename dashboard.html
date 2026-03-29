@@ -342,9 +342,10 @@
             // ── Vendor Risk Tier chart ──
             const venCounts = { Critical: 0, High: 0, Medium: 0, Low: 0 };
             vendors.forEach(v => {
-                // Fuzzy key match — find whichever key contains "risk rating"
-                const key = Object.keys(v).find(k => k.toLowerCase().replace(/[^a-z ]/g, '').trim() === 'risk rating');
-                const tier = capitalize(key ? String(v[key]) : '');
+                // Prefer clean 'Risk Rating' key; fall back to fuzzy match
+                const raw = v['Risk Rating'] ||
+                    (Object.entries(v).find(([k]) => k.toLowerCase().replace(/[^a-z ]/g, '').trim() === 'risk rating') || [])[1] || '';
+                const tier = capitalize(String(raw));
                 if (tier in venCounts) venCounts[tier]++;
             });
             vendorRiskChart.data.datasets[0].data = Object.values(venCounts);
