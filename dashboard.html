@@ -126,6 +126,11 @@
             <div class="kpi-value" id="kpi-compliant">--</div>
             <div class="kpi-sub">Up to date</div>
         </div>
+        <div class="kpi-card red">
+            <div class="kpi-label">Overdue Policies</div>
+            <div class="kpi-value" id="kpi-overdue-policies">--</div>
+            <div class="kpi-sub">Past review date</div>
+        </div>
     </div>
 
     <!-- Charts -->
@@ -313,10 +318,16 @@
                 return s === 'current' || s === 'compliant' || s === 'approved';
             }).length;
 
-            setKPI('kpi-open-risks',    openRisks);
-            setKPI('kpi-policies-due',  policiesDue);
-            setKPI('kpi-vendors',       vendors.length);
-            setKPI('kpi-compliant',     compliantPolicies);
+            const overduePolicies = policies.filter(p => {
+                const d = parseDate(p['Next Review']);
+                return d && d < today;
+            }).length;
+
+            setKPI('kpi-open-risks',       openRisks);
+            setKPI('kpi-policies-due',     policiesDue);
+            setKPI('kpi-vendors',          vendors.length);
+            setKPI('kpi-compliant',        compliantPolicies);
+            setKPI('kpi-overdue-policies', overduePolicies);
 
             // ── Risk Severity chart ──
             const sevCounts = { Critical: 0, High: 0, Medium: 0, Low: 0 };
