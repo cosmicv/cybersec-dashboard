@@ -952,6 +952,13 @@ function _buildZip(files) {
                     let pending = 0;
                     const sheetsFound = [];
 
+                    const dashboardData = { risks: [], vendors: [], policies: [] };
+                    const dashboardSheetMap = {
+                        'Risk Register': 'risks',
+                        'Vendors': 'vendors',
+                        'Policy Reviews': 'policies'
+                    };
+
                     wb.SheetNames.forEach(sheetName => {
                         const mod = sheetToModule[sheetName];
                         if (!mod) return;
@@ -971,7 +978,15 @@ function _buildZip(files) {
                             }, '*');
                             importedCount += rows.length;
                         }
+
+                        const dashKey = dashboardSheetMap[sheetName];
+                        if (dashKey) dashboardData[dashKey] = rows;
                     });
+
+                    const dashIframe = document.getElementById('dashboard-iframe');
+                    if (dashIframe && dashIframe.contentWindow) {
+                        dashIframe.contentWindow.postMessage({ type: 'dashboardData', data: dashboardData }, '*');
+                    }
 
                     let confirmed = 0;
                     function onImportComplete(evt) {
