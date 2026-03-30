@@ -339,8 +339,48 @@
             // (loadContent() intentionally omitted)
             editor.addEventListener('input', onEditorChange);
             editor.addEventListener('keydown', handleKeyboard);
+            editor.addEventListener('paste', handlePaste);
             updateCounts();
         });
+
+        // ========== Paste Handler ==========
+        function handlePaste(e) {
+            e.preventDefault();
+            const cd = e.clipboardData;
+            let html = cd.getData('text/html');
+            if (html) {
+                // Sanitize: keep structure, strip inline styles/classes/scripts
+                const tmp = document.createElement('div');
+                tmp.innerHTML = html;
+                // Remove script/style elements
+                tmp.querySelectorAll('script,style,meta,link').forEach(el => el.remove());
+                // Strip all style/class/id attributes
+                tmp.querySelectorAll('*').forEach(el => {
+                    el.removeAttribute('style');
+                    el.removeAttribute('class');
+                    el.removeAttribute('id');
+                    el.removeAttribute('lang');
+                    el.removeAttribute('dir');
+                });
+                // Remove spans that are now empty wrappers
+                tmp.querySelectorAll('span').forEach(span => {
+                    const parent = span.parentNode;
+                    while (span.firstChild) parent.insertBefore(span.firstChild, span);
+                    parent.removeChild(span);
+                });
+                document.execCommand('insertHTML', false, tmp.innerHTML);
+            } else {
+                // Plain text fallback — convert newlines to <br>
+                const text = cd.getData('text/plain') || '';
+                const escaped = text
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/\n/g, '<br>');
+                document.execCommand('insertHTML', false, escaped);
+            }
+            onEditorChange();
+        }
 
         // ========== Formatting Commands ==========
         function execCmd(cmd) {
@@ -466,27 +506,34 @@
         // ========== Workbook Integration (postMessage API) ==========
         window.addEventListener('message', function(event) {
             if (event.data && event.data.type === 'getDataForExport') {
-                const text = editor.innerText || '';
-                const exportData = [{ 'Notes Content': text }];
+                const exportData = [{
+                    'Notes Content': editor.innerText || '',
+                    'Notes HTML':    editor.innerHTML || ''
+                }];
                 event.source.postMessage({
                     type: 'exportData',
                     module: 'notes',
                     data: exportData,
-                    headers: ['Notes Content']
+                    headers: ['Notes Content', 'Notes HTML']
                 }, '*');
             }
             if (event.data && event.data.type === 'importDataFromWorkbook' && event.data.module === 'notes') {
                 const rows = event.data.data || [];
                 if (rows.length === 0) return;
-                const content = rows.map(r => {
-                    return r['Notes Content'] || r['notes content'] || r['Content'] || r['content'] || Object.values(r).join(' ');
-                }).join('\n\n');
-                if (content.trim()) {
-                    if (editor.innerHTML.trim()) {
-                        editor.innerHTML += '<hr><p>' + escapeHtml(content).replace(/\n/g, '<br>') + '</p>';
-                    } else {
-                        editor.innerHTML = '<p>' + escapeHtml(content).replace(/\n/g, '<br>') + '</p>';
-                    }
+                const row = rows[0];
+                // Prefer HTML column (preserves formatting); fall back to plain text
+                const html  = row['Notes HTML'] || row['notes html'] || '';
+                const plain = row['Notes Content'] || row['notes content'] || row['Content'] || row['content'] || Object.values(row).join(' ');
+                let incoming = '';
+                if (html.trim()) {
+                    incoming = html;
+                } else if (plain.trim()) {
+                    incoming = '<p>' + escapeHtml(plain).replace(/\n/g, '<br>') + '</p>';
+                }
+                if (incoming) {
+                    editor.innerHTML = editor.innerHTML.trim()
+                        ? editor.innerHTML + '<hr>' + incoming
+                        : incoming;
                     saveContent();
                     updateCounts();
                 }
