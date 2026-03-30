@@ -323,14 +323,20 @@
                 return d && d >= today && d <= in30;
             }).length;
 
+            // Compute compliant/overdue from Next Review date (same as chart),
+            // since raw Status field may be empty when Excel uses formula cells
             const compliantPolicies = policies.filter(p => {
+                const d = parseDate(p['Next Review']);
+                if (d) return d > in30;
                 const s = (p['Status'] || '').toLowerCase();
                 return s === 'current' || s === 'compliant' || s === 'approved';
             }).length;
 
             const overduePolicies = policies.filter(p => {
                 const d = parseDate(p['Next Review']);
-                return d && d < today;
+                if (d) return d < today;
+                const s = (p['Status'] || '').toLowerCase();
+                return s === 'overdue';
             }).length;
 
             // Normalize Current field: raw Excel may have Yes/No, empty (formula), or Current/Not Current
