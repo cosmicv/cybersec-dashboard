@@ -1111,11 +1111,12 @@ function _buildZip(files) {
                     let pending = 0;
                     const sheetsFound = [];
 
-                    const dashboardData = { risks: [], vendors: [], policies: [] };
+                    const dashboardData = { risks: [], vendors: [], policies: [], calendar: [] };
                     const dashboardSheetMap = {
                         'Risk Register': 'risks',
                         'Vendors': 'vendors',
-                        'Policy Reviews': 'policies'
+                        'Policy Reviews': 'policies',
+                        'Calendar': 'calendar'
                     };
 
                     // Read Config sheet if present
