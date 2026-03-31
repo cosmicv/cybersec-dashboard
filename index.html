@@ -578,6 +578,62 @@ function _buildZip(files) {
             color: #444;
         }
 
+        .manage-tabs-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+
+        .manage-tabs-dropdown {
+            display: none;
+            position: absolute;
+            top: calc(100% + 6px);
+            left: 0;
+            background: #fff;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+            padding: 10px 0;
+            min-width: 200px;
+            z-index: 1000;
+        }
+
+        .manage-tabs-dropdown.open {
+            display: block;
+        }
+
+        .manage-tabs-dropdown .dropdown-title {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #6c757d;
+            padding: 4px 14px 8px;
+            border-bottom: 1px solid #dee2e6;
+            margin-bottom: 4px;
+        }
+
+        .manage-tabs-dropdown label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 14px;
+            font-size: 13px;
+            color: #343a40;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .manage-tabs-dropdown label:hover {
+            background: #f8f9fa;
+        }
+
+        .manage-tabs-dropdown input[type="checkbox"] {
+            width: 15px;
+            height: 15px;
+            cursor: pointer;
+            accent-color: #667eea;
+        }
+
         @media (max-width: 768px) {
             .dashboard-header h1 {
                 font-size: 1.8em;
@@ -611,6 +667,17 @@ function _buildZip(files) {
             <label for="wbImportFile" style="padding:8px 18px;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;background:#28a745;color:white;">Import .xlsx</label>
             <input type="file" id="wbImportFile" accept=".xlsx,.xls" onchange="importWorkbook(event)" style="display:none;">
             <button onclick="clearAllData()" style="padding:8px 18px;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;background:#dc3545;color:white;transition:all 0.3s;">Clear All Data</button>
+            <div class="manage-tabs-wrapper">
+                <button onclick="toggleManageTabsDropdown()" style="padding:8px 18px;border:1px solid #ced4da;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;background:#fff;color:#495057;transition:all 0.3s;">&#x2699;&#xFE0F; Manage Tabs</button>
+                <div class="manage-tabs-dropdown" id="manageTabsDropdown">
+                    <div class="dropdown-title">Show / Hide Tabs</div>
+                    <label><input type="checkbox" id="tabToggle-notes" onchange="onTabToggle('notes', this.checked)" checked> &#x1F4DD; Notes</label>
+                    <label><input type="checkbox" id="tabToggle-calendar" onchange="onTabToggle('calendar', this.checked)" checked> &#x1F4C5; Operations Calendar</label>
+                    <label><input type="checkbox" id="tabToggle-risks" onchange="onTabToggle('risks', this.checked)" checked> &#x26A0;&#xFE0F; Risk Register</label>
+                    <label><input type="checkbox" id="tabToggle-vendors" onchange="onTabToggle('vendors', this.checked)" checked> &#x1F4CB; Vendor Tracking</label>
+                    <label><input type="checkbox" id="tabToggle-policies" onchange="onTabToggle('policies', this.checked)" checked> &#x1F4DC; Policy Reviews</label>
+                </div>
+            </div>
             <span id="wbStatus" style="margin-left:auto;font-size:13px;color:#6c757d;font-style:italic;">All module data in one Excel file</span>
         </div>
 
@@ -857,6 +924,49 @@ function _buildZip(files) {
             }
         }
 
+        // ========== Tab Visibility ==========
+        const TOGGLEABLE_TABS = ['notes', 'calendar', 'risks', 'vendors', 'policies'];
+
+        let tabConfig = { notes: true, calendar: true, risks: true, vendors: true, policies: true };
+
+        function applyTabConfig() {
+            TOGGLEABLE_TABS.forEach(tab => {
+                const visible = tabConfig[tab] !== false;
+                // Tab button
+                const btn = document.querySelector(`.tab-button[onclick="switchTab('${tab}')"]`);
+                if (btn) btn.style.display = visible ? '' : 'none';
+                // Tab content div
+                const div = document.getElementById(tab + '-tab');
+                if (div && !visible) {
+                    // If this hidden tab is currently active, switch to dashboard
+                    if (div.classList.contains('active')) switchTab('dashboard');
+                    div.style.display = 'none';
+                } else if (div) {
+                    div.style.display = '';
+                }
+                // Sync checkbox
+                const cb = document.getElementById('tabToggle-' + tab);
+                if (cb) cb.checked = visible;
+            });
+        }
+
+        function onTabToggle(tab, visible) {
+            tabConfig[tab] = visible;
+            applyTabConfig();
+        }
+
+        function toggleManageTabsDropdown() {
+            document.getElementById('manageTabsDropdown').classList.toggle('open');
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            const wrapper = document.querySelector('.manage-tabs-wrapper');
+            if (wrapper && !wrapper.contains(e.target)) {
+                document.getElementById('manageTabsDropdown').classList.remove('open');
+            }
+        });
+
         // ========== Workbook Export ==========
         const MODULE_CONFIG = {
             calendar: { iframe: 'calendar-iframe', sheetName: 'Calendar' },
@@ -949,6 +1059,13 @@ function _buildZip(files) {
                     }
                 });
 
+                // Write Config sheet
+                const tabLabels = { notes: 'Notes', calendar: 'Operations Calendar', risks: 'Risk Register', vendors: 'Vendor Tracking', policies: 'Policy Reviews' };
+                const configData = TOGGLEABLE_TABS.map(tab => ({ Setting: tabLabels[tab], Value: String(tabConfig[tab] !== false) }));
+                const configWs = XLSX.utils.json_to_sheet(configData, { header: ['Setting', 'Value'] });
+                configWs['!cols'] = [{ wch: 24 }, { wch: 8 }];
+                XLSX.utils.book_append_sheet(wb, configWs, 'Config');
+
                 const dateStr = new Date().toISOString().split('T')[0];
                 XLSX.writeFile(wb, `CyberSec_Dashboard_${dateStr}.xlsx`);
                 setStatus(`Exported ${totalRows} total rows across ${Object.keys(collected).length} sheets.`);
@@ -995,6 +1112,17 @@ function _buildZip(files) {
                         'Vendors': 'vendors',
                         'Policy Reviews': 'policies'
                     };
+
+                    // Read Config sheet if present
+                    if (wb.SheetNames.includes('Config')) {
+                        const configRows = XLSX.utils.sheet_to_json(wb.Sheets['Config'], { defval: '' });
+                        const tabLabels = { 'Notes': 'notes', 'Operations Calendar': 'calendar', 'Risk Register': 'risks', 'Vendor Tracking': 'vendors', 'Policy Reviews': 'policies' };
+                        configRows.forEach(row => {
+                            const tab = tabLabels[String(row['Setting']).trim()];
+                            if (tab) tabConfig[tab] = String(row['Value']).trim().toLowerCase() !== 'false';
+                        });
+                        applyTabConfig();
+                    }
 
                     wb.SheetNames.forEach(sheetName => {
                         const mod = sheetToModule[sheetName];
@@ -1076,6 +1204,10 @@ function _buildZip(files) {
             localStorage.removeItem('riskRegisterData');
             localStorage.removeItem('riskRegisterPeople');
             localStorage.removeItem('notesEditorContent');
+
+            // Reset tab visibility to all-visible
+            TOGGLEABLE_TABS.forEach(tab => { tabConfig[tab] = true; });
+            applyTabConfig();
 
             setStatus(`Cleared data from ${cleared} module(s).`);
             alert('All module data has been cleared.');
