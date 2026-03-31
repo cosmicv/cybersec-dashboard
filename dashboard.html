@@ -189,12 +189,6 @@
                 <canvas id="riskSeverityChart"></canvas>
             </div>
         </div>
-        <div id="chart-section-calendar" class="chart-card">
-            <h3>Calendar Task Status</h3>
-            <div class="chart-wrapper">
-                <canvas id="calendarTasksChart"></canvas>
-            </div>
-        </div>
     </div>
 
     <script>
@@ -297,26 +291,6 @@
             }
         );
 
-        const calendarTasksChart = new Chart(
-            document.getElementById('calendarTasksChart'),
-            {
-                type: 'doughnut',
-                data: {
-                    labels: ['Overdue', 'Due Soon', 'Scheduled'],
-                    datasets: [{
-                        data: [0, 0, 0],
-                        backgroundColor: [COLORS.red, COLORS.yellow, COLORS.blue],
-                        borderWidth: 2,
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { position: 'bottom' } }
-                }
-            }
-        );
-
         // ── Listen for data pushed from parent (index.html) ─────────
         let lastData = null;
 
@@ -349,7 +323,6 @@
             setVisible('chart-section-risks-status',   show('risks'));
             setVisible('chart-section-risks-severity', show('risks'));
             setVisible('kpi-section-calendar',      show('calendar'));
-            setVisible('chart-section-calendar',    show('calendar'));
         }
 
         function requestRefresh() {
@@ -467,9 +440,6 @@
             setKPI('kpi-cal-overdue',   calOverdue);
             setKPI('kpi-cal-soon',      calSoon);
             setKPI('kpi-cal-scheduled', calScheduled);
-
-            [calOverdue, calSoon, calScheduled].forEach((v, i) => { calendarTasksChart.data.datasets[0].data[i] = v; });
-            calendarTasksChart.update('none');
 
             // ── Risk Status chart ──
             const stCounts = { Open: 0, 'In Progress': 0, Mitigated: 0, Accepted: 0, Closed: 0 };
