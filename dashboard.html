@@ -392,8 +392,9 @@
                 const tier = capitalize(String(raw));
                 if (tier in venCounts) venCounts[tier]++;
             });
-            vendorRiskChart.data.datasets[0].data = Object.values(venCounts);
-            vendorRiskChart.update();
+            const venData = Object.values(venCounts);
+            venData.forEach((v, i) => { vendorRiskChart.data.datasets[0].data[i] = v; });
+            vendorRiskChart.update('none');
 
             // ── Risk Status chart ──
             const stCounts = { Open: 0, 'In Progress': 0, Mitigated: 0, Accepted: 0, Closed: 0 };
