@@ -353,11 +353,7 @@
         }
 
         function requestRefresh() {
-            if (lastData) {
-                updateDashboard(lastData);
-            } else {
-                window.parent.postMessage({ type: 'requestDashboardData' }, '*');
-            }
+            window.parent.postMessage({ type: 'requestDashboardData' }, '*');
         }
 
         function updateDashboard(data) {

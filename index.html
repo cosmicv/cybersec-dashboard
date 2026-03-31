@@ -1159,6 +1159,10 @@ function _buildZip(files) {
                     if (dashIframe && dashIframe.contentWindow) {
                         dashIframe.contentWindow.postMessage({ type: 'dashboardData', data: dashboardData }, '*');
                     }
+                    // Also push tab visibility so dashboard reflects current config after import
+                    if (dashIframe && dashIframe.contentWindow) {
+                        dashIframe.contentWindow.postMessage({ type: 'tabVisibility', data: tabConfig }, '*');
+                    }
 
                     let confirmed = 0;
                     function onImportComplete(evt) {
@@ -1234,15 +1238,59 @@ function _buildZip(files) {
         });
 
         // ========== Dashboard Refresh ==========
-        // Store last imported raw data so the dashboard refresh button can re-use it
         let _lastDashboardData = null;
+
+        // Map module keys to the dashboard data keys they feed
+        const DASHBOARD_MODULE_MAP = { risks: 'risks', vendors: 'vendors', policies: 'policies', calendar: 'calendar' };
+
+        function collectAndRefreshDashboard() {
+            const dashIframe = document.getElementById('dashboard-iframe');
+            if (!dashIframe || !dashIframe.contentWindow) return;
+
+            const fresh = { risks: [], vendors: [], policies: [], calendar: [] };
+            const pending = new Set(Object.keys(DASHBOARD_MODULE_MAP));
+            let timeout;
+
+            function onExport(e) {
+                if (!e.data || e.data.type !== 'exportData') return;
+                const mod = e.data.module;
+                if (pending.has(mod)) {
+                    fresh[DASHBOARD_MODULE_MAP[mod]] = e.data.data || [];
+                    pending.delete(mod);
+                    if (pending.size === 0) {
+                        clearTimeout(timeout);
+                        window.removeEventListener('message', onExport);
+                        _lastDashboardData = fresh;
+                        dashIframe.contentWindow.postMessage({ type: 'refreshResponse', data: fresh }, '*');
+                    }
+                }
+            }
+
+            window.addEventListener('message', onExport);
+
+            Object.keys(DASHBOARD_MODULE_MAP).forEach(mod => {
+                const cfg = MODULE_CONFIG[mod];
+                const iframe = cfg && document.getElementById(cfg.iframe);
+                if (iframe && iframe.contentWindow) {
+                    iframe.contentWindow.postMessage({ type: 'getDataForExport' }, '*');
+                } else {
+                    pending.delete(mod);
+                }
+            });
+
+            // If all modules responded instantly (e.g. pending already empty), skip timeout
+            if (pending.size === 0) return;
+
+            timeout = setTimeout(() => {
+                window.removeEventListener('message', onExport);
+                _lastDashboardData = fresh;
+                dashIframe.contentWindow.postMessage({ type: 'refreshResponse', data: fresh }, '*');
+            }, 3000);
+        }
 
         window.addEventListener('message', function(e) {
             if (e.data && e.data.type === 'requestDashboardData') {
-                const dashIframe = document.getElementById('dashboard-iframe');
-                if (dashIframe && dashIframe.contentWindow && _lastDashboardData) {
-                    dashIframe.contentWindow.postMessage({ type: 'refreshResponse', data: _lastDashboardData }, '*');
-                }
+                collectAndRefreshDashboard();
             }
         });
     </script>
