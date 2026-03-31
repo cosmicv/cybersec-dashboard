@@ -546,6 +546,38 @@ function _buildZip(files) {
             vertical-align: middle;
         }
 
+        .app-footer {
+            background: #1a1a2e;
+            border-top: 1px solid #2a2a4a;
+            padding: 10px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 11px;
+            color: #666;
+            flex-shrink: 0;
+        }
+
+        .app-footer .footer-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .app-footer .footer-version {
+            color: #8888cc;
+            font-weight: 600;
+        }
+
+        .app-footer .footer-build {
+            font-family: monospace;
+            color: #555;
+        }
+
+        .app-footer .footer-right {
+            color: #444;
+        }
+
         @media (max-width: 768px) {
             .dashboard-header h1 {
                 font-size: 1.8em;
@@ -644,7 +676,7 @@ function _buildZip(files) {
 
         <div id="info-tab" class="tab-content">
             <div class="info-content">
-                <h2>&#x1F6E1;&#xFE0F; CyberSec Operations Dashboard <span class="version-badge">v1.0</span></h2>
+                <h2>&#x1F6E1;&#xFE0F; CyberSec Operations Dashboard <span class="version-badge">v1.1</span></h2>
                 <p class="info-subtitle">A unified platform for managing cybersecurity operations, risk tracking, and compliance scheduling.</p>
 
                 <div class="info-columns">
@@ -800,8 +832,12 @@ function _buildZip(files) {
             </div>
         </div>
 
-        <div style="background:#f8f9fa;border-top:1px solid #dee2e6;padding:12px 30px;text-align:center;font-size:12px;color:#6c757d;">
-            CyberSec Operations Dashboard &mdash; v1.1 &mdash; February 2026
+        <div class="app-footer">
+            <div class="footer-left">
+                <span class="footer-version">CyberSec Operations Dashboard v1.1</span>
+                <span class="footer-build">build bb4b47d &bull; 2026-03-31</span>
+            </div>
+            <div class="footer-right">Static &bull; No server required</div>
         </div>
     </div>
 
