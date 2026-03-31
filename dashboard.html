@@ -106,7 +106,7 @@
 
     <!-- KPI Cards -->
     <div class="kpi-grid">
-        <div class="kpi-card blue">
+        <div id="kpi-section-policies" class="kpi-card blue">
             <div class="kpi-label">Policy Status</div>
             <div style="display:flex; gap:16px; align-items:flex-end; margin-top:4px;">
                 <div>
@@ -123,7 +123,7 @@
                 </div>
             </div>
         </div>
-        <div class="kpi-card blue">
+        <div id="kpi-section-vendors" class="kpi-card blue">
             <div class="kpi-label">Vendors <span id="kpi-vendors-total" style="font-weight:400; font-size:12px; color:#6c757d;"></span></div>
             <div style="display:flex; gap:16px; align-items:flex-end; margin-top:4px;">
                 <div>
@@ -136,7 +136,7 @@
                 </div>
             </div>
         </div>
-        <div class="kpi-card red">
+        <div id="kpi-section-risks" class="kpi-card red">
             <div class="kpi-label">Open Risks</div>
             <div class="kpi-value" id="kpi-open-risks">--</div>
             <div class="kpi-sub">Requiring attention</div>
@@ -145,28 +145,28 @@
 
     <!-- Charts -->
     <div class="charts-grid">
-        <div class="chart-card">
+        <div id="chart-section-policies" class="chart-card">
             <h3>Policy Review Status</h3>
             <div class="chart-wrapper">
                 <canvas id="policyStatusChart"></canvas>
             </div>
         </div>
 
-        <div class="chart-card">
+        <div id="chart-section-vendors" class="chart-card">
             <h3>Vendor Risk Tier</h3>
             <div class="chart-wrapper">
                 <canvas id="vendorRiskChart"></canvas>
             </div>
         </div>
 
-        <div class="chart-card">
+        <div id="chart-section-risks-status" class="chart-card">
             <h3>Risk Status Breakdown</h3>
             <div class="chart-wrapper">
                 <canvas id="riskStatusChart"></canvas>
             </div>
         </div>
 
-        <div class="chart-card">
+        <div id="chart-section-risks-severity" class="chart-card">
             <h3>Risk by Severity</h3>
             <div class="chart-wrapper">
                 <canvas id="riskSeverityChart"></canvas>
@@ -287,7 +287,25 @@
                 lastData = data;
                 updateDashboard(data);
             }
+            if (type === 'tabVisibility') {
+                applyTabVisibility(data);
+            }
         });
+
+        function applyTabVisibility(config) {
+            const show = tab => config[tab] !== false;
+            const setVisible = (id, visible) => {
+                const el = document.getElementById(id);
+                if (el) el.style.display = visible ? '' : 'none';
+            };
+            setVisible('kpi-section-policies',      show('policies'));
+            setVisible('chart-section-policies',    show('policies'));
+            setVisible('kpi-section-vendors',       show('vendors'));
+            setVisible('chart-section-vendors',     show('vendors'));
+            setVisible('kpi-section-risks',         show('risks'));
+            setVisible('chart-section-risks-status',   show('risks'));
+            setVisible('chart-section-risks-severity', show('risks'));
+        }
 
         function requestRefresh() {
             if (lastData) {

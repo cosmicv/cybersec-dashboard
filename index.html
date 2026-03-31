@@ -948,6 +948,11 @@ function _buildZip(files) {
                 const cb = document.getElementById('tabToggle-' + tab);
                 if (cb) cb.checked = visible;
             });
+            // Notify dashboard to show/hide its KPI cards and charts
+            const dashIframe = document.getElementById('dashboard-iframe');
+            if (dashIframe && dashIframe.contentWindow) {
+                dashIframe.contentWindow.postMessage({ type: 'tabVisibility', data: tabConfig }, '*');
+            }
         }
 
         function onTabToggle(tab, visible) {
