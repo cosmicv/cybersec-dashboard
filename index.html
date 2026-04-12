@@ -1127,16 +1127,19 @@ function _buildZip(files) {
                         'Calendar': 'calendar'
                     };
 
-                    // Read Config sheet if present
+                    // Read Config sheet if present; reset to all-visible if not (prevents bleed-over between clients)
                     if (wb.SheetNames.includes('Config')) {
                         const configRows = XLSX.utils.sheet_to_json(wb.Sheets['Config'], { defval: '' });
                         const tabLabels = { 'Notes': 'notes', 'Operations Calendar': 'calendar', 'Risk Register': 'risks', 'Vendor Tracking': 'vendors', 'Policy Reviews': 'policies' };
+                        TOGGLEABLE_TABS.forEach(t => { tabConfig[t] = true; }); // start from clean slate
                         configRows.forEach(row => {
                             const tab = tabLabels[String(row['Setting']).trim()];
                             if (tab) tabConfig[tab] = String(row['Value']).trim().toLowerCase() !== 'false';
                         });
-                        applyTabConfig();
+                    } else {
+                        TOGGLEABLE_TABS.forEach(t => { tabConfig[t] = true; });
                     }
+                    applyTabConfig();
 
                     wb.SheetNames.forEach(sheetName => {
                         const mod = sheetToModule[sheetName];
