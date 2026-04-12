@@ -928,6 +928,12 @@ function _buildZip(files) {
         const TOGGLEABLE_TABS = ['notes', 'calendar', 'risks', 'vendors', 'policies'];
 
         let tabConfig = { notes: true, calendar: true, risks: true, vendors: true, policies: true };
+        (function() {
+            try {
+                const saved = localStorage.getItem('tabConfig');
+                if (saved) { const parsed = JSON.parse(saved); TOGGLEABLE_TABS.forEach(t => { if (t in parsed) tabConfig[t] = parsed[t]; }); }
+            } catch(e) {}
+        })();
 
         function applyTabConfig() {
             TOGGLEABLE_TABS.forEach(tab => {
@@ -948,6 +954,8 @@ function _buildZip(files) {
                 const cb = document.getElementById('tabToggle-' + tab);
                 if (cb) cb.checked = visible;
             });
+            // Persist tab visibility across reloads
+            try { localStorage.setItem('tabConfig', JSON.stringify(tabConfig)); } catch(e) {}
             // Notify dashboard to show/hide its KPI cards and charts
             const dashIframe = document.getElementById('dashboard-iframe');
             if (dashIframe && dashIframe.contentWindow) {
@@ -1214,6 +1222,7 @@ function _buildZip(files) {
             localStorage.removeItem('riskRegisterData');
             localStorage.removeItem('riskRegisterPeople');
             localStorage.removeItem('notesEditorContent');
+            localStorage.removeItem('tabConfig');
 
             // Reset tab visibility to all-visible
             TOGGLEABLE_TABS.forEach(tab => { tabConfig[tab] = true; });
