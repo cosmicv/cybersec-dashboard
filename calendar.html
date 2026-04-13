@@ -529,6 +529,7 @@
             
             <button class="btn" id="exportBtn" class="btn btn-secondary">Export CSV</button>
             <button class="btn" id="addEventBtn" class="btn btn-warning">+ Add Event</button>
+            <button class="btn btn-secondary" id="toggleCompletedBtn" onclick="toggleCompleted()">&#9989; Hide Completed</button>
             <span id="workbookStatus" class="workbook-status">Workbook status: ready</span>
 
             <div class="nav-controls">
@@ -638,6 +639,7 @@
         let currentDate = new Date();
         let operations = [];
         let editingIndex = -1; // -1 means adding new, >= 0 means editing existing
+        let hideCompleted = false;
 
         function formatDateUS(val) {
             if (!val && val !== 0) return '';
@@ -914,7 +916,7 @@
                     if (matches) {
                         console.log(`Found event for ${dateStr}:`, op.task, '| op.date:', op.date, '| opDateOnly:', opDateOnly);
                     }
-                    return matches;
+                    return matches && !(hideCompleted && isCompletedOp(op));
                 });
                 
                 console.log(`Date ${dateStr}: ${dayOperations.length} events`);
@@ -980,6 +982,18 @@
             updateMonthDisplay();
         }
 
+        function toggleCompleted() {
+            hideCompleted = !hideCompleted;
+            const btn = document.getElementById('toggleCompletedBtn');
+            btn.textContent = hideCompleted ? '👁 Show Completed' : '✅ Hide Completed';
+            btn.style.background = hideCompleted ? '#dc3545' : '';
+            renderCalendar();
+        }
+
+        function isCompletedOp(op) {
+            return /(closed|complete(d)?|done)/i.test(String(op?.status || '').trim());
+        }
+
         // Table rendering
         function renderTable() {
             console.log('renderTable called, operations.length:', operations.length);
@@ -995,8 +1009,9 @@
                 return;
             }
 
-            // Sort operations by date
-            const sortedOps = [...operations].sort((a, b) => new Date(a.date) - new Date(b.date));
+            // Sort operations by date (apply completed filter if active)
+            const filteredOps = hideCompleted ? operations.filter(op => !isCompletedOp(op)) : operations;
+            const sortedOps = [...filteredOps].sort((a, b) => new Date(a.date) - new Date(b.date));
             console.log('sortedOps:', sortedOps);
 
             let html = `
