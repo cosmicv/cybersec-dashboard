@@ -831,8 +831,22 @@ function _buildZip(files) {
             notes:    { iframe: 'notes-iframe',    sheetName: 'Notes' }
         };
 
+        let _clientName = '';
+
         function setStatus(msg) {
             document.getElementById('wbStatus').textContent = msg;
+        }
+
+        function setClientName(name) {
+            _clientName = name || '';
+            const fnSpan = document.getElementById('wbFileName');
+            if (_clientName) {
+                fnSpan.textContent = '🏢 ' + _clientName;
+                fnSpan.style.display = 'inline';
+            } else {
+                fnSpan.textContent = '';
+                fnSpan.style.display = 'none';
+            }
         }
 
         function exportWorkbook() {
@@ -914,8 +928,13 @@ function _buildZip(files) {
                     }
                 });
 
+                // Write Config sheet with client name
+                const configWs = XLSX.utils.aoa_to_sheet([['Key','Value'],['ClientName', _clientName || '']]);
+                XLSX.utils.book_append_sheet(wb, configWs, 'Config');
+
                 const dateStr = new Date().toISOString().split('T')[0];
-                XLSX.writeFile(wb, `CyberSec_Dashboard_${dateStr}.xlsx`);
+                const exportName = _clientName ? `${_clientName}_Dashboard_${dateStr}.xlsx` : `CyberSec_Dashboard_${dateStr}.xlsx`;
+                XLSX.writeFile(wb, exportName);
                 setStatus(`Exported ${totalRows} total rows across ${Object.keys(collected).length} sheets.`);
             } catch (err) {
                 console.error('Workbook export error:', err);
@@ -1003,11 +1022,20 @@ function _buildZip(files) {
                         setTimeout(() => window.removeEventListener('message', onImportComplete), 5000);
                     }
 
+                    // Read client name from Config sheet
+                    let importedClientName = '';
+                    if (wb.Sheets['Config']) {
+                        const configRows = XLSX.utils.sheet_to_json(wb.Sheets['Config'], { defval: '' });
+                        const row = configRows.find(r => r['Key'] === 'ClientName');
+                        if (row) importedClientName = row['Value'] || '';
+                    }
+                    if (!importedClientName) {
+                        importedClientName = prompt('Enter a client name for this workbook (will be saved on next export):', '') || '';
+                    }
+                    setClientName(importedClientName);
+
                     if (sheetsFound.length > 0) {
                         setStatus(`Imported ${importedCount} rows from: ${sheetsFound.join(', ')}`);
-                        const fnSpan = document.getElementById('wbFileName');
-                        fnSpan.textContent = '📄 ' + file.name;
-                        fnSpan.style.display = 'inline';
                         alert(`Successfully imported data from ${sheetsFound.length} sheet(s):\n${sheetsFound.join(', ')}\n\nTotal rows: ${importedCount}`);
                     } else {
                         setStatus('No matching sheets found in workbook.');
@@ -1030,9 +1058,7 @@ function _buildZip(files) {
             }
 
             setStatus('Clearing all module data...');
-            const fnSpan = document.getElementById('wbFileName');
-            fnSpan.textContent = '';
-            fnSpan.style.display = 'none';
+            setClientName('');
             let cleared = 0;
 
             Object.keys(MODULE_CONFIG).forEach(mod => {
