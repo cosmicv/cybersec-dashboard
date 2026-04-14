@@ -579,6 +579,7 @@ function _buildZip(files) {
             <label for="wbImportFile" style="padding:8px 18px;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;background:#28a745;color:white;">Import .xlsx</label>
             <input type="file" id="wbImportFile" accept=".xlsx,.xls" onchange="importWorkbook(event)" style="display:none;">
             <button onclick="clearAllData()" style="padding:8px 18px;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;background:#dc3545;color:white;transition:all 0.3s;">Clear All Data</button>
+            <span id="wbFileName" style="font-size:13px;color:#495057;font-weight:500;background:#e9ecef;border:1px solid #ced4da;border-radius:4px;padding:4px 10px;display:none;"></span>
             <span id="wbStatus" style="margin-left:auto;font-size:13px;color:#6c757d;font-style:italic;">All module data in one Excel file</span>
         </div>
 
@@ -1004,6 +1005,9 @@ function _buildZip(files) {
 
                     if (sheetsFound.length > 0) {
                         setStatus(`Imported ${importedCount} rows from: ${sheetsFound.join(', ')}`);
+                        const fnSpan = document.getElementById('wbFileName');
+                        fnSpan.textContent = '📄 ' + file.name;
+                        fnSpan.style.display = 'inline';
                         alert(`Successfully imported data from ${sheetsFound.length} sheet(s):\n${sheetsFound.join(', ')}\n\nTotal rows: ${importedCount}`);
                     } else {
                         setStatus('No matching sheets found in workbook.');
@@ -1026,6 +1030,9 @@ function _buildZip(files) {
             }
 
             setStatus('Clearing all module data...');
+            const fnSpan = document.getElementById('wbFileName');
+            fnSpan.textContent = '';
+            fnSpan.style.display = 'none';
             let cleared = 0;
 
             Object.keys(MODULE_CONFIG).forEach(mod => {
