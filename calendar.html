@@ -462,6 +462,32 @@
             border-color: #dc3545;
         }
 
+        .day-event.overdue {
+            background: #9b1c2e;
+            border-left: 3px solid #ff4d6d;
+        }
+
+        .operation-row.overdue td {
+            background: #fff5f5;
+        }
+
+        .operation-row.overdue td:first-child {
+            border-left: 3px solid #dc3545;
+        }
+
+        .overdue-badge {
+            display: inline-block;
+            margin-left: 6px;
+            padding: 1px 6px;
+            background: #dc3545;
+            color: white;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            vertical-align: middle;
+        }
+
         @media (max-width: 768px) {
             body {
                 padding: 10px;
@@ -925,8 +951,9 @@
                     const originalIndex = operations.indexOf(op);
                     const event = document.createElement('div');
                     const visualClass = getVisualPriorityClass(op);
-                    event.className = `day-event ${visualClass}`;
-                    event.textContent = op.task;
+                    const overdue = isOverdue(op);
+                    event.className = `day-event ${overdue ? 'overdue' : visualClass}`;
+                    event.textContent = (overdue ? '⚠ ' : '') + op.task;
                     event.title = `${op.task} - ${op.category} - Status: ${op.status || 'Open'} (click to edit)`;
                     event.style.cursor = visualClass === 'closed' ? 'default' : 'pointer';
                     event.addEventListener('click', (e) => {
@@ -994,6 +1021,17 @@
             return /(closed|complete(d)?|done)/i.test(String(op?.status || '').trim());
         }
 
+        function isOverdue(op) {
+            if (isCompletedOp(op)) return false;
+            const dateOnly = toDateKey(op.date);
+            if (!dateOnly) return false;
+            const opDate = new Date(dateOnly + 'T00:00:00');
+            if (isNaN(opDate.getTime())) return false;
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            return opDate < today;
+        }
+
         // Table rendering
         function renderTable() {
             console.log('renderTable called, operations.length:', operations.length);
@@ -1042,10 +1080,11 @@
                 // Find the original index in operations array
                 const originalIndex = operations.indexOf(op);
                 const isClosed = getVisualPriorityClass(op) === 'closed';
-                
+                const isOD = isOverdue(op);
+
                 html += `
-                    <tr class="${isClosed ? 'operation-row closed' : 'operation-row'}">
-                        <td>${formattedDate}</td>
+                    <tr class="${isClosed ? 'operation-row closed' : isOD ? 'operation-row overdue' : 'operation-row'}">
+                        <td>${formattedDate}${isOD ? ' <span class="overdue-badge">OVERDUE</span>' : ''}</td>
                         <td><strong>${op.task}</strong>${op.isRecurring ? ' <span style="color: #667eea; font-size: 12px;">&#128260;</span>' : ''}</td>
                         <td>${op.category}</td>
                         <td><span class="status-badge status-${getVisualPriorityClass(op)}">${op.priority}</span></td>

@@ -546,94 +546,6 @@ function _buildZip(files) {
             vertical-align: middle;
         }
 
-        .app-footer {
-            background: #1a1a2e;
-            border-top: 1px solid #2a2a4a;
-            padding: 10px 24px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            font-size: 11px;
-            color: #666;
-            flex-shrink: 0;
-        }
-
-        .app-footer .footer-left {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-        }
-
-        .app-footer .footer-version {
-            color: #8888cc;
-            font-weight: 600;
-        }
-
-        .app-footer .footer-build {
-            font-family: monospace;
-            color: #555;
-        }
-
-        .app-footer .footer-right {
-            color: #444;
-        }
-
-        .manage-tabs-wrapper {
-            position: relative;
-            display: inline-block;
-        }
-
-        .manage-tabs-dropdown {
-            display: none;
-            position: absolute;
-            top: calc(100% + 6px);
-            left: 0;
-            background: #fff;
-            border: 1px solid #dee2e6;
-            border-radius: 8px;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
-            padding: 10px 0;
-            min-width: 200px;
-            z-index: 1000;
-        }
-
-        .manage-tabs-dropdown.open {
-            display: block;
-        }
-
-        .manage-tabs-dropdown .dropdown-title {
-            font-size: 11px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: #6c757d;
-            padding: 4px 14px 8px;
-            border-bottom: 1px solid #dee2e6;
-            margin-bottom: 4px;
-        }
-
-        .manage-tabs-dropdown label {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 6px 14px;
-            font-size: 13px;
-            color: #343a40;
-            cursor: pointer;
-            user-select: none;
-        }
-
-        .manage-tabs-dropdown label:hover {
-            background: #f8f9fa;
-        }
-
-        .manage-tabs-dropdown input[type="checkbox"] {
-            width: 15px;
-            height: 15px;
-            cursor: pointer;
-            accent-color: #667eea;
-        }
-
         @media (max-width: 768px) {
             .dashboard-header h1 {
                 font-size: 1.8em;
@@ -667,40 +579,37 @@ function _buildZip(files) {
             <label for="wbImportFile" style="padding:8px 18px;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;background:#28a745;color:white;">Import .xlsx</label>
             <input type="file" id="wbImportFile" accept=".xlsx,.xls" onchange="importWorkbook(event)" style="display:none;">
             <button onclick="clearAllData()" style="padding:8px 18px;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;background:#dc3545;color:white;transition:all 0.3s;">Clear All Data</button>
-            <div class="manage-tabs-wrapper">
-                <button onclick="toggleManageTabsDropdown()" style="padding:8px 18px;border:1px solid #ced4da;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;background:#fff;color:#495057;transition:all 0.3s;">&#x2699;&#xFE0F; Manage Tabs</button>
-                <div class="manage-tabs-dropdown" id="manageTabsDropdown">
-                    <div class="dropdown-title">Show / Hide Tabs</div>
-                    <label><input type="checkbox" id="tabToggle-notes" onchange="onTabToggle('notes', this.checked)" checked> &#x1F4DD; Notes</label>
-                    <label><input type="checkbox" id="tabToggle-calendar" onchange="onTabToggle('calendar', this.checked)" checked> &#x1F4C5; Operations Calendar</label>
-                    <label><input type="checkbox" id="tabToggle-risks" onchange="onTabToggle('risks', this.checked)" checked> &#x26A0;&#xFE0F; Risk Register</label>
-                    <label><input type="checkbox" id="tabToggle-vendors" onchange="onTabToggle('vendors', this.checked)" checked> &#x1F4CB; Vendor Tracking</label>
-                    <label><input type="checkbox" id="tabToggle-policies" onchange="onTabToggle('policies', this.checked)" checked> &#x1F4DC; Policy Reviews</label>
+            <div style="position:relative;display:inline-block;">
+                <button onclick="toggleTabVisDropdown(event)" id="tabVisBtn" style="padding:8px 18px;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;background:#6c757d;color:white;transition:all 0.3s;">&#9881; Tabs &#9660;</button>
+                <div id="tabVisDropdown" style="display:none;position:absolute;top:calc(100% + 4px);left:0;background:white;border:1px solid #ced4da;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,0.15);z-index:9999;min-width:190px;padding:6px 0;" onclick="event.stopPropagation()">
+                    <div style="padding:8px 14px 6px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:#6c757d;border-bottom:1px solid #e9ecef;margin-bottom:4px;">Visible Tabs</div>
+                    <div id="tabVisOptions"></div>
                 </div>
             </div>
+            <span id="wbFileName" style="font-size:13px;color:#495057;font-weight:500;background:#e9ecef;border:1px solid #ced4da;border-radius:4px;padding:4px 10px;display:none;"></span>
             <span id="wbStatus" style="margin-left:auto;font-size:13px;color:#6c757d;font-style:italic;">All module data in one Excel file</span>
         </div>
 
         <div class="tab-navigation">
-            <button class="tab-button active" onclick="switchTab('dashboard')">
+            <button class="tab-button active" data-tab="dashboard" onclick="switchTab('dashboard')">
                 &#x1F4CA; Dashboard
             </button>
-            <button class="tab-button" onclick="switchTab('notes')">
+            <button class="tab-button" data-tab="notes" onclick="switchTab('notes')">
                 &#x1F4DD; Notes
             </button>
-            <button class="tab-button" onclick="switchTab('calendar')">
+            <button class="tab-button" data-tab="calendar" onclick="switchTab('calendar')">
                 &#x1F4C5; Operations Calendar
             </button>
-            <button class="tab-button" onclick="switchTab('risks')">
+            <button class="tab-button" data-tab="risks" onclick="switchTab('risks')">
                 &#x26A0;&#xFE0F; Risk Register
             </button>
-            <button class="tab-button" onclick="switchTab('vendors')">
+            <button class="tab-button" data-tab="vendors" onclick="switchTab('vendors')">
                 &#x1F4CB; Vendor Tracking
             </button>
-            <button class="tab-button" onclick="switchTab('policies')">
+            <button class="tab-button" data-tab="policies" onclick="switchTab('policies')">
                 &#x1F4DC; Policy Reviews
             </button>
-            <button class="tab-button" onclick="switchTab('info')">
+            <button class="tab-button" data-tab="info" onclick="switchTab('info')">
                 &#x2139;&#xFE0F; Info &amp; Help
             </button>
         </div>
@@ -743,7 +652,7 @@ function _buildZip(files) {
 
         <div id="info-tab" class="tab-content">
             <div class="info-content">
-                <h2>&#x1F6E1;&#xFE0F; CyberSec Operations Dashboard <span class="version-badge">v1.1</span></h2>
+                <h2>&#x1F6E1;&#xFE0F; CyberSec Operations Dashboard <span class="version-badge">v1.0</span></h2>
                 <p class="info-subtitle">A unified platform for managing cybersecurity operations, risk tracking, and compliance scheduling.</p>
 
                 <div class="info-columns">
@@ -899,16 +808,92 @@ function _buildZip(files) {
             </div>
         </div>
 
-        <div class="app-footer">
-            <div class="footer-left">
-                <span class="footer-version">CyberSec Operations Dashboard v1.1</span>
-                <span class="footer-build">build bb4b47d &bull; 2026-03-31</span>
-            </div>
-            <div class="footer-right">Static &bull; No server required</div>
+        <div style="background:#f8f9fa;border-top:1px solid #dee2e6;padding:12px 30px;text-align:center;font-size:12px;color:#6c757d;">
+            CyberSec Operations Dashboard &mdash; v1.1 &mdash; February 2026
         </div>
     </div>
 
     <script>
+        // ========== Tab Visibility ==========
+        const TAB_DEFS = [
+            { id: 'dashboard', label: '📊 Dashboard' },
+            { id: 'notes',     label: '📝 Notes' },
+            { id: 'calendar',  label: '📅 Operations Calendar' },
+            { id: 'risks',     label: '⚠️ Risk Register' },
+            { id: 'vendors',   label: '📋 Vendor Tracking' },
+            { id: 'policies',  label: '📜 Policy Reviews' },
+            { id: 'info',      label: 'ℹ️ Info & Help' },
+        ];
+
+        let tabVisibility = { dashboard:true, notes:true, calendar:true, risks:true, vendors:true, policies:true, info:true };
+
+        function buildTabVisOptions() {
+            const container = document.getElementById('tabVisOptions');
+            if (!container) return;
+            container.innerHTML = TAB_DEFS.map(t => `
+                <label style="display:flex;align-items:center;gap:8px;padding:7px 14px;cursor:pointer;font-size:13px;color:#212529;transition:background 0.15s;"
+                       onmouseover="this.style.background='#f0f2ff'" onmouseout="this.style.background=''"
+                       onclick="toggleTabVisible('${t.id}')">
+                    <input type="checkbox" id="tabvis_${t.id}" ${tabVisibility[t.id] ? 'checked' : ''}
+                           style="cursor:pointer;width:14px;height:14px;" onclick="event.stopPropagation();toggleTabVisible('${t.id}')">
+                    ${t.label}
+                </label>`).join('');
+        }
+
+        function toggleTabVisible(tabId) {
+            const visibleCount = Object.values(tabVisibility).filter(Boolean).length;
+            if (tabVisibility[tabId] && visibleCount <= 1) return; // keep at least one
+
+            tabVisibility[tabId] = !tabVisibility[tabId];
+            const cb = document.getElementById('tabvis_' + tabId);
+            if (cb) cb.checked = tabVisibility[tabId];
+            applyTabVisibility();
+        }
+
+        function applyTabVisibility() {
+            let activeTabHidden = false;
+            let currentActive = null;
+
+            TAB_DEFS.forEach(t => {
+                const btn = document.querySelector(`.tab-button[data-tab="${t.id}"]`);
+                const content = document.getElementById(t.id + '-tab');
+                const visible = tabVisibility[t.id];
+
+                if (btn) btn.style.display = visible ? '' : 'none';
+                if (content && content.classList.contains('active') && !visible) {
+                    activeTabHidden = true;
+                }
+                if (content && content.classList.contains('active') && visible) {
+                    currentActive = t.id;
+                }
+            });
+
+            if (activeTabHidden) {
+                const first = TAB_DEFS.find(t => tabVisibility[t.id]);
+                if (first) switchTab(first.id);
+            }
+        }
+
+        function syncTabVisCheckboxes() {
+            TAB_DEFS.forEach(t => {
+                const cb = document.getElementById('tabvis_' + t.id);
+                if (cb) cb.checked = !!tabVisibility[t.id];
+            });
+        }
+
+        function toggleTabVisDropdown(event) {
+            event.stopPropagation();
+            const dd = document.getElementById('tabVisDropdown');
+            const isOpen = dd.style.display !== 'none';
+            dd.style.display = isOpen ? 'none' : 'block';
+            if (!isOpen) buildTabVisOptions();
+        }
+
+        document.addEventListener('click', () => {
+            const dd = document.getElementById('tabVisDropdown');
+            if (dd) dd.style.display = 'none';
+        });
+
         // ========== Tab Switching ==========
         function switchTab(tabName) {
             document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
@@ -924,62 +909,6 @@ function _buildZip(files) {
             }
         }
 
-        // ========== Tab Visibility ==========
-        const TOGGLEABLE_TABS = ['notes', 'calendar', 'risks', 'vendors', 'policies'];
-
-        let tabConfig = { notes: true, calendar: true, risks: true, vendors: true, policies: true };
-        (function() {
-            try {
-                const saved = localStorage.getItem('tabConfig');
-                if (saved) { const parsed = JSON.parse(saved); TOGGLEABLE_TABS.forEach(t => { if (t in parsed) tabConfig[t] = parsed[t]; }); }
-            } catch(e) {}
-        })();
-
-        function applyTabConfig() {
-            TOGGLEABLE_TABS.forEach(tab => {
-                const visible = tabConfig[tab] !== false;
-                // Tab button
-                const btn = document.querySelector(`.tab-button[onclick="switchTab('${tab}')"]`);
-                if (btn) btn.style.display = visible ? '' : 'none';
-                // Tab content div
-                const div = document.getElementById(tab + '-tab');
-                if (div && !visible) {
-                    // If this hidden tab is currently active, switch to dashboard
-                    if (div.classList.contains('active')) switchTab('dashboard');
-                    div.style.display = 'none';
-                } else if (div) {
-                    div.style.display = '';
-                }
-                // Sync checkbox
-                const cb = document.getElementById('tabToggle-' + tab);
-                if (cb) cb.checked = visible;
-            });
-            // Persist tab visibility across reloads
-            try { localStorage.setItem('tabConfig', JSON.stringify(tabConfig)); } catch(e) {}
-            // Notify dashboard to show/hide its KPI cards and charts
-            const dashIframe = document.getElementById('dashboard-iframe');
-            if (dashIframe && dashIframe.contentWindow) {
-                dashIframe.contentWindow.postMessage({ type: 'tabVisibility', data: tabConfig }, '*');
-            }
-        }
-
-        function onTabToggle(tab, visible) {
-            tabConfig[tab] = visible;
-            applyTabConfig();
-        }
-
-        function toggleManageTabsDropdown() {
-            document.getElementById('manageTabsDropdown').classList.toggle('open');
-        }
-
-        // Close dropdown when clicking outside
-        document.addEventListener('click', function(e) {
-            const wrapper = document.querySelector('.manage-tabs-wrapper');
-            if (wrapper && !wrapper.contains(e.target)) {
-                document.getElementById('manageTabsDropdown').classList.remove('open');
-            }
-        });
-
         // ========== Workbook Export ==========
         const MODULE_CONFIG = {
             calendar: { iframe: 'calendar-iframe', sheetName: 'Calendar' },
@@ -989,8 +918,22 @@ function _buildZip(files) {
             notes:    { iframe: 'notes-iframe',    sheetName: 'Notes' }
         };
 
+        let _clientName = '';
+
         function setStatus(msg) {
             document.getElementById('wbStatus').textContent = msg;
+        }
+
+        function setClientName(name) {
+            _clientName = name || '';
+            const fnSpan = document.getElementById('wbFileName');
+            if (_clientName) {
+                fnSpan.textContent = '🏢 ' + _clientName;
+                fnSpan.style.display = 'inline';
+            } else {
+                fnSpan.textContent = '';
+                fnSpan.style.display = 'none';
+            }
         }
 
         function exportWorkbook() {
@@ -1072,15 +1015,15 @@ function _buildZip(files) {
                     }
                 });
 
-                // Write Config sheet
-                const tabLabels = { notes: 'Notes', calendar: 'Operations Calendar', risks: 'Risk Register', vendors: 'Vendor Tracking', policies: 'Policy Reviews' };
-                const configData = TOGGLEABLE_TABS.map(tab => ({ Setting: tabLabels[tab], Value: String(tabConfig[tab] !== false) }));
-                const configWs = XLSX.utils.json_to_sheet(configData, { header: ['Setting', 'Value'] });
-                configWs['!cols'] = [{ wch: 24 }, { wch: 8 }];
+                // Write Config sheet with client name + tab visibility (one row per tab)
+                const configData = [['Key','Value'], ['ClientName', _clientName || '']];
+                TAB_DEFS.forEach(t => configData.push(['TabVis_' + t.id, tabVisibility[t.id] !== false ? '1' : '0']));
+                const configWs = XLSX.utils.aoa_to_sheet(configData);
                 XLSX.utils.book_append_sheet(wb, configWs, 'Config');
 
                 const dateStr = new Date().toISOString().split('T')[0];
-                XLSX.writeFile(wb, `CyberSec_Dashboard_${dateStr}.xlsx`);
+                const exportName = _clientName ? `${_clientName}_Dashboard_${dateStr}.xlsx` : `CyberSec_Dashboard_${dateStr}.xlsx`;
+                XLSX.writeFile(wb, exportName);
                 setStatus(`Exported ${totalRows} total rows across ${Object.keys(collected).length} sheets.`);
             } catch (err) {
                 console.error('Workbook export error:', err);
@@ -1095,7 +1038,7 @@ function _buildZip(files) {
                 risks: ['Title','Description','Category','Probability (Before)','Impact (Before)','Severity Score (Before)','Severity Level (Before)','Probability (After)','Impact (After)','Severity Score (After)','Severity Level (After)','Status','Owner','Mitigation Plan','Notes','Date Created','Date Modified'],
                 vendors: ['Vendor Name','Vendor Type','Business Purpose','Information Classification','Risk Rating','Information Security Review','Current','Notes','Contact Information','Review Date','Type Review','Vendor Technical Contact','Responsible Team','Administration Portal Link','Integration Type','Administration Responsibilities','Administration Notes'],
                 policies: ['Policy Name','Policy ID','Description','Policy URL','Category','Compliance Framework','Review Frequency','Status','Last Reviewed','Next Review','Effective Date','Version','Owner','Approver','Notes'],
-                notes: ['Notes Content','Notes HTML']
+                notes: ['Title','Date','Category','Priority','Author','Content','Tags']
             };
             return defaults[mod] || [];
         }
@@ -1119,27 +1062,12 @@ function _buildZip(files) {
                     let pending = 0;
                     const sheetsFound = [];
 
-                    const dashboardData = { risks: [], vendors: [], policies: [], calendar: [] };
+                    const dashboardData = { risks: [], vendors: [], policies: [] };
                     const dashboardSheetMap = {
                         'Risk Register': 'risks',
                         'Vendors': 'vendors',
-                        'Policy Reviews': 'policies',
-                        'Calendar': 'calendar'
+                        'Policy Reviews': 'policies'
                     };
-
-                    // Read Config sheet if present; reset to all-visible if not (prevents bleed-over between clients)
-                    if (wb.SheetNames.includes('Config')) {
-                        const configRows = XLSX.utils.sheet_to_json(wb.Sheets['Config'], { defval: '' });
-                        const tabLabels = { 'Notes': 'notes', 'Operations Calendar': 'calendar', 'Risk Register': 'risks', 'Vendor Tracking': 'vendors', 'Policy Reviews': 'policies' };
-                        TOGGLEABLE_TABS.forEach(t => { tabConfig[t] = true; }); // start from clean slate
-                        configRows.forEach(row => {
-                            const tab = tabLabels[String(row['Setting']).trim()];
-                            if (tab) tabConfig[tab] = String(row['Value']).trim().toLowerCase() !== 'false';
-                        });
-                    } else {
-                        TOGGLEABLE_TABS.forEach(t => { tabConfig[t] = true; });
-                    }
-                    applyTabConfig();
 
                     wb.SheetNames.forEach(sheetName => {
                         const mod = sheetToModule[sheetName];
@@ -1170,10 +1098,6 @@ function _buildZip(files) {
                     if (dashIframe && dashIframe.contentWindow) {
                         dashIframe.contentWindow.postMessage({ type: 'dashboardData', data: dashboardData }, '*');
                     }
-                    // Also push tab visibility so dashboard reflects current config after import
-                    if (dashIframe && dashIframe.contentWindow) {
-                        dashIframe.contentWindow.postMessage({ type: 'tabVisibility', data: tabConfig }, '*');
-                    }
 
                     let confirmed = 0;
                     function onImportComplete(evt) {
@@ -1186,6 +1110,31 @@ function _buildZip(files) {
                         window.addEventListener('message', onImportComplete);
                         setTimeout(() => window.removeEventListener('message', onImportComplete), 5000);
                     }
+
+                    // Read client name + tab visibility from Config sheet
+                    let importedClientName = '';
+                    if (wb.Sheets['Config']) {
+                        const configRows = XLSX.utils.sheet_to_json(wb.Sheets['Config'], { defval: '' });
+                        const row = configRows.find(r => r['Key'] === 'ClientName');
+                        if (row) importedClientName = row['Value'] || '';
+                        let anyTabVisSaved = false;
+                        TAB_DEFS.forEach(t => {
+                            const tvRow = configRows.find(r => r['Key'] === 'TabVis_' + t.id);
+                            if (tvRow && (tvRow['Value'] === '1' || tvRow['Value'] === 1 || tvRow['Value'] === '0' || tvRow['Value'] === 0)) {
+                                tabVisibility[t.id] = String(tvRow['Value']) === '1';
+                                anyTabVisSaved = true;
+                            }
+                        });
+                        if (anyTabVisSaved) {
+                            applyTabVisibility();
+                            syncTabVisCheckboxes();
+                        }
+                    }
+
+                    if (!importedClientName) {
+                        importedClientName = prompt('Enter a client name for this workbook (will be saved on next export):', '') || '';
+                    }
+                    setClientName(importedClientName);
 
                     if (sheetsFound.length > 0) {
                         setStatus(`Imported ${importedCount} rows from: ${sheetsFound.join(', ')}`);
@@ -1211,6 +1160,7 @@ function _buildZip(files) {
             }
 
             setStatus('Clearing all module data...');
+            setClientName('');
             let cleared = 0;
 
             Object.keys(MODULE_CONFIG).forEach(mod => {
@@ -1225,11 +1175,6 @@ function _buildZip(files) {
             localStorage.removeItem('riskRegisterData');
             localStorage.removeItem('riskRegisterPeople');
             localStorage.removeItem('notesEditorContent');
-            localStorage.removeItem('tabConfig');
-
-            // Reset tab visibility to all-visible
-            TOGGLEABLE_TABS.forEach(tab => { tabConfig[tab] = true; });
-            applyTabConfig();
 
             setStatus(`Cleared data from ${cleared} module(s).`);
             alert('All module data has been cleared.');
@@ -1250,61 +1195,20 @@ function _buildZip(files) {
         });
 
         // ========== Dashboard Refresh ==========
+        // Store last imported raw data so the dashboard refresh button can re-use it
         let _lastDashboardData = null;
-
-        // Map module keys to the dashboard data keys they feed
-        const DASHBOARD_MODULE_MAP = { risks: 'risks', vendors: 'vendors', policies: 'policies', calendar: 'calendar' };
-
-        function collectAndRefreshDashboard() {
-            const dashIframe = document.getElementById('dashboard-iframe');
-            if (!dashIframe || !dashIframe.contentWindow) return;
-
-            const fresh = { risks: [], vendors: [], policies: [], calendar: [] };
-            const pending = new Set(Object.keys(DASHBOARD_MODULE_MAP));
-            let timeout;
-
-            function onExport(e) {
-                if (!e.data || e.data.type !== 'exportData') return;
-                const mod = e.data.module;
-                if (pending.has(mod)) {
-                    fresh[DASHBOARD_MODULE_MAP[mod]] = e.data.data || [];
-                    pending.delete(mod);
-                    if (pending.size === 0) {
-                        clearTimeout(timeout);
-                        window.removeEventListener('message', onExport);
-                        _lastDashboardData = fresh;
-                        dashIframe.contentWindow.postMessage({ type: 'refreshResponse', data: fresh }, '*');
-                    }
-                }
-            }
-
-            window.addEventListener('message', onExport);
-
-            Object.keys(DASHBOARD_MODULE_MAP).forEach(mod => {
-                const cfg = MODULE_CONFIG[mod];
-                const iframe = cfg && document.getElementById(cfg.iframe);
-                if (iframe && iframe.contentWindow) {
-                    iframe.contentWindow.postMessage({ type: 'getDataForExport' }, '*');
-                } else {
-                    pending.delete(mod);
-                }
-            });
-
-            // If all modules responded instantly (e.g. pending already empty), skip timeout
-            if (pending.size === 0) return;
-
-            timeout = setTimeout(() => {
-                window.removeEventListener('message', onExport);
-                _lastDashboardData = fresh;
-                dashIframe.contentWindow.postMessage({ type: 'refreshResponse', data: fresh }, '*');
-            }, 3000);
-        }
 
         window.addEventListener('message', function(e) {
             if (e.data && e.data.type === 'requestDashboardData') {
-                collectAndRefreshDashboard();
+                const dashIframe = document.getElementById('dashboard-iframe');
+                if (dashIframe && dashIframe.contentWindow && _lastDashboardData) {
+                    dashIframe.contentWindow.postMessage({ type: 'refreshResponse', data: _lastDashboardData }, '*');
+                }
             }
         });
     </script>
+    <div style="text-align:center;padding:12px;font-size:12px;color:#6c757d;border-top:1px solid #dee2e6;background:#f8f9fa;">
+        Questions, bugs, or comments? Email <a href="mailto:cybersecsupport.plethora965@passmail.com" style="color:#667eea;text-decoration:none;">cybersecsupport.plethora965@passmail.com</a>
+    </div>
 </body>
 </html>
