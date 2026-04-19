@@ -16,6 +16,7 @@ The CyberSec Operations Dashboard is a unified tool for managing day-to-day secu
 
 | Tab | File | Description |
 |-----|------|-------------|
+| Dashboard | `dashboard.html` | KPI summary cards and charts aggregated from all modules |
 | Notes | `notes.html` | Free-form security operations notes and meeting records |
 | Operations Calendar | `calendar.html` | Monthly calendar for scheduling and tracking security tasks |
 | Risk Register | `riskregister.html` | Risk tracking with probability/impact scoring and visualizations |
@@ -28,21 +29,26 @@ The CyberSec Operations Dashboard is a unified tool for managing day-to-day secu
 - **Import .xlsx** — Load all modules at once from a single Excel workbook. Each sheet maps to a module.
 - **Export .xlsx** — Save all current data back to a workbook in the same format, ready to re-import.
 - **Clear All Data** — Wipe all modules and start fresh.
+- **Tab Visibility** — ⚙ Tabs dropdown lets you show/hide individual tabs. State is saved in the workbook and restored on next import.
+- **Client name** — Stored in the workbook Config sheet. Displayed in the toolbar and auto-populated on import.
 - Individual modules also support CSV import/export for working with a single data set.
 
 ### Calendar
 - Monthly view with color-coded priority indicators
+- **Overdue task highlighting** — Past-due incomplete tasks shown in dark red with ⚠ prefix on the calendar and an OVERDUE badge in the task table
 - Task status tracking: `Not Started`, `In Progress`, `Completed`
 - Add, edit, and delete events with owner assignment and notes
 - Recurring event support (daily, weekly, monthly, yearly)
-- Status toggle cycles tasks through their workflow states
+- Hide/show completed tasks toggle
 
 ### Risk Register
-- Automatic severity scoring (Probability × Impact)
-- Severity levels: Critical, High, Medium, Low
+- Automatic severity scoring (Probability × Impact) with **before and after controls** values per risk
+- Severity levels: Critical (≥70), High (≥40), Medium (≥15), Low (<15)
+- **5×5 risk heatmap** — likelihood vs. impact matrix with color-coded zones; toggles between Before/After Controls view
 - Filtering by status, severity, and owner
-- Risk timeline and severity distribution charts
+- Severity distribution (doughnut) and status (bar) charts
 - People/owner management
+- CSV export
 
 ### Vendor Tracking
 - Full vendor inventory with classification and risk rating
@@ -102,13 +108,13 @@ python3 -m http.server 8000
 
 ## Workbook Format
 
-The Excel workbook contains one sheet per module. Column headers must match exactly (title case):
+The Excel workbook contains one sheet per module plus a `Config` sheet. Column headers must match exactly (title case):
 
 **Calendar**
 `Date` | `Task` | `Category` | `Priority` | `Status` | `Owner` | `Notes`
 
 **Risk Register**
-`Title` | `Description` | `Category` | `Probability` | `Impact` | `Severity Score` | `Severity Level` | `Status` | `Owner` | `Mitigation Plan` | `Notes` | `Date Created` | `Date Modified`
+`Title` | `Description` | `Category` | `Probability (Before)` | `Impact (Before)` | `Severity Score (Before)` | `Severity Level (Before)` | `Probability (After)` | `Impact (After)` | `Severity Score (After)` | `Severity Level (After)` | `Status` | `Owner` | `Mitigation Plan` | `Notes` | `Date Created` | `Date Modified`
 
 **Vendors**
 `Vendor Name` | `Vendor Type` | `Business Purpose` | `Information Classification` | `Risk Rating` | `Information Security Review` | `Current` | `Notes` | `Contact Information` | `Review Date` | ...
@@ -118,6 +124,9 @@ The Excel workbook contains one sheet per module. Column headers must match exac
 
 **Notes**
 `Title` | `Date` | `Category` | `Priority` | `Author` | `Content` | `Tags`
+
+**Config** *(auto-managed, do not edit manually)*
+`Key` | `Value` — stores `ClientName`, and `TabVis_<tabId>` (1/0) for each tab.
 
 The included `CyberSec_Dashboard_Data.xlsx` sample file contains example data for all modules and serves as a formatting reference.
 
@@ -157,7 +166,7 @@ Each module iframe listens for three message types:
 
 | Library | Version | How loaded | Used for |
 |---------|---------|-----------|----------|
-| Chart.js | 4.4.0 | CDN (jsdelivr) | Risk register charts |
+| Chart.js | 4.4.0 | CDN (jsdelivr) | Charts across dashboard, risk register, and vendor tracking |
 | xlsx parsing | custom | Bundled inline in `index.html` | Reading/writing .xlsx files |
 
 All xlsx parsing uses a self-contained pure JavaScript implementation bundled directly into `index.html` — no CDN dependency for core data operations.
