@@ -171,7 +171,25 @@
         /* Table */
         .table-wrapper {
             padding: 20px 30px 30px;
-            overflow-x: auto;
+            overflow-x: scroll;
+        }
+
+        .table-wrapper::-webkit-scrollbar {
+            height: 12px;
+        }
+
+        .table-wrapper::-webkit-scrollbar-track {
+            background: #f1f3f5;
+            border-radius: 6px;
+        }
+
+        .table-wrapper::-webkit-scrollbar-thumb {
+            background: #adb5bd;
+            border-radius: 6px;
+        }
+
+        .table-wrapper::-webkit-scrollbar-thumb:hover {
+            background: #6c757d;
         }
 
         table {
