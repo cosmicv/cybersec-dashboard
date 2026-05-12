@@ -1005,9 +1005,10 @@
                 html += `<tr><td colspan="${displayCols.length + 1}" style="text-align:center; padding:40px; color:#6c757d;">No matching vendors found.</td></tr>`;
             }
 
-            const todayStart = new Date();
-            todayStart.setHours(0, 0, 0, 0);
-            const todayTs = todayStart.getTime();
+            const oneYearAgo = new Date();
+            oneYearAgo.setHours(0, 0, 0, 0);
+            oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+            const oneYearAgoTs = oneYearAgo.getTime();
 
             filtered.forEach((v) => {
                 const origIdx = vendors.indexOf(v);
@@ -1015,7 +1016,7 @@
                 const classification = (v['Information Classification'] || '').toLowerCase();
                 const currentVal = (v['Current'] || '').trim();
                 const reviewTs = parseFlexDate(v['Review Date']);
-                const isOverdue = reviewTs > 0 && reviewTs < todayTs && currentVal !== 'N/A';
+                const isOverdue = reviewTs > 0 && reviewTs < oneYearAgoTs && currentVal !== 'N/A';
 
                 html += `<tr class="risk-${risk}${isOverdue ? ' overdue' : ''}" ondblclick="editVendor(${origIdx})" title="Double-click to edit">`;                displayCols.forEach(col => {
                     const val = v[col] || '';
