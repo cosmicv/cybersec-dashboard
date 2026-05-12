@@ -196,7 +196,7 @@
             width: 100%;
             border-collapse: collapse;
             font-size: 13px;
-            min-width: 1200px;
+            min-width: 800px;
         }
 
         thead th {
@@ -349,6 +349,61 @@
         .action-btn.edit-btn:hover { background: #5568d3; }
         .action-btn.delete { background: #dc3545; color: white; border-color: #dc3545; font-weight: 600; }
         .action-btn.delete:hover { background: #c82333; border-color: #c82333; }
+
+        /* Compact action dropdown */
+        .action-menu {
+            position: relative;
+            display: inline-block;
+        }
+
+        .action-menu-btn {
+            padding: 4px 10px;
+            border: 1px solid #ced4da;
+            background: white;
+            color: #495057;
+            font-size: 15px;
+            line-height: 1;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+
+        .action-menu-btn:hover { background: #667eea; color: white; border-color: #667eea; }
+
+        .action-dropdown {
+            display: none;
+            position: absolute;
+            right: 0;
+            top: 100%;
+            margin-top: 2px;
+            background: white;
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+            z-index: 100;
+            min-width: 120px;
+            overflow: hidden;
+        }
+
+        .action-menu.open .action-dropdown { display: block; }
+
+        .action-dropdown button {
+            display: block;
+            width: 100%;
+            padding: 8px 14px;
+            border: none;
+            background: none;
+            text-align: left;
+            font-size: 13px;
+            cursor: pointer;
+            color: #495057;
+            transition: background 0.15s;
+        }
+
+        .action-dropdown button:hover { background: #f0f2ff; color: #667eea; }
+        .action-dropdown button.dd-delete:hover { background: #fde8ea; color: #dc3545; }
 
         tbody tr { cursor: default; }
         tbody tr:hover { background: #f0f2ff; cursor: pointer; }
@@ -1005,7 +1060,7 @@
             const displayCols = [
                 'Vendor Name', 'Vendor Type', 'Information Classification', 'Risk Rating',
                 'Information Security Review', 'Current', 'Review Date', 'Type Review',
-                'Responsible Team', 'Notes'
+                'Responsible Team'
             ];
 
             const sortArrow = (col) => {
@@ -1057,10 +1112,15 @@
                         html += `<td>${escapeHtml(val)}</td>`;
                     }
                 });
-                html += `<td style="white-space:nowrap;">
-                    <button class="action-btn edit-btn" onclick="editVendor(${origIdx})">&#9998; Edit</button>
-                    <button class="action-btn" onclick="viewDetail(${origIdx})">View</button>
-                    <button class="action-btn delete" onclick="deleteVendor(${origIdx})">Delete</button>
+                html += `<td style="white-space:nowrap; text-align:center;">
+                    <div class="action-menu" id="menu-${origIdx}">
+                        <button class="action-menu-btn" onclick="toggleMenu(event, ${origIdx})">⋮</button>
+                        <div class="action-dropdown">
+                            <button onclick="editVendor(${origIdx}); closeAllMenus()">✏️ Edit</button>
+                            <button onclick="viewDetail(${origIdx}); closeAllMenus()">🔍 View</button>
+                            <button class="dd-delete" onclick="deleteVendor(${origIdx}); closeAllMenus()">🗑️ Delete</button>
+                        </div>
+                    </div>
                 </td>`;
                 html += `</tr>`;
             });
@@ -1074,6 +1134,20 @@
             if (!str) return '';
             return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
         }
+
+        function toggleMenu(e, idx) {
+            e.stopPropagation();
+            const menu = document.getElementById('menu-' + idx);
+            const isOpen = menu.classList.contains('open');
+            closeAllMenus();
+            if (!isOpen) menu.classList.add('open');
+        }
+
+        function closeAllMenus() {
+            document.querySelectorAll('.action-menu.open').forEach(m => m.classList.remove('open'));
+        }
+
+        document.addEventListener('click', closeAllMenus);
 
         function handleSort(col) {
             if (sortColumn === col) {
@@ -1241,56 +1315,4 @@
                 const DATE_COLS = new Set(['Review Date']);
                 const exportData = vendors.map(v => {
                     const row = {};
-                    COLUMNS.forEach(col => {
-                        row[col] = DATE_COLS.has(col) ? (toDateInputVal(v[col]) || '') : (v[col] || '');
-                    });
-                    return row;
-                });
-                e.source.postMessage({
-                    type: 'exportData',
-                    module: 'vendors',
-                    data: exportData,
-                    headers: COLUMNS
-                }, '*');
-            }
-            if (e.data && e.data.type === 'importDataFromWorkbook' && e.data.module === 'vendors') {
-                const rows = e.data.data || [];
-                if (rows.length === 0) return;
-
-                // Build a fuzzy lookup: strip all non-alpha/space chars, lowercase
-                function fuzzyKey(s) { return String(s).toLowerCase().replace(/[^a-z ]/g, '').trim(); }
-                const fuzzyHeaderMap = {};
-                Object.keys(HEADER_MAP).forEach(k => { fuzzyHeaderMap[fuzzyKey(k)] = HEADER_MAP[k]; });
-
-                rows.forEach(r => {
-                    const vendor = {};
-                    COLUMNS.forEach(col => {
-                        vendor[col] = r[col] || '';
-                    });
-                    // Try exact HEADER_MAP match, then fuzzy match
-                    Object.keys(r).forEach(key => {
-                        const exact  = HEADER_MAP[key.toLowerCase().trim()];
-                        const fuzzy  = fuzzyHeaderMap[fuzzyKey(key)];
-                        const mapped = exact || fuzzy;
-                        if (mapped && !vendor[mapped]) vendor[mapped] = r[key];
-                    });
-                    // Fallback: compute Current from Review Date if formula cell had no cached value
-                    if (!vendor['Current'] && vendor['Review Date']) {
-                        const ts = parseFlexDate(vendor['Review Date']);
-                        if (ts) vendor['Current'] = ts >= Date.now() ? 'Current' : 'Not Current';
-                    }
-                    vendors.push(vendor);
-                });
-                populateFilters();
-                renderAll();
-                e.source.postMessage({ type: 'importComplete', module: 'vendors', count: rows.length }, '*');
-            }
-            if (e.data && e.data.type === 'clearAllData') {
-                vendors = [];
-                populateFilters();
-                renderAll();
-            }
-        });
-    </script>
-</body>
-</html>
+           
