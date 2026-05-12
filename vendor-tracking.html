@@ -238,6 +238,14 @@
             border-left: 4px solid #28a745;
         }
 
+        tbody tr.overdue td {
+            background: #fde2e4;
+        }
+
+        tbody tr.overdue:hover td {
+            background: #fbd0d3;
+        }
+
         /* Badges */
         .badge {
             display: inline-block;
@@ -997,13 +1005,19 @@
                 html += `<tr><td colspan="${displayCols.length + 1}" style="text-align:center; padding:40px; color:#6c757d;">No matching vendors found.</td></tr>`;
             }
 
+            const todayStart = new Date();
+            todayStart.setHours(0, 0, 0, 0);
+            const todayTs = todayStart.getTime();
+
             filtered.forEach((v) => {
                 const origIdx = vendors.indexOf(v);
                 const risk = v['Risk Rating'] || '';
                 const classification = (v['Information Classification'] || '').toLowerCase();
                 const currentVal = (v['Current'] || '').trim();
+                const reviewTs = parseFlexDate(v['Review Date']);
+                const isOverdue = reviewTs > 0 && reviewTs < todayTs && currentVal !== 'N/A';
 
-                html += `<tr class="risk-${risk}" ondblclick="editVendor(${origIdx})" title="Double-click to edit">`;                displayCols.forEach(col => {
+                html += `<tr class="risk-${risk}${isOverdue ? ' overdue' : ''}" ondblclick="editVendor(${origIdx})" title="Double-click to edit">`;                displayCols.forEach(col => {
                     const val = v[col] || '';
                     if (col === 'Risk Rating') {
                         html += `<td><span class="badge badge-risk-${val}">${val}</span></td>`;
