@@ -579,6 +579,7 @@ function _buildZip(files) {
             <label for="wbImportFile" style="padding:8px 18px;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;background:#28a745;color:white;">Import .xlsx</label>
             <input type="file" id="wbImportFile" accept=".xlsx,.xls" onchange="importWorkbook(event)" style="display:none;">
             <button onclick="clearAllData()" style="padding:8px 18px;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;background:#dc3545;color:white;transition:all 0.3s;">Clear All Data</button>
+            <button onclick="showReportModal()" style="padding:8px 18px;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;background:#495057;color:white;transition:all 0.3s;" title="Generate a Word report from current data">&#x1F4C4; Report</button>
             <div style="position:relative;display:inline-block;">
                 <button onclick="toggleTabVisDropdown(event)" id="tabVisBtn" style="padding:8px 18px;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;background:#6c757d;color:white;transition:all 0.3s;">&#9881; Tabs &#9660;</button>
                 <div id="tabVisDropdown" style="display:none;position:absolute;top:calc(100% + 4px);left:0;background:white;border:1px solid #ced4da;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,0.15);z-index:9999;min-width:190px;padding:6px 0;" onclick="event.stopPropagation()">
@@ -1182,6 +1183,306 @@ function _buildZip(files) {
             alert('All module data has been cleared.');
         }
 
+        // ========== Report Generation ==========
+        function showReportModal() {
+            document.getElementById('reportModal').style.display = 'flex';
+        }
+
+        function closeReportModal() {
+            document.getElementById('reportModal').style.display = 'none';
+        }
+
+        function generateReport(reportType) {
+            closeReportModal();
+            setStatus('Collecting data for report...');
+
+            const collected = {};
+            const reportModules = ['risks', 'vendors', 'policies', 'calendar'];
+            let pending = reportModules.length;
+            let rptTimeout;
+
+            function onReportData(event) {
+                if (event.data && event.data.type === 'exportData') {
+                    collected[event.data.module] = event.data;
+                    pending--;
+                    if (pending <= 0) {
+                        window.removeEventListener('message', onReportData);
+                        clearTimeout(rptTimeout);
+                        buildWordReport(collected, reportType);
+                    }
+                }
+            }
+
+            window.addEventListener('message', onReportData);
+
+            reportModules.forEach(mod => {
+                const cfg = MODULE_CONFIG[mod];
+                const iframe = cfg && document.getElementById(cfg.iframe);
+                if (iframe && iframe.contentWindow) {
+                    iframe.contentWindow.postMessage({ type: 'getDataForExport' }, '*');
+                } else {
+                    pending--;
+                    if (pending <= 0) {
+                        window.removeEventListener('message', onReportData);
+                        buildWordReport(collected, reportType);
+                    }
+                }
+            });
+
+            rptTimeout = setTimeout(() => {
+                window.removeEventListener('message', onReportData);
+                if (Object.keys(collected).length > 0) {
+                    buildWordReport(collected, reportType);
+                } else {
+                    setStatus('Report failed — load all tabs at least once first.');
+                    alert('Report timed out. Switch to each tab at least once so the modules load, then try again.');
+                }
+            }, 5000);
+        }
+
+        function buildWordReport(collected, reportType) {
+            function esc(str) {
+                return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+            }
+
+            const today = new Date();
+            const dateStr = today.toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
+            const clientName = _clientName || 'Client';
+            const safeClient = clientName.replace(/[^a-zA-Z0-9_\-]/g, '_');
+            const fileName = safeClient + '_SecurityReport_' + today.toISOString().slice(0,10) + '.doc';
+
+            // Parse module data
+            const risks    = (collected.risks    && collected.risks.data)    || [];
+            const vendors  = (collected.vendors  && collected.vendors.data)  || [];
+            const policies = (collected.policies && collected.policies.data) || [];
+            const calendar = (collected.calendar && collected.calendar.data) || [];
+
+            // --- Risk metrics ---
+            const openRisks    = risks.filter(r => r.Status !== 'Closed' && r.Status !== 'Archived');
+            const criticalRisks = openRisks.filter(r => (r['Severity Level (Before)'] || '').toLowerCase() === 'critical');
+            const highRisks     = openRisks.filter(r => (r['Severity Level (Before)'] || '').toLowerCase() === 'high');
+            const mediumRisks   = openRisks.filter(r => (r['Severity Level (Before)'] || '').toLowerCase() === 'medium');
+            const lowRisks      = openRisks.filter(r => (r['Severity Level (Before)'] || '').toLowerCase() === 'low');
+
+            // --- Policy metrics ---
+            const overduePolicies  = policies.filter(p => /overdue/i.test(p.Status || ''));
+            const dueSoonPolicies  = policies.filter(p => /due soon/i.test(p.Status || ''));
+            const compliantPolicies = policies.filter(p => /current|compliant/i.test(p.Status || ''));
+
+            // --- Vendor metrics ---
+            const notCurrentVendors = vendors.filter(v => /not current|expired/i.test(v.Current || ''));
+
+            // --- Calendar metrics ---
+            const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+            const in30Days = new Date(todayMidnight.getTime() + 30*24*60*60*1000);
+            const overdueEvents = calendar.filter(e => {
+                if (/completed/i.test(e.Status || '')) return false;
+                const d = new Date(e.Date);
+                return !isNaN(d) && d < todayMidnight;
+            });
+            const dueSoonEvents = calendar.filter(e => {
+                if (/completed/i.test(e.Status || '')) return false;
+                const d = new Date(e.Date);
+                return !isNaN(d) && d >= todayMidnight && d <= in30Days;
+            });
+
+            // --- Auto-generated narrative ---
+            let narrative = 'As of ' + dateStr + ', ' + esc(clientName) + ' has ' + openRisks.length + ' open risk' + (openRisks.length !== 1 ? 's' : '');
+            const riskParts = [];
+            if (criticalRisks.length) riskParts.push(criticalRisks.length + ' critical');
+            if (highRisks.length)     riskParts.push(highRisks.length + ' high');
+            if (riskParts.length)     narrative += ' (' + riskParts.join(', ') + ')';
+            narrative += '.';
+            if (overduePolicies.length)
+                narrative += ' ' + overduePolicies.length + ' polic' + (overduePolicies.length !== 1 ? 'ies are' : 'y is') + ' overdue for review.';
+            else if (policies.length)
+                narrative += ' All ' + policies.length + ' tracked polic' + (policies.length !== 1 ? 'ies are' : 'y is') + ' current.';
+            if (notCurrentVendors.length)
+                narrative += ' ' + notCurrentVendors.length + ' vendor' + (notCurrentVendors.length !== 1 ? 's have' : ' has') + ' expired or lapsed security documentation.';
+            else if (vendors.length)
+                narrative += ' All ' + vendors.length + ' tracked vendor' + (vendors.length !== 1 ? 's are' : ' is') + ' current.';
+            if (overdueEvents.length)
+                narrative += ' ' + overdueEvents.length + ' operations task' + (overdueEvents.length !== 1 ? 's are' : ' is') + ' overdue.';
+
+            // --- Severity badge helper ---
+            function badge(level) {
+                const l = (level || '').toLowerCase();
+                const cls = l === 'critical' ? 'bc' : l === 'high' ? 'bh' : l === 'medium' ? 'bm' : 'bl';
+                return '<span class="' + cls + '">' + esc(level || 'Unknown') + '</span>';
+            }
+
+            // --- Status badge helper (policy/vendor) ---
+            function statusBadge(status) {
+                const s = (status || '').toLowerCase();
+                const cls = /overdue|not current|expired/.test(s) ? 'bc' : /due soon/.test(s) ? 'bh' : 'bl';
+                return '<span class="' + cls + '">' + esc(status) + '</span>';
+            }
+
+            // ========== HTML SECTIONS ==========
+
+            // Cover
+            const cover = `
+<div class="cover">
+  <div style="border-top:4pt solid #3d5a99;margin:0;"></div>
+  <p style="font-size:8pt;color:#6c757d;text-transform:uppercase;letter-spacing:2pt;margin:28pt 0 0;">Confidential</p>
+  <h1 style="font-size:30pt;margin:16pt 0 8pt;">${esc(clientName)}</h1>
+  <p style="font-size:16pt;color:#3d5a99;margin:0 0 20pt;font-weight:normal;">${reportType === 'executive' ? 'Executive Security Report' : 'Comprehensive Security Report'}</p>
+  <p style="font-size:12pt;color:#6c757d;">${dateStr}</p>
+  <div style="border-bottom:4pt solid #3d5a99;margin:36pt 0 0;"></div>
+  <p style="font-size:10pt;color:#495057;margin-top:20pt;">Prepared by: Virtual Chief Information Security Officer (vCISO)</p>
+</div>`;
+
+            // Executive Summary
+            const execSummary = `
+<h2>Executive Summary</h2>
+<p>${narrative}</p>
+<h3>Security Posture at a Glance</h3>
+<table>
+  <tr><th>Area</th><th>Metric</th><th>Value</th><th>Status</th></tr>
+  <tr><td>Risks</td><td>Open Risks</td><td>${openRisks.length}</td>
+    <td>${criticalRisks.length > 0 ? badge('Critical') : highRisks.length > 0 ? badge('High') : '<span class="bl">Acceptable</span>'}</td></tr>
+  <tr><td></td><td>Critical &amp; High</td><td>${criticalRisks.length} / ${highRisks.length}</td><td></td></tr>
+  <tr><td>Policies</td><td>Total Tracked</td><td>${policies.length}</td>
+    <td>${overduePolicies.length > 0 ? badge('Critical') : dueSoonPolicies.length > 0 ? badge('High') : '<span class="bl">Current</span>'}</td></tr>
+  <tr><td></td><td>Overdue / Due Soon</td><td>${overduePolicies.length} / ${dueSoonPolicies.length}</td><td></td></tr>
+  <tr><td>Vendors</td><td>Total Tracked</td><td>${vendors.length}</td>
+    <td>${notCurrentVendors.length > 0 ? '<span class="bh">Attention</span>' : '<span class="bl">Current</span>'}</td></tr>
+  <tr><td></td><td>Not Current</td><td>${notCurrentVendors.length}</td><td></td></tr>
+  <tr><td>Operations</td><td>Overdue Tasks</td><td>${overdueEvents.length}</td>
+    <td>${overdueEvents.length > 0 ? '<span class="bh">Attention</span>' : '<span class="bl">On Track</span>'}</td></tr>
+  <tr><td></td><td>Due in 30 Days</td><td>${dueSoonEvents.length}</td><td></td></tr>
+</table>`;
+
+            // Risk Summary
+            const topRisks = [...openRisks].sort((a,b) => {
+                const o = { critical:0, high:1, medium:2, low:3 };
+                return (o[(a['Severity Level (Before)']||'').toLowerCase()] ?? 4) - (o[(b['Severity Level (Before)']||'').toLowerCase()] ?? 4);
+            }).slice(0,10);
+            const riskSection = `
+<h2>Risk Summary</h2>
+<table>
+  <tr><th>Severity</th><th>Open Count</th></tr>
+  <tr><td>Critical</td><td>${criticalRisks.length}</td></tr>
+  <tr><td>High</td><td>${highRisks.length}</td></tr>
+  <tr><td>Medium</td><td>${mediumRisks.length}</td></tr>
+  <tr><td>Low</td><td>${lowRisks.length}</td></tr>
+  <tr><td><strong>Total Open</strong></td><td><strong>${openRisks.length}</strong></td></tr>
+</table>
+${topRisks.length > 0 ? `<h3>Top Open Risks</h3>
+<table>
+  <tr><th>Title</th><th>Category</th><th>Severity</th><th>Score</th><th>Status</th><th>Owner</th></tr>
+  ${topRisks.map(r => `<tr><td>${esc(r.Title)}</td><td>${esc(r.Category)}</td><td>${badge(r['Severity Level (Before)'])}</td><td>${esc(r['Severity Score (Before)'])}</td><td>${esc(r.Status)}</td><td>${esc(r.Owner)}</td></tr>`).join('')}
+</table>` : '<p><em>No open risks recorded.</em></p>'}`;
+
+            // Policy Status
+            const policySection = `
+<h2>Policy Status</h2>
+${policies.length > 0 ? `<table>
+  <tr><th>Policy Name</th><th>Status</th><th>Last Reviewed</th><th>Next Review</th><th>Owner</th><th>Framework</th></tr>
+  ${policies.map(p => `<tr><td>${esc(p['Policy Name'])}</td><td>${statusBadge(p.Status)}</td><td>${esc(p['Last Reviewed'])}</td><td>${esc(p['Next Review'])}</td><td>${esc(p.Owner)}</td><td>${esc(p['Compliance Framework'])}</td></tr>`).join('')}
+</table>` : '<p><em>No policies recorded.</em></p>'}`;
+
+            // Vendor Status
+            const vendorSection = `
+<h2>Vendor Status</h2>
+${vendors.length > 0 ? `<table>
+  <tr><th>Vendor Name</th><th>Type</th><th>Risk Rating</th><th>Current</th><th>Review Date</th><th>Responsible Team</th></tr>
+  ${vendors.map(v => `<tr><td>${esc(v['Vendor Name'])}</td><td>${esc(v['Vendor Type'])}</td><td>${esc(v['Risk Rating'])}</td><td>${statusBadge(v.Current)}</td><td>${esc(v['Review Date'])}</td><td>${esc(v['Responsible Team'])}</td></tr>`).join('')}
+</table>` : '<p><em>No vendors recorded.</em></p>'}`;
+
+            // Action Items
+            const actionItems = [
+                ...overdueEvents.map(e => ({ src:'Operations Calendar', item:e.Task, due:e.Date, priority:e.Priority, owner:e.Owner, status:'Overdue' })),
+                ...criticalRisks.map(r => ({ src:'Risk Register', item:r.Title, due:'', priority:'Critical', owner:r.Owner, status:r.Status })),
+                ...highRisks.filter(r => r.Status === 'Open').map(r => ({ src:'Risk Register', item:r.Title, due:'', priority:'High', owner:r.Owner, status:r.Status })),
+                ...overduePolicies.map(p => ({ src:'Policy Reviews', item:p['Policy Name'], due:p['Next Review'], priority:'High', owner:p.Owner, status:'Overdue' })),
+                ...notCurrentVendors.map(v => ({ src:'Vendor Tracking', item:v['Vendor Name'], due:v['Review Date'], priority:'High', owner:v['Responsible Team']||'', status:'Not Current' })),
+            ];
+            const actionSection = `
+<h2>Open Action Items</h2>
+${actionItems.length > 0 ? `<table>
+  <tr><th>Source</th><th>Item</th><th>Priority</th><th>Due Date</th><th>Owner</th><th>Status</th></tr>
+  ${actionItems.map(a => `<tr><td>${esc(a.src)}</td><td>${esc(a.item)}</td><td>${badge(a.priority)}</td><td>${esc(a.due)}</td><td>${esc(a.owner)}</td><td>${esc(a.status)}</td></tr>`).join('')}
+</table>` : '<p><em>No open action items identified.</em></p>'}`;
+
+            // Appendices (full report only)
+            let appendices = '';
+            if (reportType === 'full') {
+                if (risks.length > 0) {
+                    appendices += `
+<div class="pb">
+<h2>Appendix A: Full Risk Register</h2>
+<table>
+  <tr><th>Title</th><th>Category</th><th>Severity</th><th>Score</th><th>Status</th><th>Owner</th><th>Mitigation Plan</th></tr>
+  ${risks.map(r => `<tr><td>${esc(r.Title)}</td><td>${esc(r.Category)}</td><td>${badge(r['Severity Level (Before)'])}</td><td>${esc(r['Severity Score (Before)'])}</td><td>${esc(r.Status)}</td><td>${esc(r.Owner)}</td><td>${esc(r['Mitigation Plan'])}</td></tr>`).join('')}
+</table>
+</div>`;
+                }
+                if (vendors.length > 0) {
+                    appendices += `
+<div class="pb">
+<h2>Appendix B: Complete Vendor List</h2>
+<table>
+  <tr><th>Vendor Name</th><th>Type</th><th>Business Purpose</th><th>Info Classification</th><th>Risk Rating</th><th>Current</th><th>Review Date</th><th>Responsible Team</th></tr>
+  ${vendors.map(v => `<tr><td>${esc(v['Vendor Name'])}</td><td>${esc(v['Vendor Type'])}</td><td>${esc(v['Business Purpose'])}</td><td>${esc(v['Information Classification'])}</td><td>${esc(v['Risk Rating'])}</td><td>${statusBadge(v.Current)}</td><td>${esc(v['Review Date'])}</td><td>${esc(v['Responsible Team'])}</td></tr>`).join('')}
+</table>
+</div>`;
+                }
+            }
+
+            // ========== ASSEMBLE DOCUMENT ==========
+            const html = `<html xmlns:o='urn:schemas-microsoft-com:office:office'
+xmlns:w='urn:schemas-microsoft-com:office:word'
+xmlns='http://www.w3.org/TR/REC-html40'>
+<head>
+<meta charset='utf-8'>
+<title>${esc(clientName)} Security Report</title>
+<!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom><w:DoNotOptimizeForBrowser/></w:WordDocument></xml><![endif]-->
+<style>
+@page { margin:1in; size:8.5in 11in; }
+body { font-family:Arial,sans-serif; font-size:11pt; color:#212529; line-height:1.45; }
+h1 { font-size:28pt; color:#2c3e50; margin:0 0 8pt 0; }
+h2 { font-size:14pt; color:#3d5a99; border-bottom:1pt solid #3d5a99; padding-bottom:4pt; margin:28pt 0 10pt 0; }
+h3 { font-size:12pt; color:#495057; margin:16pt 0 8pt 0; }
+p  { margin:6pt 0; }
+table { border-collapse:collapse; width:100%; margin:10pt 0 18pt 0; font-size:9.5pt; }
+th { background-color:#3d5a99; color:white; padding:6pt 8pt; text-align:left; font-weight:bold; }
+td { padding:5pt 8pt; border:0.5pt solid #dee2e6; vertical-align:top; }
+tr:nth-child(even) td { background-color:#f8f9fa; }
+.pb  { page-break-before:always; }
+.cover { text-align:center; page-break-after:always; padding-top:2.5in; }
+.bc { color:#721c24; background-color:#f8d7da; padding:1pt 5pt; }
+.bh { color:#856404; background-color:#fff3cd; padding:1pt 5pt; }
+.bm { color:#0c5460; background-color:#d1ecf1; padding:1pt 5pt; }
+.bl { color:#155724; background-color:#d4edda; padding:1pt 5pt; }
+</style>
+</head>
+<body>
+${cover}
+<div class="pb">
+${execSummary}
+${riskSection}
+${policySection}
+${vendorSection}
+${actionSection}
+${appendices}
+</div>
+</body>
+</html>`;
+
+            // Download
+            const blob = new Blob([html], { type:'application/msword;charset=utf-8' });
+            const url  = URL.createObjectURL(blob);
+            const a    = document.createElement('a');
+            a.href     = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            setTimeout(() => URL.revokeObjectURL(url), 1500);
+            setStatus('Report downloaded: ' + fileName);
+        }
+
         // ========== Auto-clear on page load ==========
         // localStorage already wiped in <head> before iframes parsed.
         // Send clearAllData postMessage to each iframe after it loads
@@ -1230,6 +1531,31 @@ function _buildZip(files) {
     </script>
     <div style="text-align:center;padding:12px;font-size:12px;color:#6c757d;border-top:1px solid #dee2e6;background:#f8f9fa;">
         Questions, bugs, or comments? Email <a href="mailto:cybersecsupport.plethora965@passmail.com" style="color:#667eea;text-decoration:none;">cybersecsupport.plethora965@passmail.com</a>
+    </div>
+
+    <!-- ========== Report Generation Modal ========== -->
+    <div id="reportModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.55);z-index:10000;align-items:center;justify-content:center;">
+        <div style="background:white;border-radius:12px;padding:32px;max-width:500px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+            <h3 style="margin:0 0 6px;font-size:18px;color:#2c3e50;font-family:'Inter',sans-serif;">&#x1F4C4; Generate Client Report</h3>
+            <p style="margin:0 0 24px;color:#6c757d;font-size:13px;font-family:'Inter',sans-serif;">Pulls live data from all modules and downloads a Word document (.doc) ready to send or edit.</p>
+            <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:24px;">
+                <button onclick="generateReport('executive')"
+                    style="padding:16px 20px;border:2px solid #667eea;border-radius:8px;cursor:pointer;background:white;text-align:left;transition:background 0.2s;font-family:'Inter',sans-serif;"
+                    onmouseover="this.style.background='#f0f2ff'" onmouseout="this.style.background='white'">
+                    <div style="font-weight:700;font-size:14px;color:#3d5a99;">&#x1F4C4; Executive Summary</div>
+                    <div style="font-size:12px;color:#6c757d;margin-top:4px;">Cover page &bull; KPI snapshot &bull; Risk summary &bull; Policy &amp; vendor status &bull; Action items &mdash; ~3&ndash;4 pages</div>
+                </button>
+                <button onclick="generateReport('full')"
+                    style="padding:16px 20px;border:2px solid #28a745;border-radius:8px;cursor:pointer;background:white;text-align:left;transition:background 0.2s;font-family:'Inter',sans-serif;"
+                    onmouseover="this.style.background='#f0fff4'" onmouseout="this.style.background='white'">
+                    <div style="font-weight:700;font-size:14px;color:#1a7a34;">&#x1F4CB; Full Report</div>
+                    <div style="font-size:12px;color:#6c757d;margin-top:4px;">Everything above plus complete Risk Register and Vendor List appendices</div>
+                </button>
+            </div>
+            <div style="text-align:right;">
+                <button onclick="closeReportModal()" style="padding:8px 20px;border:1px solid #dee2e6;border-radius:6px;cursor:pointer;background:white;color:#6c757d;font-size:13px;font-family:'Inter',sans-serif;">Cancel</button>
+            </div>
+        </div>
     </div>
 </body>
 </html>
