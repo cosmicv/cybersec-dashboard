@@ -35,6 +35,7 @@ The dashboard consolidates day-to-day security operations into a single interfac
 
 - **Import .xlsx** — Load all modules at once from a single Excel workbook
 - **Export .xlsx** — Save all data back to a workbook, ready to re-import next session
+- **📄 Report** — Generate a client-ready Word document (.doc) from live dashboard data. Choose between an Executive Summary (~3–4 pages: cover, KPI snapshot, risk summary, policy & vendor status, action items) or a Full Report (adds complete Risk Register and Vendor List appendices). The report auto-generates an executive narrative and downloads as `ClientName_SecurityReport_YYYY-MM-DD.doc`.
 - **Client name** — Stored in the workbook and displayed in the toolbar
 - **Tab visibility** — Show or hide individual tabs; state is saved in the workbook
 
