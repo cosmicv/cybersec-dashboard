@@ -5,7 +5,7 @@ Always remind the user to pull the latest changes to their local Windows folder:
 
 ```powershell
 cd C:\Users\cosmicv\Documents\CoworkOS\Programming\cybersec-dashboard-git
-git pull origin claude/locate-project-files-hjlQx
+git pull origin main
 ```
 
 Then reload `index.html` in the browser to see the changes.
@@ -21,7 +21,7 @@ Then reload `index.html` in the browser to see the changes.
 - `CyberSec_Dashboard_Data.xlsx` — sample data workbook
 
 ## Development branch
-Always develop on `claude/locate-project-files-hjlQx` unless instructed otherwise.
+Always develop on `main` unless instructed otherwise.
 
 ## Local path (Windows)
 `C:\Users\cosmicv\Documents\CoworkOS\Programming\cybersec-dashboard-git`
