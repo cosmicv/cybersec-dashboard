@@ -12,6 +12,8 @@ A browser-based security operations management platform for vCISOs. No server, n
 
 Or download the repository as a ZIP, extract it, and open `index.html` in any modern browser — it runs entirely from your local folder with no setup required.
 
+**Your data stays local.** All data entered into the app is stored only in your browser's local cache or in the Excel workbook you export. Nothing is uploaded to GitHub or any external server.
+
 ---
 
 ## What It Does
