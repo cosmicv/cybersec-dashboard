@@ -1078,6 +1078,8 @@ function _buildZip(files) {
                         if (rows.length === 0) return;
 
                         sheetsFound.push(sheetName);
+                        // Cache payload so we can re-deliver if the iframe wasn't ready yet
+                        _pendingModuleData[mod] = rows;
                         const iframe = document.getElementById(MODULE_CONFIG[mod].iframe);
                         if (iframe && iframe.contentWindow) {
                             pending++;
@@ -1198,11 +1200,30 @@ function _buildZip(files) {
         // Store last imported raw data so the dashboard refresh button can re-use it
         let _lastDashboardData = null;
 
+        // Cache the last import payload per module so we can re-deliver if an iframe
+        // signals ready after the import message was already sent (timing race fix).
+        const _pendingModuleData = {};
+
         window.addEventListener('message', function(e) {
             if (e.data && e.data.type === 'requestDashboardData') {
                 const dashIframe = document.getElementById('dashboard-iframe');
                 if (dashIframe && dashIframe.contentWindow && _lastDashboardData) {
                     dashIframe.contentWindow.postMessage({ type: 'refreshResponse', data: _lastDashboardData }, '*');
+                }
+            }
+            // If an iframe signals it's ready, re-send any pending import data for that module
+            if (e.data && e.data.type === 'iframeReady' && e.data.module) {
+                const mod = e.data.module;
+                if (_pendingModuleData[mod]) {
+                    const cfg = MODULE_CONFIG[mod];
+                    const iframe = cfg && document.getElementById(cfg.iframe);
+                    if (iframe && iframe.contentWindow) {
+                        iframe.contentWindow.postMessage({
+                            type: 'importDataFromWorkbook',
+                            module: mod,
+                            data: _pendingModuleData[mod]
+                        }, '*');
+                    }
                 }
             }
         });

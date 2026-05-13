@@ -757,6 +757,10 @@
                 }
             });
             renderAll();
+            // Signal parent that this iframe is ready to receive data
+            if (window.parent && window.parent !== window) {
+                window.parent.postMessage({ type: 'iframeReady', module: 'vendors' }, '*');
+            }
         });
 
         // ==================== CSV PARSING ====================
@@ -1315,4 +1319,60 @@
                 const DATE_COLS = new Set(['Review Date']);
                 const exportData = vendors.map(v => {
                     const row = {};
-           
+                    COLUMNS.forEach(col => {
+                        row[col] = DATE_COLS.has(col) ? (toDateInputVal(v[col]) || '') : (v[col] || '');
+                    });
+                    return row;
+                });
+                e.source.postMessage({
+                    type: 'exportData',
+                    module: 'vendors',
+                    data: exportData,
+                    headers: COLUMNS
+                }, '*');
+            }
+            if (e.data && e.data.type === 'importDataFromWorkbook' && e.data.module === 'vendors') {
+                const rows = e.data.data || [];
+                if (rows.length === 0) return;
+
+                // Build a fuzzy lookup: strip all non-alpha/space chars, lowercase
+                function fuzzyKey(s) { return String(s).toLowerCase().replace(/[^a-z ]/g, '').trim(); }
+                const fuzzyHeaderMap = {};
+                Object.keys(HEADER_MAP).forEach(k => { fuzzyHeaderMap[fuzzyKey(k)] = HEADER_MAP[k]; });
+
+                // Replace existing data (don't append — prevents duplicates on re-import)
+                const imported = [];
+                rows.forEach(r => {
+                    const vendor = {};
+                    COLUMNS.forEach(col => {
+                        vendor[col] = r[col] || '';
+                    });
+                    // Try exact HEADER_MAP match, then fuzzy match
+                    Object.keys(r).forEach(key => {
+                        const exact  = HEADER_MAP[key.toLowerCase().trim()];
+                        const fuzzy  = fuzzyHeaderMap[fuzzyKey(key)];
+                        const mapped = exact || fuzzy;
+                        if (mapped && !vendor[mapped]) vendor[mapped] = r[key];
+                    });
+                    // Fallback: compute Current from Review Date if formula cell had no cached value
+                    if (!vendor['Current'] && vendor['Review Date']) {
+                        const ts = parseFlexDate(vendor['Review Date']);
+                        if (ts) vendor['Current'] = ts >= Date.now() ? 'Current' : 'Not Current';
+                    }
+                    // Only include rows that have a vendor name
+                    if ((vendor['Vendor Name'] || '').trim()) imported.push(vendor);
+                });
+                vendors = imported;
+                populateFilters();
+                renderAll();
+                e.source.postMessage({ type: 'importComplete', module: 'vendors', count: vendors.length }, '*');
+            }
+            if (e.data && e.data.type === 'clearAllData') {
+                vendors = [];
+                populateFilters();
+                renderAll();
+            }
+        });
+    </script>
+</body>
+</html>
