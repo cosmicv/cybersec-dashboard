@@ -1,0 +1,1285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Framework Control Reviews</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f8f9fa;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        header h1 { font-size: 2em; margin-bottom: 10px; font-weight: 700; }
+        header .subtitle { font-size: 1em; opacity: 0.9; }
+
+        /* ---- Template Loader Bar ---- */
+        .loader-bar {
+            padding: 14px 24px;
+            background: #e9ecef;
+            border-bottom: 1px solid #dee2e6;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .loader-bar label { font-weight: 600; font-size: 13px; color: #495057; }
+        .loader-bar select {
+            padding: 7px 12px;
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            font-size: 13px;
+            background: white;
+        }
+
+        /* ---- Stats Bar ---- */
+        .stats-bar {
+            display: flex;
+            gap: 0;
+            border-bottom: 1px solid #dee2e6;
+            background: white;
+            flex-wrap: wrap;
+        }
+        .stat-card {
+            flex: 1;
+            min-width: 100px;
+            padding: 14px 18px;
+            text-align: center;
+            border-right: 1px solid #dee2e6;
+        }
+        .stat-card:last-child { border-right: none; }
+        .stat-label { font-size: 11px; color: #6c757d; text-transform: uppercase; letter-spacing: 0.04em; font-weight: 600; }
+        .stat-value { font-size: 24px; font-weight: 700; margin-top: 4px; }
+        .stat-pct  { font-size: 11px; color: #6c757d; margin-top: 2px; }
+        .stat-compliant { color: #28a745; }
+        .stat-partial   { color: #fd7e14; }
+        .stat-nonc      { color: #dc3545; }
+        .stat-overdue   { color: #dc3545; }
+        .stat-na        { color: #adb5bd; }
+        .stat-total     { color: #3d5a99; }
+
+        .compliance-bar-wrap { padding: 4px 24px 10px; background: white; border-bottom: 1px solid #dee2e6; }
+        .compliance-bar-track { height: 8px; background: #dee2e6; border-radius: 4px; overflow: hidden; }
+        .compliance-bar-fill  { height: 100%; border-radius: 4px; transition: width 0.4s; }
+
+        /* ---- Controls / Filter Bar ---- */
+        .controls-bar {
+            padding: 12px 24px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .controls-bar select, .controls-bar input {
+            padding: 7px 12px;
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            font-size: 13px;
+            background: white;
+        }
+        .controls-bar input { width: 180px; }
+        .filter-sep { width: 1px; height: 28px; background: #dee2e6; margin: 0 4px; }
+
+        /* ---- Buttons ---- */
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .btn:hover { opacity: 0.87; transform: translateY(-1px); }
+        .btn-primary  { background: #667eea; color: white; }
+        .btn-success  { background: #28a745; color: white; }
+        .btn-secondary{ background: #6c757d; color: white; }
+        .btn-warning  { background: #ffc107; color: #212529; }
+        .btn-danger   { background: #dc3545; color: white; }
+        .btn-outline  { background: white; color: #495057; border: 1px solid #ced4da; }
+        .btn-sm { padding: 4px 10px; font-size: 12px; }
+
+        /* ---- Table ---- */
+        .table-wrapper { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        thead th {
+            background: #f8f9fa;
+            padding: 10px 12px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 12px;
+            color: #495057;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            border-bottom: 2px solid #dee2e6;
+            white-space: nowrap;
+        }
+        tbody td {
+            padding: 9px 12px;
+            border-bottom: 1px solid #f0f0f0;
+            vertical-align: middle;
+        }
+        tbody tr:hover td { background: #f8f9fa; }
+        tbody tr.excluded td { opacity: 0.55; }
+
+        .ctrl-id   { font-family: 'Courier New', monospace; font-size: 12px; font-weight: 700; color: #3d5a99; white-space: nowrap; }
+        .ctrl-name { max-width: 300px; }
+        .ctrl-domain { font-size: 11px; color: #6c757d; white-space: nowrap; }
+        .ctrl-owner  { max-width: 120px; font-size: 12px; }
+        .ctrl-date   { white-space: nowrap; font-size: 12px; }
+
+        /* Status badges */
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+        .badge-compliant    { background: #d4edda; color: #155724; }
+        .badge-partial      { background: #fff3cd; color: #856404; }
+        .badge-noncompliant { background: #f8d7da; color: #721c24; }
+        .badge-notreviewed  { background: #e9ecef; color: #495057; }
+        .badge-na           { background: #e9ecef; color: #6c757d; }
+        .badge-outofscope   { background: #e2d9f3; color: #4a235a; }
+
+        /* Date status badges */
+        .date-overdue  { color: #dc3545; font-weight: 700; }
+        .date-duesoon  { color: #fd7e14; font-weight: 600; }
+        .date-ok       { color: #28a745; }
+        .date-empty    { color: #adb5bd; }
+
+        .date-badge {
+            display: inline-block;
+            font-size: 10px;
+            padding: 1px 5px;
+            border-radius: 8px;
+            margin-left: 4px;
+            font-weight: 700;
+        }
+        .date-badge-overdue { background: #f8d7da; color: #721c24; }
+        .date-badge-duesoon { background: #fff3cd; color: #856404; }
+
+        /* Empty state */
+        #emptyState {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6c757d;
+            font-size: 15px;
+            display: none;
+        }
+        #emptyState h3 { color: #495057; margin-bottom: 8px; }
+
+        /* ---- Modal ---- */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal-box {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            width: 680px;
+            max-width: 95vw;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        .modal-box h2 { margin-bottom: 20px; color: #2c3e50; font-size: 18px; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+        .form-group { display: flex; flex-direction: column; gap: 5px; }
+        .form-group.full { grid-column: 1 / -1; }
+        .form-group label { font-size: 12px; font-weight: 600; color: #495057; }
+        .form-group input, .form-group select, .form-group textarea {
+            padding: 8px 10px;
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            font-size: 13px;
+            font-family: inherit;
+        }
+        .form-group textarea { min-height: 72px; resize: vertical; }
+        .modal-desc {
+            font-size: 12px;
+            color: #6c757d;
+            background: #f8f9fa;
+            border-radius: 6px;
+            padding: 8px 10px;
+            margin-bottom: 16px;
+            line-height: 1.5;
+        }
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+            padding-top: 16px;
+            border-top: 1px solid #dee2e6;
+        }
+        #scopeReasonGroup { display: none; }
+
+        /* ---- Confirm Dialog ---- */
+        .confirm-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.4);
+            z-index: 1100;
+            align-items: center;
+            justify-content: center;
+        }
+        .confirm-overlay.active { display: flex; }
+        .confirm-box {
+            background: white;
+            border-radius: 10px;
+            padding: 24px;
+            max-width: 420px;
+            width: 90%;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.25);
+        }
+        .confirm-box h3 { margin-bottom: 10px; color: #2c3e50; }
+        .confirm-box p  { color: #6c757d; font-size: 13px; margin-bottom: 16px; line-height: 1.5; }
+        .confirm-box input, .confirm-box textarea {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            font-size: 13px;
+            font-family: inherit;
+            margin-bottom: 14px;
+        }
+        .confirm-actions { display: flex; gap: 10px; justify-content: flex-end; }
+
+        /* Selection bar */
+        #selectionBar {
+            display: none;
+            background: #3d5a99;
+            color: white;
+            padding: 8px 24px;
+            font-size: 13px;
+            align-items: center;
+            gap: 12px;
+        }
+        #selectionBar.active { display: flex; }
+        #selectionBar .btn { font-size: 12px; padding: 5px 12px; }
+
+        /* Workbook status */
+        .wb-status {
+            font-size: 11px;
+            color: #6c757d;
+            padding: 4px 24px 6px;
+            background: white;
+            border-bottom: 1px solid #f0f0f0;
+            font-style: italic;
+            min-height: 22px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <header>
+        <h1>&#x1F4CB; Framework Control Reviews</h1>
+        <p class="subtitle">Annual security control review tracking &mdash; NIST CSF 2.0 &bull; SOC 2 &bull; ISO 27001 &bull; HIPAA</p>
+    </header>
+
+    <!-- Template Loader -->
+    <div class="loader-bar">
+        <label>Load Framework:</label>
+        <select id="frameworkSelect">
+            <option value="">&#x2014; Select Framework &#x2014;</option>
+            <option value="NIST CSF 2.0">NIST CSF 2.0 (22 categories)</option>
+            <option value="SOC 2">SOC 2 Trust Services Criteria (37 criteria)</option>
+            <option value="ISO 27001">ISO 27001 Annex A (93 controls)</option>
+            <option value="HIPAA">HIPAA Security Rule (22 standards)</option>
+        </select>
+        <button class="btn btn-primary" onclick="loadTemplate()">&#x2B; Load Template</button>
+        <div class="filter-sep"></div>
+        <button class="btn btn-success" onclick="showAddModal(null)">&#x2B; Add Control</button>
+        <button class="btn btn-outline" onclick="exportCSV()">&#x2193; Export CSV</button>
+        <span id="wbStatus" class="wb-status" style="margin-left:auto;font-style:italic;font-size:12px;color:#6c757d;"></span>
+    </div>
+
+    <!-- Stats Bar -->
+    <div class="stats-bar" id="statsBar">
+        <div class="stat-card"><div class="stat-label">Total</div><div class="stat-value stat-total" id="st-total">0</div></div>
+        <div class="stat-card"><div class="stat-label">Applicable</div><div class="stat-value" id="st-applicable" style="color:#495057;">0</div><div class="stat-pct" id="st-excl-pct"></div></div>
+        <div class="stat-card"><div class="stat-label">Compliant</div><div class="stat-value stat-compliant" id="st-compliant">0</div><div class="stat-pct" id="st-compliant-pct"></div></div>
+        <div class="stat-card"><div class="stat-label">Partial</div><div class="stat-value stat-partial" id="st-partial">0</div></div>
+        <div class="stat-card"><div class="stat-label">Non-Compliant</div><div class="stat-value stat-nonc" id="st-nonc">0</div></div>
+        <div class="stat-card"><div class="stat-label">Not Reviewed</div><div class="stat-value stat-na" id="st-notreviewed">0</div></div>
+        <div class="stat-card"><div class="stat-label">Overdue</div><div class="stat-value stat-overdue" id="st-overdue">0</div></div>
+        <div class="stat-card"><div class="stat-label">N/A or Scoped Out</div><div class="stat-value stat-na" id="st-excluded">0</div></div>
+    </div>
+
+    <!-- Compliance bar -->
+    <div class="compliance-bar-wrap">
+        <div class="compliance-bar-track">
+            <div class="compliance-bar-fill" id="complianceBar" style="width:0%;background:#28a745;"></div>
+        </div>
+    </div>
+
+    <!-- Selection Action Bar -->
+    <div id="selectionBar">
+        <span id="selectionCount">0 selected</span>
+        <button class="btn btn-warning" onclick="bulkSetStatus('N/A')">Mark N/A</button>
+        <button class="btn btn-secondary" onclick="bulkSetStatus('Out of Scope')">Mark Out of Scope</button>
+        <button class="btn btn-success" onclick="bulkSetStatus('Compliant')">Mark Compliant</button>
+        <button class="btn btn-outline" onclick="bulkSetStatus('Not Reviewed')">Reset to Not Reviewed</button>
+        <button class="btn btn-danger" onclick="bulkDelete()">Delete Selected</button>
+        <button class="btn btn-outline" onclick="clearSelection()" style="margin-left:auto;">&#x2715; Clear Selection</button>
+    </div>
+
+    <!-- Filters -->
+    <div class="controls-bar">
+        <select id="filterFramework" onchange="onFilterChange()">
+            <option value="">All Frameworks</option>
+        </select>
+        <select id="filterDomain" onchange="onFilterChange()">
+            <option value="">All Domains</option>
+        </select>
+        <select id="filterStatus" onchange="onFilterChange()">
+            <option value="">All Statuses</option>
+            <option value="Not Reviewed">Not Reviewed</option>
+            <option value="Compliant">Compliant</option>
+            <option value="Partial">Partial</option>
+            <option value="Non-Compliant">Non-Compliant</option>
+            <option value="N/A">N/A</option>
+            <option value="Out of Scope">Out of Scope</option>
+        </select>
+        <input type="text" id="filterSearch" placeholder="&#x1F50D; Search controls..." oninput="onFilterChange()">
+        <button class="btn btn-outline btn-sm" onclick="clearFilters()">Clear Filters</button>
+    </div>
+
+    <!-- Table -->
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th style="width:36px;"><input type="checkbox" id="selectAll" onchange="toggleSelectAll(this.checked)"></th>
+                    <th>Control ID</th>
+                    <th>Control Name</th>
+                    <th>Domain</th>
+                    <th>Status</th>
+                    <th>Last Assessed</th>
+                    <th>Next Review</th>
+                    <th>Owner</th>
+                    <th style="width:90px;">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="controlsTable"></tbody>
+        </table>
+        <div id="emptyState">
+            <h3>No controls loaded</h3>
+            <p>Use <strong>Load Template</strong> to load a pre-built framework control set, or <strong>+ Add Control</strong> to add one manually.</p>
+        </div>
+    </div>
+
+</div><!-- /container -->
+
+<!-- ========== Add/Edit Modal ========== -->
+<div class="modal-overlay" id="editModal">
+    <div class="modal-box">
+        <h2 id="modalTitle">Add Control</h2>
+        <div class="modal-desc" id="modalDesc" style="display:none;"></div>
+        <input type="hidden" id="editId">
+        <div class="form-grid">
+            <div class="form-group">
+                <label>Framework *</label>
+                <input type="text" id="editFramework" placeholder="e.g. NIST CSF 2.0">
+            </div>
+            <div class="form-group">
+                <label>Control ID *</label>
+                <input type="text" id="editControlId" placeholder="e.g. GV.OC">
+            </div>
+            <div class="form-group full">
+                <label>Control Name *</label>
+                <input type="text" id="editName" placeholder="Control name">
+            </div>
+            <div class="form-group">
+                <label>Domain / Category</label>
+                <input type="text" id="editDomain" placeholder="e.g. GV - Govern">
+            </div>
+            <div class="form-group">
+                <label>Status</label>
+                <select id="editStatus" onchange="onStatusChange()">
+                    <option value="Not Reviewed">Not Reviewed</option>
+                    <option value="Compliant">Compliant</option>
+                    <option value="Partial">Partial</option>
+                    <option value="Non-Compliant">Non-Compliant</option>
+                    <option value="N/A">N/A</option>
+                    <option value="Out of Scope">Out of Scope</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Last Assessed</label>
+                <input type="date" id="editLastAssessed" onchange="autoNextReview()">
+            </div>
+            <div class="form-group">
+                <label>Next Review</label>
+                <input type="date" id="editNextReview">
+            </div>
+            <div class="form-group">
+                <label>Owner</label>
+                <input type="text" id="editOwner" placeholder="Name or team">
+            </div>
+            <div class="form-group full" id="scopeReasonGroup">
+                <label>Scope Exclusion Reason *</label>
+                <input type="text" id="editScopeReason" placeholder="Document why this control is out of scope">
+            </div>
+            <div class="form-group full">
+                <label>Evidence Notes</label>
+                <textarea id="editEvidenceNotes" placeholder="Document controls, artifacts, or links to evidence"></textarea>
+            </div>
+            <div class="form-group full">
+                <label>Notes</label>
+                <textarea id="editNotes" placeholder="Additional notes or observations"></textarea>
+            </div>
+        </div>
+        <div class="modal-actions">
+            <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+            <button class="btn btn-primary" onclick="saveControl()">Save Control</button>
+        </div>
+    </div>
+</div>
+
+<!-- ========== Confirm / Reason Dialog ========== -->
+<div class="confirm-overlay" id="confirmDialog">
+    <div class="confirm-box">
+        <h3 id="confirmTitle">Confirm</h3>
+        <p id="confirmMsg"></p>
+        <input type="text" id="confirmInput" placeholder="" style="display:none;">
+        <div class="confirm-actions">
+            <button class="btn btn-outline" onclick="confirmReject()">Cancel</button>
+            <button class="btn btn-primary" id="confirmOkBtn" onclick="confirmAccept()">Confirm</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// ============================================================
+//  FRAMEWORK LIBRARIES
+// ============================================================
+const FRAMEWORK_LIBRARIES = {
+    'NIST CSF 2.0': [
+        { controlId:'GV.OC', name:'Organizational Context', domain:'GV - Govern', description:'The circumstances — mission, stakeholder expectations, dependencies, and legal requirements — surrounding the organization\'s cybersecurity risk management decisions are understood.' },
+        { controlId:'GV.RM', name:'Risk Management Strategy', domain:'GV - Govern', description:'The organization\'s priorities, constraints, risk tolerance and appetite statements, and assumptions are established, communicated, and used to support operational risk decisions.' },
+        { controlId:'GV.RR', name:'Roles, Responsibilities, and Authorities', domain:'GV - Govern', description:'Cybersecurity roles, responsibilities, and authorities to foster accountability, performance assessment, and continuous improvement are established and communicated.' },
+        { controlId:'GV.PO', name:'Policy', domain:'GV - Govern', description:'Organizational cybersecurity policy is established, communicated, and enforced.' },
+        { controlId:'GV.OV', name:'Oversight', domain:'GV - Govern', description:'Results of organization-wide cybersecurity risk management activities and performance are used to inform, improve, and adjust the risk management strategy.' },
+        { controlId:'GV.SC', name:'Cybersecurity Supply Chain Risk Management', domain:'GV - Govern', description:'Cyber supply chain risk management processes are identified, established, managed, monitored, and improved by organizational stakeholders.' },
+        { controlId:'ID.AM', name:'Asset Management', domain:'ID - Identify', description:'Assets (data, hardware, software, systems, facilities, services, people) that enable the organization to achieve business purposes are identified and managed.' },
+        { controlId:'ID.RA', name:'Risk Assessment', domain:'ID - Identify', description:'The cybersecurity risk to the organization, assets, and individuals is understood.' },
+        { controlId:'ID.IM', name:'Improvement', domain:'ID - Identify', description:'Improvements to organizational cybersecurity risk management processes, procedures and activities are identified across all CSF Functions.' },
+        { controlId:'PR.AA', name:'Identity Management, Authentication, and Access Control', domain:'PR - Protect', description:'Access to physical and logical assets is limited to authorized users, services, and hardware and managed commensurate with the assessed risk.' },
+        { controlId:'PR.AT', name:'Awareness and Training', domain:'PR - Protect', description:'The organization\'s personnel are provided with cybersecurity awareness and training so that they can perform their cybersecurity-related tasks.' },
+        { controlId:'PR.DS', name:'Data Security', domain:'PR - Protect', description:'Data are managed consistent with the organization\'s risk strategy to protect the confidentiality, integrity, and availability of information.' },
+        { controlId:'PR.PS', name:'Platform Security', domain:'PR - Protect', description:'The hardware, software, and services of physical and virtual platforms are managed consistent with the organization\'s risk strategy.' },
+        { controlId:'PR.IR', name:'Technology Infrastructure Resilience', domain:'PR - Protect', description:'Security architectures are managed with the organization\'s risk strategy to protect asset confidentiality, integrity, and availability, and organizational resilience.' },
+        { controlId:'DE.CM', name:'Continuous Monitoring', domain:'DE - Detect', description:'Assets are monitored to find anomalies, indicators of compromise, and other potentially adverse events.' },
+        { controlId:'DE.AE', name:'Adverse Event Analysis', domain:'DE - Detect', description:'Anomalies, indicators of compromise, and other potentially adverse events are analyzed to characterize the events and detect cybersecurity incidents.' },
+        { controlId:'RS.MA', name:'Incident Management', domain:'RS - Respond', description:'Responses to detected cybersecurity incidents are managed.' },
+        { controlId:'RS.AN', name:'Incident Analysis', domain:'RS - Respond', description:'Investigations are conducted to ensure effective response and support forensics and recovery activities.' },
+        { controlId:'RS.CO', name:'Incident Response Reporting and Communication', domain:'RS - Respond', description:'Response activities are coordinated with internal and external stakeholders as required by laws, regulations, or policies.' },
+        { controlId:'RS.MI', name:'Incident Mitigation', domain:'RS - Respond', description:'Activities are performed to prevent expansion of an event and mitigate its effects.' },
+        { controlId:'RC.RP', name:'Incident Recovery Plan Execution', domain:'RC - Recover', description:'Restoration activities are performed to ensure operational availability of systems and services affected by cybersecurity incidents.' },
+        { controlId:'RC.CO', name:'Incident Recovery Communication', domain:'RC - Recover', description:'Restoration activities are coordinated with internal and external parties.' },
+    ],
+    'SOC 2': [
+        { controlId:'CC1.1', name:'Commitment to Integrity and Ethical Values', domain:'CC1 - Control Environment', description:'The entity demonstrates a commitment to integrity and ethical values.' },
+        { controlId:'CC1.2', name:'Board Independence and Oversight', domain:'CC1 - Control Environment', description:'The board of directors demonstrates independence from management and exercises oversight of the development and performance of internal control.' },
+        { controlId:'CC1.3', name:'Organizational Structure', domain:'CC1 - Control Environment', description:'Management establishes structures, reporting lines, and appropriate authorities and responsibilities in the pursuit of objectives.' },
+        { controlId:'CC1.4', name:'Commitment to Competence', domain:'CC1 - Control Environment', description:'The entity demonstrates a commitment to attract, develop, and retain competent individuals in alignment with objectives.' },
+        { controlId:'CC1.5', name:'Accountability', domain:'CC1 - Control Environment', description:'The entity holds individuals accountable for their internal control responsibilities in the pursuit of objectives.' },
+        { controlId:'CC2.1', name:'Relevant Quality Information', domain:'CC2 - Communication and Information', description:'The entity obtains or generates and uses relevant, quality information to support the functioning of internal control.' },
+        { controlId:'CC2.2', name:'Internal Communication', domain:'CC2 - Communication and Information', description:'The entity internally communicates information, including objectives and responsibilities for internal control.' },
+        { controlId:'CC2.3', name:'External Communication', domain:'CC2 - Communication and Information', description:'The entity communicates with external parties regarding matters affecting the functioning of internal control.' },
+        { controlId:'CC3.1', name:'Specify Suitable Objectives', domain:'CC3 - Risk Assessment', description:'The entity specifies objectives with sufficient clarity to enable the identification and assessment of risks relating to objectives.' },
+        { controlId:'CC3.2', name:'Identify and Analyze Risk', domain:'CC3 - Risk Assessment', description:'The entity identifies risks to the achievement of its objectives across the entity and analyzes risks as a basis for determining how the risks should be managed.' },
+        { controlId:'CC3.3', name:'Assess Fraud Risk', domain:'CC3 - Risk Assessment', description:'The entity considers the potential for fraud in assessing risks to the achievement of objectives.' },
+        { controlId:'CC3.4', name:'Identify and Analyze Changes', domain:'CC3 - Risk Assessment', description:'The entity identifies and assesses changes that could significantly impact the system of internal control.' },
+        { controlId:'CC4.1', name:'Conduct Ongoing Evaluations', domain:'CC4 - Monitoring Activities', description:'The entity selects, develops, and performs ongoing and/or separate evaluations to ascertain whether the components of internal control are present and functioning.' },
+        { controlId:'CC4.2', name:'Evaluate and Communicate Deficiencies', domain:'CC4 - Monitoring Activities', description:'The entity evaluates and communicates internal control deficiencies in a timely manner to those parties responsible for taking corrective action.' },
+        { controlId:'CC5.1', name:'Select and Develop Control Activities', domain:'CC5 - Control Activities', description:'The entity selects and develops control activities that contribute to the mitigation of risks to the achievement of objectives.' },
+        { controlId:'CC5.2', name:'Select and Develop Technology Controls', domain:'CC5 - Control Activities', description:'The entity selects and develops general control activities over technology to support the achievement of objectives.' },
+        { controlId:'CC5.3', name:'Deploy Control Activities', domain:'CC5 - Control Activities', description:'The entity deploys control activities through policies that establish what is expected and procedures that put policies into action.' },
+        { controlId:'CC6.1', name:'Logical Access Security Measures', domain:'CC6 - Logical and Physical Access', description:'The entity implements logical access security software, infrastructure, and architectures over protected information assets.' },
+        { controlId:'CC6.2', name:'Authentication and Authorization', domain:'CC6 - Logical and Physical Access', description:'Prior to issuing system credentials, the entity registers and authorizes new internal and external users.' },
+        { controlId:'CC6.3', name:'Role-Based Access Controls', domain:'CC6 - Logical and Physical Access', description:'The entity authorizes, modifies, or removes access to data, software, functions, and other protected information assets based on roles and responsibilities.' },
+        { controlId:'CC6.4', name:'Physical Access Restrictions', domain:'CC6 - Logical and Physical Access', description:'The entity restricts physical access to facilities and protected information assets.' },
+        { controlId:'CC6.5', name:'Logical and Physical Protections at Retirement', domain:'CC6 - Logical and Physical Access', description:'The entity discontinues logical and physical protections over physical assets only after the ability to read or recover data and software from those assets has been diminished.' },
+        { controlId:'CC6.6', name:'Boundary Protection Against Threats', domain:'CC6 - Logical and Physical Access', description:'The entity implements controls to prevent or detect and act upon the introduction of unauthorized or malicious software.' },
+        { controlId:'CC6.7', name:'Transmission and Movement of Information', domain:'CC6 - Logical and Physical Access', description:'The entity restricts the transmission, movement, and removal of information to authorized internal and external users and processes.' },
+        { controlId:'CC6.8', name:'Prevention and Detection of Unauthorized Software', domain:'CC6 - Logical and Physical Access', description:'The entity implements controls to prevent or detect and act upon the introduction of unauthorized or malicious software.' },
+        { controlId:'CC7.1', name:'Configuration and Vulnerability Management', domain:'CC7 - System Operations', description:'The entity uses detection and monitoring procedures to identify changes to configurations that introduce new vulnerabilities.' },
+        { controlId:'CC7.2', name:'Monitoring of Anomalies and Events', domain:'CC7 - System Operations', description:'The entity monitors system components and the operation of those components for anomalies that are indicative of malicious acts.' },
+        { controlId:'CC7.3', name:'Evaluation of Security Events', domain:'CC7 - System Operations', description:'The entity evaluates security events to determine whether they could or have resulted in a failure of a security commitment.' },
+        { controlId:'CC7.4', name:'Incident Response Activities', domain:'CC7 - System Operations', description:'The entity responds to identified security incidents by executing a defined incident response program.' },
+        { controlId:'CC7.5', name:'Remediation of Identified Security Incidents', domain:'CC7 - System Operations', description:'The entity identifies, develops, and implements remediation activities to respond to incidents and to evaluate the effectiveness of those remediation activities.' },
+        { controlId:'CC8.1', name:'Change Management Process', domain:'CC8 - Change Management', description:'The entity authorizes, designs, develops, configures, documents, tests, approves, and implements changes to infrastructure, data, software, and procedures.' },
+        { controlId:'CC9.1', name:'Risk Mitigation Activities', domain:'CC9 - Risk Mitigation', description:'The entity identifies, selects, and develops risk mitigation activities for risks arising from potential business disruptions.' },
+        { controlId:'CC9.2', name:'Vendor and Business Partner Risk Management', domain:'CC9 - Risk Mitigation', description:'The entity assesses and manages risks associated with vendors and business partners.' },
+        { controlId:'A1.1',  name:'Capacity and Performance Management', domain:'A1 - Availability', description:'The entity maintains current processing capacity and manages future capacity demands.' },
+        { controlId:'A1.2',  name:'Environmental Protections', domain:'A1 - Availability', description:'Environmental protections, software, data backup processes, and recovery infrastructure are authorized, designed, implemented, operated, and maintained.' },
+        { controlId:'A1.3',  name:'Backup and Recovery Testing', domain:'A1 - Availability', description:'Recovery plan procedures supporting system recovery are tested to help meet the entity\'s availability commitments and system requirements.' },
+        { controlId:'C1.1',  name:'Confidential Information Identification and Handling', domain:'C1 - Confidentiality', description:'The entity identifies and maintains confidential information to meet the entity\'s objectives related to confidentiality.' },
+        { controlId:'C1.2',  name:'Disposal of Confidential Information', domain:'C1 - Confidentiality', description:'The entity disposes of confidential information to meet the entity\'s objectives related to confidentiality.' },
+    ],
+    'ISO 27001': [
+        // Organizational Controls
+        { controlId:'5.1',  name:'Policies for information security', domain:'Organizational Controls', description:'Information security policy and topic-specific policies shall be defined, approved by management, published, communicated and acknowledged by relevant personnel.' },
+        { controlId:'5.2',  name:'Information security roles and responsibilities', domain:'Organizational Controls', description:'Information security roles and responsibilities shall be defined and allocated according to organization needs.' },
+        { controlId:'5.3',  name:'Segregation of duties', domain:'Organizational Controls', description:'Conflicting duties and conflicting areas of responsibility shall be segregated.' },
+        { controlId:'5.4',  name:'Management responsibilities', domain:'Organizational Controls', description:'Management shall require all personnel to apply information security in accordance with the established policy.' },
+        { controlId:'5.5',  name:'Contact with authorities', domain:'Organizational Controls', description:'The organization shall establish and maintain contact with relevant authorities.' },
+        { controlId:'5.6',  name:'Contact with special interest groups', domain:'Organizational Controls', description:'The organization shall establish and maintain contact with special interest groups or other specialist security forums.' },
+        { controlId:'5.7',  name:'Threat intelligence', domain:'Organizational Controls', description:'Information relating to information security threats shall be collected and analysed to produce threat intelligence.' },
+        { controlId:'5.8',  name:'Information security in project management', domain:'Organizational Controls', description:'Information security shall be integrated into project management.' },
+        { controlId:'5.9',  name:'Inventory of information and other associated assets', domain:'Organizational Controls', description:'An inventory of information and other associated assets, including owners, shall be developed and maintained.' },
+        { controlId:'5.10', name:'Acceptable use of information and other associated assets', domain:'Organizational Controls', description:'Rules for the acceptable use and procedures for handling information and other associated assets shall be identified, documented and implemented.' },
+        { controlId:'5.11', name:'Return of assets', domain:'Organizational Controls', description:'Personnel and other interested parties shall return all the organization\'s assets upon change or termination of their employment.' },
+        { controlId:'5.12', name:'Classification of information', domain:'Organizational Controls', description:'Information shall be classified according to the information security needs of the organization.' },
+        { controlId:'5.13', name:'Labelling of information', domain:'Organizational Controls', description:'An appropriate set of procedures for information labelling shall be developed and implemented.' },
+        { controlId:'5.14', name:'Information transfer', domain:'Organizational Controls', description:'Information transfer rules, procedures, or agreements shall be in place for all types of transfer facilities within and outside the organization.' },
+        { controlId:'5.15', name:'Access control', domain:'Organizational Controls', description:'Rules to control physical and logical access to information and other associated assets shall be established and implemented.' },
+        { controlId:'5.16', name:'Identity management', domain:'Organizational Controls', description:'The full life cycle of identities shall be managed.' },
+        { controlId:'5.17', name:'Authentication information', domain:'Organizational Controls', description:'Allocation and management of authentication information shall be controlled by a management process.' },
+        { controlId:'5.18', name:'Access rights', domain:'Organizational Controls', description:'Access rights to information and other associated assets shall be provisioned, reviewed, modified and removed in line with policy.' },
+        { controlId:'5.19', name:'Information security in supplier relationships', domain:'Organizational Controls', description:'Processes and procedures shall be defined and implemented to manage the information security risks associated with the use of supplier\'s products or services.' },
+        { controlId:'5.20', name:'Addressing information security within supplier agreements', domain:'Organizational Controls', description:'Relevant information security requirements shall be established and agreed with each supplier.' },
+        { controlId:'5.21', name:'Managing information security in the ICT supply chain', domain:'Organizational Controls', description:'Processes and procedures shall be defined and implemented to manage the information security risks associated with the ICT products and services supply chain.' },
+        { controlId:'5.22', name:'Monitoring, review and change management of supplier services', domain:'Organizational Controls', description:'The organization shall regularly monitor, review, evaluate and manage change in supplier information security practices and service delivery.' },
+        { controlId:'5.23', name:'Information security for use of cloud services', domain:'Organizational Controls', description:'Processes for acquisition, use, management and exit from cloud services shall be established.' },
+        { controlId:'5.24', name:'Information security incident management planning and preparation', domain:'Organizational Controls', description:'The organization shall plan and prepare for managing information security incidents by defining, establishing and communicating incident management processes.' },
+        { controlId:'5.25', name:'Assessment and decision on information security events', domain:'Organizational Controls', description:'The organization shall assess information security events and decide if they are to be categorized as information security incidents.' },
+        { controlId:'5.26', name:'Response to information security incidents', domain:'Organizational Controls', description:'Information security incidents shall be responded to in accordance with the documented procedures.' },
+        { controlId:'5.27', name:'Learning from information security incidents', domain:'Organizational Controls', description:'Knowledge gained from information security incidents shall be used to strengthen and improve the information security controls.' },
+        { controlId:'5.28', name:'Collection of evidence', domain:'Organizational Controls', description:'The organization shall establish and implement procedures for the identification, collection, acquisition and preservation of evidence related to information security events.' },
+        { controlId:'5.29', name:'Information security during disruption', domain:'Organizational Controls', description:'The organization shall plan how to maintain information security at an appropriate level during disruption.' },
+        { controlId:'5.30', name:'ICT readiness for business continuity', domain:'Organizational Controls', description:'ICT readiness shall be planned, implemented, maintained and tested based on business continuity objectives.' },
+        { controlId:'5.31', name:'Legal, statutory, regulatory and contractual requirements', domain:'Organizational Controls', description:'Legal, statutory, regulatory and contractual requirements relevant to information security shall be identified, documented and kept up to date.' },
+        { controlId:'5.32', name:'Intellectual property rights', domain:'Organizational Controls', description:'The organization shall implement appropriate procedures to protect intellectual property rights.' },
+        { controlId:'5.33', name:'Protection of records', domain:'Organizational Controls', description:'Records shall be protected from loss, destruction, falsification, unauthorized access and unauthorized release.' },
+        { controlId:'5.34', name:'Privacy and protection of personal information', domain:'Organizational Controls', description:'The organization shall identify and meet the requirements regarding the preservation of privacy and protection of personal information.' },
+        { controlId:'5.35', name:'Independent review of information security', domain:'Organizational Controls', description:'The organization\'s approach to managing information security shall be reviewed independently at planned intervals.' },
+        { controlId:'5.36', name:'Compliance with policies, rules and standards for information security', domain:'Organizational Controls', description:'Compliance with the organization\'s information security policy, topic-specific policies, rules and standards shall be regularly reviewed.' },
+        { controlId:'5.37', name:'Documented operating procedures', domain:'Organizational Controls', description:'Operating procedures for information processing facilities shall be documented and made available to personnel who need them.' },
+        // People Controls
+        { controlId:'6.1', name:'Screening', domain:'People Controls', description:'Background verification checks on all candidates to become personnel shall be carried out prior to joining the organization.' },
+        { controlId:'6.2', name:'Terms and conditions of employment', domain:'People Controls', description:'Employment contractual agreements shall state the personnel\'s and the organization\'s responsibilities for information security.' },
+        { controlId:'6.3', name:'Information security awareness, education and training', domain:'People Controls', description:'Personnel shall receive appropriate information security awareness, education and training and regular updates of policies and procedures.' },
+        { controlId:'6.4', name:'Disciplinary process', domain:'People Controls', description:'A disciplinary process shall be formalized and communicated to take actions against personnel who have committed an information security policy violation.' },
+        { controlId:'6.5', name:'Responsibilities after termination or change of employment', domain:'People Controls', description:'Information security responsibilities and duties that remain valid after termination or change of employment shall be defined, enforced and communicated.' },
+        { controlId:'6.6', name:'Confidentiality or non-disclosure agreements', domain:'People Controls', description:'Confidentiality or non-disclosure agreements reflecting the organization\'s needs for protection of information shall be identified, documented, reviewed and signed.' },
+        { controlId:'6.7', name:'Remote working', domain:'People Controls', description:'Security measures shall be implemented when personnel are working remotely to protect information accessed, processed or stored outside the organization\'s premises.' },
+        { controlId:'6.8', name:'Information security event reporting', domain:'People Controls', description:'The organization shall provide a mechanism for personnel to report observed or suspected information security events through appropriate channels.' },
+        // Physical Controls
+        { controlId:'7.1',  name:'Physical security perimeters', domain:'Physical Controls', description:'Security perimeters shall be defined and used to protect areas that contain information and other associated assets.' },
+        { controlId:'7.2',  name:'Physical entry', domain:'Physical Controls', description:'Secure areas shall be protected by appropriate entry controls and access points to ensure only authorized personnel are allowed access.' },
+        { controlId:'7.3',  name:'Securing offices, rooms and facilities', domain:'Physical Controls', description:'Physical security for offices, rooms and facilities shall be designed and implemented.' },
+        { controlId:'7.4',  name:'Physical security monitoring', domain:'Physical Controls', description:'Premises shall be continuously monitored for unauthorized physical access.' },
+        { controlId:'7.5',  name:'Protecting against physical and environmental threats', domain:'Physical Controls', description:'Protection against physical and environmental threats shall be designed and implemented.' },
+        { controlId:'7.6',  name:'Working in secure areas', domain:'Physical Controls', description:'Security measures for working in secure areas shall be designed and implemented.' },
+        { controlId:'7.7',  name:'Clear desk and clear screen', domain:'Physical Controls', description:'Clear desk rules for papers and removable storage media and clear screen rules for information processing facilities shall be defined and enforced.' },
+        { controlId:'7.8',  name:'Equipment siting and protection', domain:'Physical Controls', description:'Equipment shall be sited securely and protected.' },
+        { controlId:'7.9',  name:'Security of assets off-premises', domain:'Physical Controls', description:'Off-site assets shall be protected.' },
+        { controlId:'7.10', name:'Storage media', domain:'Physical Controls', description:'Storage media shall be managed through their life cycle of acquisition, use, transportation and disposal.' },
+        { controlId:'7.11', name:'Supporting utilities', domain:'Physical Controls', description:'Information processing facilities shall be protected from power failures and other disruptions caused by failures in supporting utilities.' },
+        { controlId:'7.12', name:'Cabling security', domain:'Physical Controls', description:'Cables carrying power, data or supporting information services shall be protected from interception, interference or damage.' },
+        { controlId:'7.13', name:'Equipment maintenance', domain:'Physical Controls', description:'Equipment shall be maintained correctly to ensure availability, integrity and confidentiality of information.' },
+        { controlId:'7.14', name:'Secure disposal or re-use of equipment', domain:'Physical Controls', description:'Items of equipment containing storage media shall be verified to ensure that any sensitive data and licensed software has been removed or securely overwritten prior to disposal or re-use.' },
+        // Technological Controls
+        { controlId:'8.1',  name:'User end point devices', domain:'Technological Controls', description:'Information stored on, processed by or accessible via user end point devices shall be protected.' },
+        { controlId:'8.2',  name:'Privileged access rights', domain:'Technological Controls', description:'The allocation and use of privileged access rights shall be restricted and managed.' },
+        { controlId:'8.3',  name:'Information access restriction', domain:'Technological Controls', description:'Access to information and other associated assets shall be restricted in accordance with the established access control policy.' },
+        { controlId:'8.4',  name:'Access to source code', domain:'Technological Controls', description:'Read and write access to source code, development tools and software libraries shall be appropriately managed.' },
+        { controlId:'8.5',  name:'Secure authentication', domain:'Technological Controls', description:'Secure authentication technologies and procedures shall be implemented based on information access restrictions.' },
+        { controlId:'8.6',  name:'Capacity management', domain:'Technological Controls', description:'The use of resources shall be monitored and adjusted in line with current and expected capacity requirements.' },
+        { controlId:'8.7',  name:'Protection against malware', domain:'Technological Controls', description:'Protection against malware shall be implemented and supported by appropriate user awareness.' },
+        { controlId:'8.8',  name:'Management of technical vulnerabilities', domain:'Technological Controls', description:'Information about technical vulnerabilities of information systems in use shall be obtained in a timely fashion.' },
+        { controlId:'8.9',  name:'Configuration management', domain:'Technological Controls', description:'Configurations, including security configurations, of hardware, software, services and networks shall be established, documented, implemented, monitored and reviewed.' },
+        { controlId:'8.10', name:'Information deletion', domain:'Technological Controls', description:'Information stored in information systems, devices or in any other storage media shall be deleted when no longer required.' },
+        { controlId:'8.11', name:'Data masking', domain:'Technological Controls', description:'Data masking shall be used in accordance with the organization\'s access control policy and other related policies.' },
+        { controlId:'8.12', name:'Data leakage prevention', domain:'Technological Controls', description:'Data leakage prevention measures shall be applied to systems, networks and any other devices that process, store or transmit sensitive information.' },
+        { controlId:'8.13', name:'Information backup', domain:'Technological Controls', description:'Backup copies of information, software and systems shall be maintained and regularly tested.' },
+        { controlId:'8.14', name:'Redundancy of information processing facilities', domain:'Technological Controls', description:'Information processing facilities shall be implemented with redundancy sufficient to meet availability requirements.' },
+        { controlId:'8.15', name:'Logging', domain:'Technological Controls', description:'Logs that record activities, exceptions, faults and other relevant events shall be produced, stored, protected and analysed.' },
+        { controlId:'8.16', name:'Monitoring activities', domain:'Technological Controls', description:'Networks, systems and applications shall be monitored for anomalous behaviour and appropriate actions taken.' },
+        { controlId:'8.17', name:'Clock synchronization', domain:'Technological Controls', description:'The clocks of information processing systems used by the organization shall be synchronized to approved time sources.' },
+        { controlId:'8.18', name:'Use of privileged utility programs', domain:'Technological Controls', description:'The use of utility programs that might be capable of overriding system and application controls shall be restricted and tightly controlled.' },
+        { controlId:'8.19', name:'Installation of software on operational systems', domain:'Technological Controls', description:'Procedures and measures shall be implemented to securely manage software installation on operational systems.' },
+        { controlId:'8.20', name:'Networks security', domain:'Technological Controls', description:'Networks and network devices shall be secured, managed and controlled to protect information in systems and applications.' },
+        { controlId:'8.21', name:'Security of network services', domain:'Technological Controls', description:'Security mechanisms, service levels and service requirements of network services shall be identified, implemented and monitored.' },
+        { controlId:'8.22', name:'Segregation of networks', domain:'Technological Controls', description:'Groups of information services, users and information systems shall be segregated in the organization\'s networks.' },
+        { controlId:'8.23', name:'Web filtering', domain:'Technological Controls', description:'Access to external websites shall be managed to reduce exposure to malicious content.' },
+        { controlId:'8.24', name:'Use of cryptography', domain:'Technological Controls', description:'Rules for the effective use of cryptography, including cryptographic key management, shall be defined and implemented.' },
+        { controlId:'8.25', name:'Secure development life cycle', domain:'Technological Controls', description:'Rules for the secure development of software and systems shall be established and applied.' },
+        { controlId:'8.26', name:'Application security requirements', domain:'Technological Controls', description:'Information security requirements shall be identified, specified and approved when developing or acquiring applications.' },
+        { controlId:'8.27', name:'Secure system architecture and engineering principles', domain:'Technological Controls', description:'Principles for engineering secure systems shall be established, documented, maintained and applied to any information system development activities.' },
+        { controlId:'8.28', name:'Secure coding', domain:'Technological Controls', description:'Secure coding principles shall be applied to software development.' },
+        { controlId:'8.29', name:'Security testing in development and acceptance', domain:'Technological Controls', description:'Security testing processes shall be defined and implemented in the development life cycle.' },
+        { controlId:'8.30', name:'Outsourced development', domain:'Technological Controls', description:'The organization shall direct, monitor and review the activities related to outsourced system development.' },
+        { controlId:'8.31', name:'Separation of development, test and production environments', domain:'Technological Controls', description:'Development, testing and production environments shall be separated and secured.' },
+        { controlId:'8.32', name:'Change management', domain:'Technological Controls', description:'Changes to information processing facilities and information systems shall be subject to change management procedures.' },
+        { controlId:'8.33', name:'Test information', domain:'Technological Controls', description:'Test information shall be appropriately selected, protected and managed.' },
+        { controlId:'8.34', name:'Protection of information systems during audit testing', domain:'Technological Controls', description:'Audit tests and other assurance activities involving assessment of operational systems shall be planned and agreed between the tester and appropriate management.' },
+    ],
+    'HIPAA': [
+        { controlId:'164.308(a)(1)', name:'Security Management Process', domain:'Administrative Safeguards', description:'Implement policies and procedures to prevent, detect, contain, and correct security violations. Required implementations: Risk Analysis, Risk Management, Sanction Policy, Information System Activity Review.' },
+        { controlId:'164.308(a)(2)', name:'Assigned Security Responsibility', domain:'Administrative Safeguards', description:'Identify the security official who is responsible for the development and implementation of the policies and procedures required by this subpart.' },
+        { controlId:'164.308(a)(3)', name:'Workforce Security', domain:'Administrative Safeguards', description:'Implement policies and procedures to ensure that all members of its workforce have appropriate access to ePHI, and to prevent those workforce members who do not have access from obtaining access.' },
+        { controlId:'164.308(a)(4)', name:'Information Access Management', domain:'Administrative Safeguards', description:'Implement policies and procedures for authorizing access to ePHI that are consistent with the applicable requirements of subpart E.' },
+        { controlId:'164.308(a)(5)', name:'Security Awareness and Training', domain:'Administrative Safeguards', description:'Implement a security awareness and training program for all members of its workforce (including management).' },
+        { controlId:'164.308(a)(6)', name:'Security Incident Procedures', domain:'Administrative Safeguards', description:'Implement policies and procedures to address security incidents. Required: Response and Reporting.' },
+        { controlId:'164.308(a)(7)', name:'Contingency Plan', domain:'Administrative Safeguards', description:'Establish and implement policies and procedures for responding to an emergency or other occurrence that damages systems containing ePHI.' },
+        { controlId:'164.308(a)(8)', name:'Evaluation', domain:'Administrative Safeguards', description:'Perform a periodic technical and nontechnical evaluation in response to environmental or operational changes affecting the security of ePHI.' },
+        { controlId:'164.308(b)(1)', name:'Business Associate Contracts', domain:'Administrative Safeguards', description:'A covered entity may permit a business associate to create, receive, maintain, or transmit ePHI on the covered entity\'s behalf only if the entity obtains satisfactory assurances.' },
+        { controlId:'164.310(a)(1)', name:'Facility Access Controls', domain:'Physical Safeguards', description:'Implement policies and procedures to limit physical access to electronic information systems and the facility or facilities in which they are housed, while ensuring that properly authorized access is allowed.' },
+        { controlId:'164.310(b)',    name:'Workstation Use', domain:'Physical Safeguards', description:'Implement policies and procedures that specify the proper functions to be performed, the manner in which those functions are to be performed, and the physical attributes of the surroundings of a specific workstation.' },
+        { controlId:'164.310(c)',    name:'Workstation Security', domain:'Physical Safeguards', description:'Implement physical safeguards for all workstations that access ePHI, to restrict access to authorized users.' },
+        { controlId:'164.310(d)(1)', name:'Device and Media Controls', domain:'Physical Safeguards', description:'Implement policies and procedures that govern the receipt and removal of hardware and electronic media that contain ePHI into and out of a facility.' },
+        { controlId:'164.312(a)(1)', name:'Access Control', domain:'Technical Safeguards', description:'Implement technical policies and procedures for electronic information systems that maintain ePHI to allow access only to those persons or software programs that have been granted access rights.' },
+        { controlId:'164.312(b)',    name:'Audit Controls', domain:'Technical Safeguards', description:'Implement hardware, software, and/or procedural mechanisms that record and examine activity in information systems that contain or use ePHI.' },
+        { controlId:'164.312(c)(1)', name:'Integrity Controls', domain:'Technical Safeguards', description:'Implement policies and procedures to protect ePHI from improper alteration or destruction.' },
+        { controlId:'164.312(d)',    name:'Person or Entity Authentication', domain:'Technical Safeguards', description:'Implement procedures to verify that a person or entity seeking access to ePHI is the one claimed.' },
+        { controlId:'164.312(e)(1)', name:'Transmission Security', domain:'Technical Safeguards', description:'Implement technical security measures to guard against unauthorized access to ePHI that is being transmitted over an electronic communications network.' },
+        { controlId:'164.314(a)(1)', name:'Business Associate Contracts and Arrangements', domain:'Organizational Requirements', description:'The contract or other arrangement between the covered entity and its business associate must meet the applicable requirements.' },
+        { controlId:'164.314(b)(1)', name:'Requirements for Group Health Plans', domain:'Organizational Requirements', description:'Group health plans must ensure the confidentiality of ePHI that it creates, receives, maintains, or transmits to the plan sponsor.' },
+        { controlId:'164.316(a)',    name:'Policies and Procedures', domain:'Policies and Documentation', description:'Implement reasonable and appropriate policies and procedures to comply with the standards, implementation specifications, or other requirements of this subpart.' },
+        { controlId:'164.316(b)(1)', name:'Documentation', domain:'Policies and Documentation', description:'Maintain the policies and procedures implemented to comply with this subpart in written form, and if an action, activity or assessment is required, maintain a written record of the action, activity or assessment.' },
+    ]
+};
+
+// ============================================================
+//  STATE
+// ============================================================
+let controls = [];
+let selectedIds = new Set();
+let _confirmResolve = null;
+
+const EXPORT_FIELDS = [
+    'Framework','Control ID','Control Name','Domain','Status',
+    'Last Assessed','Next Review','Owner','Evidence Notes','Scope Exclusion Reason','Notes'
+];
+
+// ============================================================
+//  UTILS
+// ============================================================
+function uid() {
+    return 'ctrl_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
+}
+
+function today() {
+    return new Date().toISOString().slice(0, 10);
+}
+
+function isExcluded(c) {
+    return c.status === 'N/A' || c.status === 'Out of Scope';
+}
+
+function dateStatus(ctrl) {
+    if (isExcluded(ctrl) || !ctrl.nextReview) return 'empty';
+    const now = new Date();
+    const d   = new Date(ctrl.nextReview);
+    if (isNaN(d)) return 'empty';
+    const diff = (d - now) / (1000 * 60 * 60 * 24);
+    if (diff < 0)  return 'overdue';
+    if (diff <= 60) return 'duesoon';
+    return 'ok';
+}
+
+function badgeHtml(status) {
+    const map = {
+        'Compliant':     'badge-compliant',
+        'Partial':       'badge-partial',
+        'Non-Compliant': 'badge-noncompliant',
+        'Not Reviewed':  'badge-notreviewed',
+        'N/A':           'badge-na',
+        'Out of Scope':  'badge-outofscope',
+    };
+    return `<span class="badge ${map[status] || 'badge-notreviewed'}">${status || 'Not Reviewed'}</span>`;
+}
+
+function fmtDate(d) {
+    if (!d) return '';
+    // Format YYYY-MM-DD → MM/DD/YYYY
+    const parts = d.split('-');
+    if (parts.length === 3) return `${parts[1]}/${parts[2]}/${parts[0]}`;
+    return d;
+}
+
+function setWbStatus(msg) {
+    document.getElementById('wbStatus').textContent = msg;
+}
+
+// ============================================================
+//  STATS
+// ============================================================
+function calcStats() {
+    const ff = document.getElementById('filterFramework').value;
+    const pool = ff ? controls.filter(c => c.framework === ff) : controls;
+
+    const total       = pool.length;
+    const excluded    = pool.filter(isExcluded).length;
+    const applicable  = total - excluded;
+    const compliant   = pool.filter(c => c.status === 'Compliant').length;
+    const partial     = pool.filter(c => c.status === 'Partial').length;
+    const nonc        = pool.filter(c => c.status === 'Non-Compliant').length;
+    const notrev      = pool.filter(c => c.status === 'Not Reviewed').length;
+    const overdue     = pool.filter(c => dateStatus(c) === 'overdue').length;
+    const pct         = applicable > 0 ? Math.round((compliant / applicable) * 100) : 0;
+
+    document.getElementById('st-total').textContent       = total;
+    document.getElementById('st-applicable').textContent  = applicable;
+    document.getElementById('st-compliant').textContent   = compliant;
+    document.getElementById('st-partial').textContent     = partial;
+    document.getElementById('st-nonc').textContent        = nonc;
+    document.getElementById('st-notreviewed').textContent = notrev;
+    document.getElementById('st-overdue').textContent     = overdue;
+    document.getElementById('st-excluded').textContent    = excluded;
+    document.getElementById('st-compliant-pct').textContent = applicable > 0 ? pct + '% compliant' : '';
+    document.getElementById('st-excl-pct').textContent   = excluded > 0 ? excluded + ' excluded' : '';
+
+    // Compliance bar: color changes by percentage
+    const bar = document.getElementById('complianceBar');
+    bar.style.width = pct + '%';
+    bar.style.background = pct >= 80 ? '#28a745' : pct >= 50 ? '#fd7e14' : '#dc3545';
+}
+
+// ============================================================
+//  FILTER DROPDOWNS
+// ============================================================
+function populateFilters() {
+    const frameworks = [...new Set(controls.map(c => c.framework).filter(Boolean))].sort();
+    const ff = document.getElementById('filterFramework');
+    const cur = ff.value;
+    ff.innerHTML = '<option value="">All Frameworks</option>' +
+        frameworks.map(f => `<option value="${f}"${f === cur ? ' selected' : ''}>${f}</option>`).join('');
+
+    const selectedFw = ff.value;
+    const pool = selectedFw ? controls.filter(c => c.framework === selectedFw) : controls;
+    const domains = [...new Set(pool.map(c => c.domain).filter(Boolean))].sort();
+    const fd = document.getElementById('filterDomain');
+    const curD = fd.value;
+    fd.innerHTML = '<option value="">All Domains</option>' +
+        domains.map(d => `<option value="${d}"${d === curD ? ' selected' : ''}>${d}</option>`).join('');
+}
+
+function onFilterChange() {
+    populateFilters();
+    renderTable();
+    calcStats();
+}
+
+function clearFilters() {
+    document.getElementById('filterFramework').value = '';
+    document.getElementById('filterDomain').value    = '';
+    document.getElementById('filterStatus').value    = '';
+    document.getElementById('filterSearch').value    = '';
+    onFilterChange();
+}
+
+// ============================================================
+//  RENDER TABLE
+// ============================================================
+function renderTable() {
+    const ff = document.getElementById('filterFramework').value;
+    const fd = document.getElementById('filterDomain').value;
+    const fs = document.getElementById('filterStatus').value;
+    const fq = document.getElementById('filterSearch').value.trim().toLowerCase();
+
+    let visible = controls.filter(c => {
+        if (ff && c.framework !== ff) return false;
+        if (fd && c.domain    !== fd) return false;
+        if (fs && c.status    !== fs) return false;
+        if (fq && ![c.controlId, c.name, c.domain, c.owner, c.notes, c.evidenceNotes]
+                      .join(' ').toLowerCase().includes(fq)) return false;
+        return true;
+    });
+
+    const tbody = document.getElementById('controlsTable');
+    const empty = document.getElementById('emptyState');
+
+    if (visible.length === 0) {
+        tbody.innerHTML = '';
+        empty.style.display = 'block';
+        return;
+    }
+    empty.style.display = 'none';
+
+    const todayStr = today();
+    tbody.innerHTML = visible.map(c => {
+        const excluded = isExcluded(c);
+        const ds = dateStatus(c);
+
+        let nextReviewHtml = '';
+        if (c.nextReview) {
+            const cls = ds === 'overdue' ? 'date-overdue' : ds === 'duesoon' ? 'date-duesoon' : 'date-ok';
+            nextReviewHtml = `<span class="${cls}">${fmtDate(c.nextReview)}</span>`;
+            if (ds === 'overdue')  nextReviewHtml += ` <span class="date-badge date-badge-overdue">OVERDUE</span>`;
+            if (ds === 'duesoon') nextReviewHtml += ` <span class="date-badge date-badge-duesoon">DUE SOON</span>`;
+        } else {
+            nextReviewHtml = `<span class="date-empty">—</span>`;
+        }
+
+        const scopeTip = c.status === 'Out of Scope' && c.scopeReason
+            ? ` title="${c.scopeReason.replace(/"/g, '&quot;')}"` : '';
+
+        return `<tr class="${excluded ? 'excluded' : ''}" id="row-${c.id}">
+            <td><input type="checkbox" onchange="toggleSelect('${c.id}',this.checked)" ${selectedIds.has(c.id) ? 'checked' : ''}></td>
+            <td class="ctrl-id">${c.controlId}</td>
+            <td class="ctrl-name"${scopeTip}>${c.name}${c.status === 'Out of Scope' && c.scopeReason ? ' <span style="font-size:10px;color:#764ba2;" title="' + c.scopeReason.replace(/"/g,'&quot;') + '">&#x1F4CC;</span>' : ''}</td>
+            <td class="ctrl-domain">${c.domain}</td>
+            <td>${badgeHtml(c.status)}</td>
+            <td class="ctrl-date">${fmtDate(c.lastAssessed) || '<span class="date-empty">—</span>'}</td>
+            <td class="ctrl-date">${nextReviewHtml}</td>
+            <td class="ctrl-owner">${c.owner || ''}</td>
+            <td>
+                <button class="btn btn-outline btn-sm" onclick="showAddModal('${c.id}')">Edit</button>
+                <button class="btn btn-danger btn-sm" onclick="deleteControl('${c.id}')">Del</button>
+            </td>
+        </tr>`;
+    }).join('');
+
+    // Sync select-all checkbox state
+    const allVisible = visible.every(c => selectedIds.has(c.id));
+    document.getElementById('selectAll').checked = visible.length > 0 && allVisible;
+}
+
+function renderAll() {
+    renderTable();
+    calcStats();
+    updateSelectionBar();
+}
+
+// ============================================================
+//  SELECTION
+// ============================================================
+function toggleSelect(id, checked) {
+    if (checked) selectedIds.add(id);
+    else selectedIds.delete(id);
+    updateSelectionBar();
+}
+
+function toggleSelectAll(checked) {
+    const ff = document.getElementById('filterFramework').value;
+    const fd = document.getElementById('filterDomain').value;
+    const fs = document.getElementById('filterStatus').value;
+    const fq = document.getElementById('filterSearch').value.trim().toLowerCase();
+
+    controls.filter(c => {
+        if (ff && c.framework !== ff) return false;
+        if (fd && c.domain    !== fd) return false;
+        if (fs && c.status    !== fs) return false;
+        if (fq && ![c.controlId, c.name, c.domain, c.owner].join(' ').toLowerCase().includes(fq)) return false;
+        return true;
+    }).forEach(c => {
+        if (checked) selectedIds.add(c.id);
+        else selectedIds.delete(c.id);
+    });
+    renderTable();
+    updateSelectionBar();
+}
+
+function clearSelection() {
+    selectedIds.clear();
+    renderAll();
+}
+
+function updateSelectionBar() {
+    const bar = document.getElementById('selectionBar');
+    const n   = selectedIds.size;
+    if (n > 0) {
+        bar.classList.add('active');
+        document.getElementById('selectionCount').textContent = n + ' selected';
+    } else {
+        bar.classList.remove('active');
+    }
+}
+
+// ============================================================
+//  BULK ACTIONS
+// ============================================================
+async function bulkSetStatus(status) {
+    if (selectedIds.size === 0) return;
+    const n = selectedIds.size;
+
+    let reason = '';
+    if (status === 'Out of Scope') {
+        reason = await prompt_dialog(
+            'Scope Exclusion Reason',
+            `Provide a reason for marking ${n} control(s) as Out of Scope. This reason will be recorded on each control.`,
+            'e.g. Cloud-only environment — no physical infrastructure'
+        );
+        if (reason === null) return; // cancelled
+    } else {
+        const label = { 'N/A': 'N/A', 'Compliant': 'Compliant', 'Not Reviewed': 'Not Reviewed' }[status] || status;
+        const ok = await confirm_dialog(
+            `Mark ${n} control(s) as ${label}?`,
+            `This will update the status of all ${n} selected control(s) to "${label}".`
+        );
+        if (!ok) return;
+    }
+
+    selectedIds.forEach(id => {
+        const c = controls.find(x => x.id === id);
+        if (!c) return;
+        c.status = status;
+        if (status === 'Out of Scope' && reason) c.scopeReason = reason;
+        if (status !== 'Out of Scope') c.scopeReason = '';
+    });
+
+    clearSelection();
+    renderAll();
+    setWbStatus(`Updated ${n} control(s) to "${status}".`);
+}
+
+async function bulkDelete() {
+    if (selectedIds.size === 0) return;
+    const n = selectedIds.size;
+    const ok = await confirm_dialog(`Delete ${n} control(s)?`, 'This action cannot be undone.');
+    if (!ok) return;
+    controls = controls.filter(c => !selectedIds.has(c.id));
+    selectedIds.clear();
+    populateFilters();
+    renderAll();
+    setWbStatus(`Deleted ${n} control(s).`);
+}
+
+// ============================================================
+//  LOAD TEMPLATE
+// ============================================================
+async function loadTemplate() {
+    const fw = document.getElementById('frameworkSelect').value;
+    if (!fw) { alert('Select a framework first.'); return; }
+    const lib = FRAMEWORK_LIBRARIES[fw];
+    if (!lib) { alert('No library found for ' + fw); return; }
+
+    const existingCount = controls.filter(c => c.framework === fw).length;
+    let mode = 'add';
+
+    if (existingCount > 0) {
+        const ok = await confirm_dialog(
+            `${fw} already loaded`,
+            `${existingCount} control(s) for ${fw} already exist. Click Confirm to add a fresh set (duplicates possible), or Cancel to abort.`
+        );
+        if (!ok) return;
+    }
+
+    const newControls = lib.map(tmpl => ({
+        id: uid(),
+        framework: fw,
+        controlId: tmpl.controlId,
+        name: tmpl.name,
+        domain: tmpl.domain,
+        description: tmpl.description || '',
+        status: 'Not Reviewed',
+        lastAssessed: '',
+        nextReview: '',
+        owner: '',
+        evidenceNotes: '',
+        scopeReason: '',
+        notes: ''
+    }));
+
+    controls.push(...newControls);
+    populateFilters();
+    document.getElementById('filterFramework').value = fw;
+    renderAll();
+    setWbStatus(`Loaded ${newControls.length} controls for ${fw}.`);
+    document.getElementById('frameworkSelect').value = '';
+}
+
+// ============================================================
+//  ADD / EDIT MODAL
+// ============================================================
+function showAddModal(id) {
+    const modal = document.getElementById('editModal');
+    const desc  = document.getElementById('modalDesc');
+
+    if (id) {
+        const c = controls.find(x => x.id === id);
+        if (!c) return;
+        document.getElementById('modalTitle').textContent = 'Edit Control';
+        document.getElementById('editId').value           = id;
+        document.getElementById('editFramework').value    = c.framework;
+        document.getElementById('editControlId').value    = c.controlId;
+        document.getElementById('editName').value         = c.name;
+        document.getElementById('editDomain').value       = c.domain;
+        document.getElementById('editStatus').value       = c.status;
+        document.getElementById('editLastAssessed').value = c.lastAssessed;
+        document.getElementById('editNextReview').value   = c.nextReview;
+        document.getElementById('editOwner').value        = c.owner;
+        document.getElementById('editScopeReason').value  = c.scopeReason;
+        document.getElementById('editEvidenceNotes').value= c.evidenceNotes;
+        document.getElementById('editNotes').value        = c.notes;
+        if (c.description) {
+            desc.textContent = c.description;
+            desc.style.display = 'block';
+        } else {
+            desc.style.display = 'none';
+        }
+    } else {
+        document.getElementById('modalTitle').textContent = 'Add Control';
+        document.getElementById('editId').value           = '';
+        document.getElementById('editFramework').value    = '';
+        document.getElementById('editControlId').value    = '';
+        document.getElementById('editName').value         = '';
+        document.getElementById('editDomain').value       = '';
+        document.getElementById('editStatus').value       = 'Not Reviewed';
+        document.getElementById('editLastAssessed').value = '';
+        document.getElementById('editNextReview').value   = '';
+        document.getElementById('editOwner').value        = '';
+        document.getElementById('editScopeReason').value  = '';
+        document.getElementById('editEvidenceNotes').value= '';
+        document.getElementById('editNotes').value        = '';
+        desc.style.display = 'none';
+    }
+    onStatusChange();
+    modal.classList.add('active');
+}
+
+function closeModal() {
+    document.getElementById('editModal').classList.remove('active');
+}
+
+function onStatusChange() {
+    const status = document.getElementById('editStatus').value;
+    document.getElementById('scopeReasonGroup').style.display =
+        status === 'Out of Scope' ? 'flex' : 'none';
+}
+
+function autoNextReview() {
+    const la = document.getElementById('editLastAssessed').value;
+    if (!la) return;
+    const nr = document.getElementById('editNextReview');
+    if (!nr.value) {
+        // Default: 1 year from last assessed
+        const d = new Date(la);
+        d.setFullYear(d.getFullYear() + 1);
+        nr.value = d.toISOString().slice(0, 10);
+    }
+}
+
+function saveControl() {
+    const framework  = document.getElementById('editFramework').value.trim();
+    const controlId  = document.getElementById('editControlId').value.trim();
+    const name       = document.getElementById('editName').value.trim();
+    const status     = document.getElementById('editStatus').value;
+
+    if (!framework || !controlId || !name) {
+        alert('Framework, Control ID, and Control Name are required.');
+        return;
+    }
+    if (status === 'Out of Scope' && !document.getElementById('editScopeReason').value.trim()) {
+        alert('Please provide a Scope Exclusion Reason for Out of Scope controls.');
+        return;
+    }
+
+    const id = document.getElementById('editId').value;
+    const data = {
+        framework,
+        controlId,
+        name,
+        domain:        document.getElementById('editDomain').value.trim(),
+        status,
+        lastAssessed:  document.getElementById('editLastAssessed').value,
+        nextReview:    document.getElementById('editNextReview').value,
+        owner:         document.getElementById('editOwner').value.trim(),
+        scopeReason:   document.getElementById('editScopeReason').value.trim(),
+        evidenceNotes: document.getElementById('editEvidenceNotes').value.trim(),
+        notes:         document.getElementById('editNotes').value.trim(),
+    };
+
+    if (id) {
+        const idx = controls.findIndex(c => c.id === id);
+        if (idx >= 0) {
+            controls[idx] = { ...controls[idx], ...data };
+        }
+    } else {
+        controls.push({ id: uid(), description: '', ...data });
+    }
+
+    closeModal();
+    populateFilters();
+    renderAll();
+}
+
+function deleteControl(id) {
+    if (!confirm('Delete this control?')) return;
+    controls = controls.filter(c => c.id !== id);
+    selectedIds.delete(id);
+    populateFilters();
+    renderAll();
+}
+
+// ============================================================
+//  CONFIRM / PROMPT DIALOGS
+// ============================================================
+function confirm_dialog(title, msg) {
+    return new Promise(resolve => {
+        _confirmResolve = resolve;
+        document.getElementById('confirmTitle').textContent = title;
+        document.getElementById('confirmMsg').textContent   = msg;
+        const inp = document.getElementById('confirmInput');
+        inp.style.display = 'none';
+        inp.value = '';
+        document.getElementById('confirmOkBtn').textContent = 'Confirm';
+        document.getElementById('confirmDialog').classList.add('active');
+    });
+}
+
+function prompt_dialog(title, msg, placeholder) {
+    return new Promise(resolve => {
+        _confirmResolve = (val) => resolve(val);
+        document.getElementById('confirmTitle').textContent = title;
+        document.getElementById('confirmMsg').textContent   = msg;
+        const inp = document.getElementById('confirmInput');
+        inp.style.display = 'block';
+        inp.placeholder = placeholder || '';
+        inp.value = '';
+        document.getElementById('confirmOkBtn').textContent = 'Apply';
+        document.getElementById('confirmDialog').classList.add('active');
+        inp.focus();
+    });
+}
+
+function confirmAccept() {
+    const inp = document.getElementById('confirmInput');
+    const val = inp.style.display !== 'none' ? inp.value.trim() : true;
+    document.getElementById('confirmDialog').classList.remove('active');
+    if (_confirmResolve) { _confirmResolve(val || null); _confirmResolve = null; }
+}
+
+function confirmReject() {
+    document.getElementById('confirmDialog').classList.remove('active');
+    if (_confirmResolve) { _confirmResolve(null); _confirmResolve = null; }
+}
+
+// ============================================================
+//  CSV EXPORT
+// ============================================================
+function exportCSV() {
+    if (controls.length === 0) { alert('No controls to export.'); return; }
+    const rows = [EXPORT_FIELDS.join(',')];
+    controls.forEach(c => {
+        rows.push([
+            c.framework, c.controlId, c.name, c.domain, c.status,
+            c.lastAssessed, c.nextReview, c.owner,
+            c.evidenceNotes, c.scopeReason, c.notes
+        ].map(v => '"' + String(v||'').replace(/"/g, '""') + '"').join(','));
+    });
+    const blob = new Blob([rows.join('\r\n')], { type: 'text/csv' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url; a.download = 'framework_reviews.csv';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+// ============================================================
+//  postMessage API (Workbook Integration)
+// ============================================================
+window.addEventListener('message', function(e) {
+    if (!e.data) return;
+
+    // Export for workbook
+    if (e.data.type === 'getDataForExport') {
+        const exportData = controls.map(c => ({
+            'Framework':             c.framework || '',
+            'Control ID':            c.controlId || '',
+            'Control Name':          c.name || '',
+            'Domain':                c.domain || '',
+            'Status':                c.status || '',
+            'Last Assessed':         c.lastAssessed || '',
+            'Next Review':           c.nextReview || '',
+            'Owner':                 c.owner || '',
+            'Evidence Notes':        c.evidenceNotes || '',
+            'Scope Exclusion Reason':c.scopeReason || '',
+            'Notes':                 c.notes || ''
+        }));
+        e.source.postMessage({
+            type: 'exportData',
+            module: 'frameworks',
+            data: exportData,
+            headers: EXPORT_FIELDS
+        }, '*');
+        setWbStatus('Exported ' + exportData.length + ' control(s).');
+    }
+
+    // Import from workbook
+    if (e.data.type === 'importDataFromWorkbook' && e.data.module === 'frameworks') {
+        const rows = e.data.data || [];
+        if (rows.length === 0) return;
+        controls = rows.map(r => ({
+            id:            uid(),
+            framework:     r['Framework']              || '',
+            controlId:     r['Control ID']             || '',
+            name:          r['Control Name']           || '',
+            domain:        r['Domain']                 || '',
+            description:   '',
+            status:        r['Status']                 || 'Not Reviewed',
+            lastAssessed:  r['Last Assessed']          || '',
+            nextReview:    r['Next Review']             || '',
+            owner:         r['Owner']                  || '',
+            evidenceNotes: r['Evidence Notes']         || '',
+            scopeReason:   r['Scope Exclusion Reason'] || '',
+            notes:         r['Notes']                  || ''
+        })).filter(c => c.controlId || c.name);
+        populateFilters();
+        renderAll();
+        e.source.postMessage({ type: 'importComplete', module: 'frameworks', count: controls.length }, '*');
+        setWbStatus('Imported ' + controls.length + ' control(s) from workbook.');
+    }
+
+    // Clear
+    if (e.data.type === 'clearAllData') {
+        controls = [];
+        selectedIds.clear();
+        populateFilters();
+        renderAll();
+    }
+});
+
+// ============================================================
+//  INIT
+// ============================================================
+document.addEventListener('DOMContentLoaded', () => {
+    renderAll();
+    if (window.parent && window.parent !== window) {
+        window.parent.postMessage({ type: 'iframeReady', module: 'frameworks' }, '*');
+    }
+});
+</script>
+</body>
+</html>
