@@ -610,6 +610,9 @@ function _buildZip(files) {
             <button class="tab-button" data-tab="policies" onclick="switchTab('policies')">
                 &#x1F4DC; Policy Reviews
             </button>
+            <button class="tab-button" data-tab="frameworks" onclick="switchTab('frameworks')">
+                &#x1F4CB; Framework Reviews
+            </button>
             <button class="tab-button" data-tab="info" onclick="switchTab('info')">
                 &#x2139;&#xFE0F; Info &amp; Help
             </button>
@@ -648,6 +651,12 @@ function _buildZip(files) {
         <div id="policies-tab" class="tab-content">
             <div class="iframe-container">
                 <iframe id="policies-iframe" src="policy-reviews.html"></iframe>
+            </div>
+        </div>
+
+        <div id="frameworks-tab" class="tab-content">
+            <div class="iframe-container">
+                <iframe id="frameworks-iframe" src="framework-reviews.html"></iframe>
             </div>
         </div>
 
@@ -823,10 +832,11 @@ function _buildZip(files) {
             { id: 'risks',     label: '⚠️ Risk Register' },
             { id: 'vendors',   label: '📋 Vendor Tracking' },
             { id: 'policies',  label: '📜 Policy Reviews' },
-            { id: 'info',      label: 'ℹ️ Info & Help' },
+            { id: 'frameworks', label: '📋 Framework Reviews' },
+            { id: 'info',       label: 'ℹ️ Info & Help' },
         ];
 
-        let tabVisibility = { dashboard:true, notes:true, calendar:true, risks:true, vendors:true, policies:true, info:true };
+        let tabVisibility = { dashboard:true, notes:true, calendar:true, risks:true, vendors:true, policies:true, frameworks:true, info:true };
 
         function buildTabVisOptions() {
             const container = document.getElementById('tabVisOptions');
@@ -904,7 +914,7 @@ function _buildZip(files) {
             if (tabEl) tabEl.classList.add('active');
 
             const buttons = document.querySelectorAll('.tab-button');
-            const tabIndex = { dashboard: 0, notes: 1, calendar: 2, risks: 3, vendors: 4, policies: 5, info: 6 };
+            const tabIndex = { dashboard: 0, notes: 1, calendar: 2, risks: 3, vendors: 4, policies: 5, frameworks: 6, info: 7 };
             if (buttons[tabIndex[tabName]]) {
                 buttons[tabIndex[tabName]].classList.add('active');
             }
@@ -916,7 +926,8 @@ function _buildZip(files) {
             risks:    { iframe: 'risks-iframe',    sheetName: 'Risk Register' },
             vendors:  { iframe: 'vendors-iframe',  sheetName: 'Vendors' },
             policies: { iframe: 'policies-iframe', sheetName: 'Policy Reviews' },
-            notes:    { iframe: 'notes-iframe',    sheetName: 'Notes' }
+            notes:      { iframe: 'notes-iframe',      sheetName: 'Notes' },
+            frameworks: { iframe: 'frameworks-iframe', sheetName: 'Framework Reviews' }
         };
 
         let _clientName = '';
@@ -1039,7 +1050,8 @@ function _buildZip(files) {
                 risks: ['Title','Description','Category','Probability (Before)','Impact (Before)','Severity Score (Before)','Severity Level (Before)','Probability (After)','Impact (After)','Severity Score (After)','Severity Level (After)','Status','Owner','Mitigation Plan','Notes','Date Created','Date Modified'],
                 vendors: ['Vendor Name','Vendor Type','Business Purpose','Information Classification','Risk Rating','Information Security Review','Current','Notes','Contact Information','Review Date','Type Review','Vendor Technical Contact','Responsible Team','Administration Portal Link','Integration Type','Administration Responsibilities','Administration Notes'],
                 policies: ['Policy Name','Policy ID','Description','Policy URL','Category','Compliance Framework','Review Frequency','Status','Last Reviewed','Next Review','Effective Date','Version','Owner','Approver','Notes'],
-                notes: ['Title','Date','Category','Priority','Author','Content','Tags']
+                notes:      ['Title','Date','Category','Priority','Author','Content','Tags'],
+                frameworks: ['Framework','Control ID','Control Name','Domain','Status','Last Assessed','Next Review','Owner','Evidence Notes','Scope Exclusion Reason','Notes']
             };
             return defaults[mod] || [];
         }
