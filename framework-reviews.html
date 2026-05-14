@@ -324,9 +324,11 @@
             <option value="HIPAA">HIPAA Security Rule (22 standards)</option>
         </select>
         <button class="btn btn-primary" onclick="loadTemplate()">&#x2B; Load Template</button>
+        <button class="btn btn-danger" onclick="removeFramework()">&#x2212; Remove Framework</button>
         <div class="filter-sep"></div>
         <button class="btn btn-success" onclick="showAddModal(null)">&#x2B; Add Control</button>
         <button class="btn btn-outline" onclick="exportCSV()">&#x2193; Export CSV</button>
+        <button class="btn btn-danger" onclick="clearAllControls()">&#x1F5D1; Clear All</button>
         <span id="wbStatus" class="wb-status" style="margin-left:auto;font-style:italic;font-size:12px;color:#6c757d;"></span>
     </div>
 
@@ -1021,6 +1023,31 @@ async function loadTemplate() {
 }
 
 // ============================================================
+//  REMOVE FRAMEWORK
+// ============================================================
+async function removeFramework() {
+    const fw = document.getElementById('frameworkSelect').value;
+    if (!fw) { alert('Select a framework from the dropdown first.'); return; }
+    const count = controls.filter(c => c.framework === fw).length;
+    if (count === 0) { alert(`No controls found for "${fw}".`); return; }
+    const ok = await confirm_dialog(
+        `Remove ${fw}?`,
+        `This will permanently delete all ${count} control(s) for "${fw}". Other frameworks will not be affected.`
+    );
+    if (!ok) return;
+    controls = controls.filter(c => c.framework !== fw);
+    selectedIds = new Set([...selectedIds].filter(id => controls.find(c => c.id === id)));
+    populateFilters();
+    // Reset framework filter if it was showing the removed one
+    if (document.getElementById('filterFramework').value === fw) {
+        document.getElementById('filterFramework').value = '';
+    }
+    renderAll();
+    setWbStatus(`Removed all ${count} control(s) for "${fw}".`);
+    document.getElementById('frameworkSelect').value = '';
+}
+
+// ============================================================
 //  ADD / EDIT MODAL
 // ============================================================
 function showAddModal(id) {
@@ -1184,6 +1211,23 @@ function confirmAccept() {
 function confirmReject() {
     document.getElementById('confirmDialog').classList.remove('active');
     if (_confirmResolve) { _confirmResolve(null); _confirmResolve = null; }
+}
+
+// ============================================================
+//  CLEAR ALL
+// ============================================================
+async function clearAllControls() {
+    if (controls.length === 0) { alert('No controls to clear.'); return; }
+    const ok = await confirm_dialog(
+        'Clear All Controls?',
+        `This will permanently remove all ${controls.length} control(s) from the framework reviews. This cannot be undone.`
+    );
+    if (!ok) return;
+    controls = [];
+    selectedIds.clear();
+    populateFilters();
+    renderAll();
+    setWbStatus('All controls cleared.');
 }
 
 // ============================================================
