@@ -30,6 +30,7 @@ The dashboard consolidates day-to-day security operations into a single interfac
 | Vendor Tracking | Third-party vendor inventory and annual security review status |
 | Policy Reviews | Policy inventory with review schedules and compliance framework mapping |
 | Notes | Free-form security operations notes and meeting records |
+| Framework Reviews | Annual control review tracking for NIST CSF 2.0, SOC 2, ISO 27001, and HIPAA. Load a pre-built control library, bulk-mark controls as N/A or Out of Scope (with documented exclusion reason), track assessment dates, and monitor compliance percentage across applicable controls. |
 
 ### Data Management
 
