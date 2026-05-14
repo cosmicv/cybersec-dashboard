@@ -1017,7 +1017,6 @@ async function loadTemplate() {
 
     controls.push(...newControls);
     populateFilters();
-    document.getElementById('filterFramework').value = fw;
     renderAll();
     setWbStatus(`Loaded ${newControls.length} controls for ${fw}.`);
     document.getElementById('frameworkSelect').value = '';
