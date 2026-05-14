@@ -389,6 +389,7 @@
             <thead>
                 <tr>
                     <th style="width:36px;"><input type="checkbox" id="selectAll" onchange="toggleSelectAll(this.checked)"></th>
+                    <th>Framework</th>
                     <th>Control ID</th>
                     <th>Control Name</th>
                     <th>Domain</th>
@@ -859,6 +860,7 @@ function renderTable() {
 
         return `<tr class="${excluded ? 'excluded' : ''}" id="row-${c.id}">
             <td><input type="checkbox" onchange="toggleSelect('${c.id}',this.checked)" ${selectedIds.has(c.id) ? 'checked' : ''}></td>
+            <td style="font-size:11px;font-weight:600;color:#6c757d;white-space:nowrap;">${c.framework}</td>
             <td class="ctrl-id">${c.controlId}</td>
             <td class="ctrl-name"${scopeTip}>${c.name}${c.status === 'Out of Scope' && c.scopeReason ? ' <span style="font-size:10px;color:#764ba2;" title="' + c.scopeReason.replace(/"/g,'&quot;') + '">&#x1F4CC;</span>' : ''}</td>
             <td class="ctrl-domain">${c.domain}</td>
@@ -1038,10 +1040,9 @@ async function removeFramework() {
     controls = controls.filter(c => c.framework !== fw);
     selectedIds = new Set([...selectedIds].filter(id => controls.find(c => c.id === id)));
     populateFilters();
-    // Reset framework filter if it was showing the removed one
-    if (document.getElementById('filterFramework').value === fw) {
-        document.getElementById('filterFramework').value = '';
-    }
+    // Always reset filter to All Frameworks so stats visibly update
+    document.getElementById('filterFramework').value = '';
+    document.getElementById('filterDomain').value = '';
     renderAll();
     setWbStatus(`Removed all ${count} control(s) for "${fw}".`);
     document.getElementById('frameworkSelect').value = '';
