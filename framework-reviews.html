@@ -749,8 +749,7 @@ function setWbStatus(msg) {
 //  STATS
 // ============================================================
 function calcStats() {
-    const ff = document.getElementById('filterFramework').value;
-    const pool = ff ? controls.filter(c => c.framework === ff) : controls;
+    const pool = controls; // Stats always reflect global totals regardless of table filter
 
     const total       = pool.length;
     const excluded    = pool.filter(isExcluded).length;
