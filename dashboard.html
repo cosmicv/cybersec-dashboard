@@ -274,11 +274,11 @@
             {
                 type: 'bar',
                 data: {
-                    labels: ['Open', 'In Progress', 'Mitigated', 'Accepted', 'Closed'],
+                    labels: ['Open', 'Monitoring', 'Mitigated', 'Closed', 'Archived'],
                     datasets: [{
                         label: 'Risks',
                         data: [0, 0, 0, 0, 0],
-                        backgroundColor: [COLORS.red, COLORS.blue, COLORS.teal, COLORS.gray, COLORS.green],
+                        backgroundColor: [COLORS.red, COLORS.yellow, COLORS.teal, COLORS.green, COLORS.gray],
                         borderRadius: 4,
                     }]
                 },
@@ -442,7 +442,7 @@
             setKPI('kpi-cal-scheduled', calScheduled);
 
             // ── Risk Status chart ──
-            const stCounts = { Open: 0, 'In Progress': 0, Mitigated: 0, Accepted: 0, Closed: 0 };
+            const stCounts = { Open: 0, Monitoring: 0, Mitigated: 0, Closed: 0, Archived: 0 };
             risks.forEach(r => {
                 const st = (r['Status'] || '').trim();
                 if (st in stCounts) stCounts[st]++;
