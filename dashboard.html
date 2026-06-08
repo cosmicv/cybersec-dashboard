@@ -398,7 +398,7 @@
             // ── Risk Severity chart ──
             const sevCounts = { Critical: 0, High: 0, Medium: 0, Low: 0 };
             risks.forEach(r => {
-                const sev = capitalize(r['Severity Level (Before)'] || r['Severity Level (After)'] || '');
+                const sev = capitalize(r['Severity Level (After)'] || r['Severity Level (Before)'] || '');
                 if (sev in sevCounts) sevCounts[sev]++;
             });
             riskSeverityChart.data.datasets[0].data = Object.values(sevCounts);

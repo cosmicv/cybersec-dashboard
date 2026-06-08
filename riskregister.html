@@ -575,8 +575,8 @@
                 <div class="heatmap-header">
                     <h3>Risk Heatmap</h3>
                     <div class="heatmap-toggle">
-                        <button class="active" id="heatmapBefore" onclick="setHeatmapMode('before')">Before Controls</button>
-                        <button id="heatmapAfter" onclick="setHeatmapMode('after')">After Controls</button>
+                        <button id="heatmapBefore" onclick="setHeatmapMode('before')">Before Controls</button>
+                        <button class="active" id="heatmapAfter" onclick="setHeatmapMode('after')">After Controls</button>
                     </div>
                 </div>
                 <canvas id="heatmapChart"></canvas>
@@ -726,7 +726,7 @@
         let chartsVisible = true;
         let severityChartInstance = null;
         let statusChartInstance = null;
-        let heatmapMode = 'before';
+        let heatmapMode = 'after';
 
         // ==================== SEVERITY CALC ====================
         function formatDateUS(val) {
@@ -752,6 +752,12 @@
         function severityColor(label) {
             const map = { Critical: '#dc3545', High: '#fd7e14', Medium: '#ffc107', Low: '#28a745' };
             return map[label] || '#6c757d';
+        }
+
+        function getAfterControlsSeverity(risk) {
+            const probability = risk.probabilityAfter != null ? risk.probabilityAfter : risk.probability;
+            const impact = risk.impactAfter != null ? risk.impactAfter : risk.impact;
+            return calcSeverity(probability, impact);
         }
 
         // ==================== INIT ====================
@@ -838,7 +844,7 @@
 
             return risks.filter(r => {
                 if (statusFilters && !statusFilters.includes(r.status)) return false;
-                const sev = calcSeverity(r.probability, r.impact);
+                const sev = getAfterControlsSeverity(r);
                 if (severityFilters && !severityFilters.includes(sev.label)) return false;
                 if (ownerFilter !== 'all' && (r.owner || '') !== ownerFilter) return false;
                 return true;
@@ -857,7 +863,7 @@
             const open = risks.filter(r => r.status === 'Open').length;
             const monitoring = risks.filter(r => r.status === 'Monitoring').length;
             const mitigated = risks.filter(r => r.status === 'Mitigated').length;
-            const critical = risks.filter(r => calcSeverity(r.probability, r.impact).label === 'Critical').length;
+            const critical = risks.filter(r => getAfterControlsSeverity(r).label === 'Critical').length;
 
             document.getElementById('statsBar').innerHTML = `
                 <div class="stat-card"><div class="stat-value" style="color:#667eea;">${total}</div><div class="stat-label">Total Risks</div></div>
@@ -882,16 +888,15 @@
                 return;
             }
 
-            // Sort by severity score descending
+            // Sort by after-controls severity score descending
             const sorted = [...filtered].sort((a, b) => {
-                return (b.probability * b.impact) - (a.probability * a.impact);
+                return getAfterControlsSeverity(b).score - getAfterControlsSeverity(a).score;
             });
 
             grid.innerHTML = sorted.map(r => {
                 const origIdx = risks.indexOf(r);
                 const sev = calcSeverity(r.probability, r.impact);
                 const sevClass = sev.label.toLowerCase();
-
                 const probAfter = r.probabilityAfter != null ? r.probabilityAfter : r.probability;
                 const impactAfter = r.impactAfter != null ? r.impactAfter : r.impact;
                 const sevAfter = calcSeverity(probAfter, impactAfter);
@@ -899,7 +904,7 @@
 
                 return `
                     <div class="risk-card">
-                        <div class="severity-stripe severity-${sevClass}"></div>
+                        <div class="severity-stripe severity-${sevAfterClass}"></div>
                         <div class="card-header">
                             <div class="card-title">${escapeHtml(r.title)}</div>
                             <span class="badge badge-${r.status.toLowerCase()}">${r.status}</span>
@@ -937,10 +942,10 @@
         function renderCharts() {
             if (!chartsVisible) return;
 
-            // Severity distribution
+            // Severity distribution after controls
             const sevCounts = { Critical: 0, High: 0, Medium: 0, Low: 0 };
             risks.forEach(r => {
-                const sev = calcSeverity(r.probability, r.impact);
+                const sev = getAfterControlsSeverity(r);
                 sevCounts[sev.label]++;
             });
 

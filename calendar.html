@@ -853,17 +853,14 @@
                     const importedCount = operations.length;
                     const skippedCount = beforeCount - importedCount;
 
-                    if (importedCount > 0) {
-                        const firstDate = new Date(operations[0].date);
-                        if (!Number.isNaN(firstDate.getTime())) {
-                            // Jump to imported data month so users immediately see imported events.
-                            currentDate = new Date(firstDate.getFullYear(), firstDate.getMonth(), 1);
-                        }
-                    }
+                    // Keep the initial calendar view anchored on today after workbook import.
+                    resetCalendarToToday();
 
                     renderCalendar();
                     updateMonthDisplay();
                     renderTable();
+
+                    [100, 500, 1200].forEach(delay => setTimeout(resetCalendarToToday, delay));
 
                     e.source.postMessage({
                         type: 'importComplete',
@@ -885,6 +882,10 @@
                     renderCalendar();
                     renderTable();
                     setWorkbookStatus('cleared all data');
+                }
+
+                if (e.data && e.data.type === 'showToday') {
+                    resetCalendarToToday();
                 }
             });
         }
@@ -1004,6 +1005,10 @@
         }
 
         function goToToday() {
+            resetCalendarToToday();
+        }
+
+        function resetCalendarToToday() {
             currentDate = new Date();
             renderCalendar();
             updateMonthDisplay();

@@ -632,7 +632,7 @@ function _buildZip(files) {
 
         <div id="calendar-tab" class="tab-content">
             <div class="iframe-container">
-                <iframe id="calendar-iframe" src="calendar.html"></iframe>
+                <iframe id="calendar-iframe" src="calendar.html?v=20260608-today-default"></iframe>
             </div>
         </div>
 
@@ -918,6 +918,10 @@ function _buildZip(files) {
             if (buttons[tabIndex[tabName]]) {
                 buttons[tabIndex[tabName]].classList.add('active');
             }
+
+            if (tabName === 'calendar' && _calendarShouldShowTodayAfterImport) {
+                postCalendarShowToday(true);
+            }
         }
 
         // ========== Workbook Export ==========
@@ -1093,6 +1097,9 @@ function _buildZip(files) {
                         sheetsFound.push(sheetName);
                         // Cache payload so we can re-deliver if the iframe wasn't ready yet
                         _pendingModuleData[mod] = rows;
+                        if (mod === 'calendar') {
+                            _calendarShouldShowTodayAfterImport = true;
+                        }
                         const iframe = document.getElementById(MODULE_CONFIG[mod].iframe);
                         if (iframe && iframe.contentWindow) {
                             pending++;
@@ -1157,6 +1164,9 @@ function _buildZip(files) {
                     } else {
                         setStatus('No matching sheets found in workbook.');
                         alert('No matching sheets found. Expected: ' + Object.values(MODULE_CONFIG).map(c=>c.sheetName).join(', '));
+                    }
+                    if (_calendarShouldShowTodayAfterImport && document.getElementById('calendar-tab')?.classList.contains('active')) {
+                        postCalendarShowToday(true);
                     }
             }).catch(function(err) {
                     console.error('Workbook import error:', err);
@@ -1512,10 +1522,25 @@ ${appendices}
         // ========== Dashboard Refresh ==========
         // Store last imported raw data so the dashboard refresh button can re-use it
         let _lastDashboardData = null;
+        let _calendarShouldShowTodayAfterImport = false;
 
         // Cache the last import payload per module so we can re-deliver if an iframe
         // signals ready after the import message was already sent (timing race fix).
         const _pendingModuleData = {};
+
+        function postCalendarShowToday(withRetries = false) {
+            const iframe = document.getElementById('calendar-iframe');
+            if (iframe && iframe.contentWindow) {
+                iframe.contentWindow.postMessage({ type: 'showToday' }, '*');
+                if (withRetries) {
+                    [100, 500, 1200].forEach(delay => {
+                        setTimeout(() => {
+                            iframe.contentWindow.postMessage({ type: 'showToday' }, '*');
+                        }, delay);
+                    });
+                }
+            }
+        }
 
         window.addEventListener('message', function(e) {
             if (e.data && e.data.type === 'requestDashboardData') {
@@ -1536,6 +1561,9 @@ ${appendices}
                             module: mod,
                             data: _pendingModuleData[mod]
                         }, '*');
+                        if (mod === 'calendar' && _calendarShouldShowTodayAfterImport) {
+                            postCalendarShowToday(true);
+                        }
                     }
                 }
             }
