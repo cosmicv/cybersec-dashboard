@@ -121,13 +121,19 @@ const XLSX = (() => {
       const ss = parseSharedStrings(files['xl/sharedStrings.xml']||'');
       const dateStyleIdxs = parseStyles(files['xl/styles.xml']||'');
       const relMap={};
-      for(const m of (files['xl/_rels/workbook.xml.rels']||'').matchAll(/Id="([^"]+)"[^>]*Target="([^"]+)"/g))
-        relMap[m[1]]=m[2];
+      for(const m of (files['xl/_rels/workbook.xml.rels']||'').matchAll(/<Relationship\b[^>]*>/g)) {
+        const tag = m[0];
+        const id = (tag.match(/\bId="([^"]+)"/)??[])[1];
+        const target = (tag.match(/\bTarget="([^"]+)"/)??[])[1];
+        if (id && target) relMap[id]=target;
+      }
       api.SheetNames=[];api.Sheets={};
       for(const m of (files['xl/workbook.xml']||'').matchAll(/<sheet\b[^>]*\bname="([^"]+)"[^>]*\br:id="([^"]+)"/g)){
         const[,name,rId]=m;
+        const target = relMap[rId] || '';
+        const normalizedTarget = target.startsWith('/xl/') ? target.slice(1) : `xl/${target.replace(/^\/+/, '')}`;
         api.SheetNames.push(name);
-        api.Sheets[name]={_xml:files['xl/'+(relMap[rId]||'')]||'',_ss:ss,_dsIdx:dateStyleIdxs};
+        api.Sheets[name]={_xml:files[normalizedTarget]||'',_ss:ss,_dsIdx:dateStyleIdxs};
       }
       return api;
     },
