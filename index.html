@@ -352,69 +352,141 @@ function _buildZip(files) {
 
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #e8edf3;
             min-height: 100vh;
-            padding: 20px;
+            padding: 18px;
         }
 
         .dashboard-container {
             max-width: 1600px;
             margin: 0 auto;
             background: white;
-            border-radius: 12px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            border: 1px solid #d7dee8;
+            border-radius: 8px;
+            box-shadow: 0 16px 40px rgba(15, 23, 42, 0.16);
             overflow: hidden;
         }
 
         .dashboard-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #16324f;
             color: white;
-            padding: 30px;
-            text-align: center;
+            padding: 24px 30px;
+            text-align: left;
         }
 
         .dashboard-header h1 {
-            font-size: 2.5em;
-            margin-bottom: 10px;
+            font-size: 1.9em;
+            margin-bottom: 6px;
             font-weight: 700;
         }
 
         .dashboard-header p {
-            font-size: 1.1em;
-            opacity: 0.9;
+            color: #c8d5e3;
+            font-size: 0.98em;
+        }
+
+        .workbook-toolbar {
+            align-items: center;
+            background: #f8fafc;
+            border-bottom: 1px solid #dbe3ed;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            padding: 12px 30px;
+        }
+
+        .toolbar-label {
+            color: #334155;
+            font-size: 13px;
+            font-weight: 700;
+            margin-right: 2px;
+        }
+
+        .toolbar-btn {
+            align-items: center;
+            border: 1px solid transparent;
+            border-radius: 6px;
+            cursor: pointer;
+            display: inline-flex;
+            font-size: 13px;
+            font-weight: 700;
+            min-height: 36px;
+            padding: 8px 14px;
+            transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+        }
+
+        .toolbar-btn.primary { background: #2f5f8f; color: white; }
+        .toolbar-btn.primary:hover { background: #274f77; }
+        .toolbar-btn.success { background: #247a57; color: white; }
+        .toolbar-btn.success:hover { background: #1f684b; }
+        .toolbar-btn.danger { background: #b42318; color: white; }
+        .toolbar-btn.danger:hover { background: #971f17; }
+        .toolbar-btn.neutral { background: #475467; color: white; }
+        .toolbar-btn.neutral:hover { background: #344054; }
+
+        .toolbar-menu {
+            position: relative;
+            display: inline-block;
+        }
+
+        .toolbar-dropdown {
+            background: white;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            box-shadow: 0 12px 30px rgba(15,23,42,0.16);
+            display: none;
+            left: 0;
+            min-width: 190px;
+            padding: 6px 0;
+            position: absolute;
+            top: calc(100% + 4px);
+            z-index: 9999;
+        }
+
+        .toolbar-dropdown-title {
+            border-bottom: 1px solid #e2e8f0;
+            color: #64748b;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            margin-bottom: 4px;
+            padding: 8px 14px 6px;
+            text-transform: uppercase;
         }
 
         .tab-navigation {
-            background: #f8f9fa;
-            border-bottom: 2px solid #dee2e6;
-            padding: 0;
+            background: #f1f5f9;
+            border-bottom: 1px solid #dbe3ed;
             display: flex;
-            gap: 0;
+            gap: 2px;
+            overflow-x: auto;
+            padding: 0 12px;
         }
 
         .tab-button {
             flex: 1;
-            padding: 18px 30px;
+            min-width: max-content;
+            padding: 15px 18px;
             background: transparent;
             border: none;
             cursor: pointer;
-            font-size: 16px;
+            font-size: 14px;
             font-weight: 600;
-            color: #6c757d;
-            transition: all 0.3s ease;
+            color: #526173;
+            transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease;
             border-bottom: 3px solid transparent;
             position: relative;
         }
 
         .tab-button:hover {
-            background: #e9ecef;
-            color: #495057;
+            background: #e2e8f0;
+            color: #253041;
         }
 
         .tab-button.active {
-            color: #667eea;
+            color: #16324f;
             background: white;
-            border-bottom-color: #667eea;
+            border-bottom-color: #2f5f8f;
         }
 
         .tab-content {
@@ -542,7 +614,7 @@ function _buildZip(files) {
 
         .version-badge {
             display: inline-block;
-            background: linear-gradient(135deg, #667eea, #764ba2);
+            background: #2f5f8f;
             color: white;
             padding: 4px 12px;
             border-radius: 12px;
@@ -553,13 +625,22 @@ function _buildZip(files) {
         }
 
         @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
             .dashboard-header h1 {
-                font-size: 1.8em;
+                font-size: 1.45em;
+            }
+
+            .dashboard-header,
+            .workbook-toolbar {
+                padding: 18px;
             }
 
             .tab-button {
-                padding: 15px 20px;
-                font-size: 14px;
+                flex: 0 0 auto;
+                padding: 13px 14px;
             }
 
             .info-content {
@@ -579,17 +660,17 @@ function _buildZip(files) {
             <p>Unified Security Operations Management Platform</p>
         </div>
 
-        <div style="background:#f8f9fa;border-bottom:1px solid #dee2e6;padding:12px 30px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
-            <span style="font-weight:600;font-size:14px;color:#495057;">&#x1F4D7; Workbook:</span>
-            <button onclick="exportWorkbook()" style="padding:8px 18px;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;background:#667eea;color:white;transition:all 0.3s;">Export .xlsx</button>
-            <label for="wbImportFile" style="padding:8px 18px;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;background:#28a745;color:white;">Import .xlsx</label>
+        <div class="workbook-toolbar">
+            <span class="toolbar-label">&#x1F4D7; Workbook</span>
+            <button class="toolbar-btn primary" onclick="exportWorkbook()">Export .xlsx</button>
+            <label class="toolbar-btn success" for="wbImportFile">Import .xlsx</label>
             <input type="file" id="wbImportFile" accept=".xlsx,.xls" onchange="importWorkbook(event)" style="display:none;">
-            <button onclick="clearAllData()" style="padding:8px 18px;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;background:#dc3545;color:white;transition:all 0.3s;">Clear All Data</button>
-            <button onclick="showReportModal()" style="padding:8px 18px;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;background:#495057;color:white;transition:all 0.3s;" title="Generate a Word report from current data">&#x1F4C4; Report</button>
-            <div style="position:relative;display:inline-block;">
-                <button onclick="toggleTabVisDropdown(event)" id="tabVisBtn" style="padding:8px 18px;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;background:#6c757d;color:white;transition:all 0.3s;">&#9881; Tabs &#9660;</button>
-                <div id="tabVisDropdown" style="display:none;position:absolute;top:calc(100% + 4px);left:0;background:white;border:1px solid #ced4da;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,0.15);z-index:9999;min-width:190px;padding:6px 0;" onclick="event.stopPropagation()">
-                    <div style="padding:8px 14px 6px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:#6c757d;border-bottom:1px solid #e9ecef;margin-bottom:4px;">Visible Tabs</div>
+            <button class="toolbar-btn danger" onclick="clearAllData()">Clear All Data</button>
+            <button class="toolbar-btn neutral" onclick="showReportModal()" title="Generate a Word report from current data">Report</button>
+            <div class="toolbar-menu">
+                <button class="toolbar-btn neutral" onclick="toggleTabVisDropdown(event)" id="tabVisBtn">Tabs &#9660;</button>
+                <div id="tabVisDropdown" class="toolbar-dropdown" onclick="event.stopPropagation()">
+                    <div class="toolbar-dropdown-title">Visible Tabs</div>
                     <div id="tabVisOptions"></div>
                 </div>
             </div>
@@ -1085,8 +1166,9 @@ function _buildZip(files) {
                     let pending = 0;
                     const sheetsFound = [];
 
-                    const dashboardData = { risks: [], vendors: [], policies: [] };
+                    const dashboardData = { risks: [], vendors: [], policies: [], calendar: [] };
                     const dashboardSheetMap = {
+                        'Calendar': 'calendar',
                         'Risk Register': 'risks',
                         'Vendors': 'vendors',
                         'Policy Reviews': 'policies'

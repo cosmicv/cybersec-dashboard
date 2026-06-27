@@ -10,8 +10,8 @@
 
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: #f0f2f5;
-            color: #333;
+            background: #f4f6f8;
+            color: #253041;
             padding: 24px;
         }
 
@@ -21,6 +21,46 @@
             color: #1a1a2e;
             margin-bottom: 20px;
         }
+
+        .page-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .page-kicker {
+            color: #6c757d;
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.06em;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+        }
+
+        .refresh-group {
+            align-items: center;
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn {
+            align-items: center;
+            background: #2f5f8f;
+            border: 1px solid #2f5f8f;
+            border-radius: 6px;
+            color: white;
+            cursor: pointer;
+            display: inline-flex;
+            font-size: 13px;
+            font-weight: 700;
+            gap: 8px;
+            min-height: 36px;
+            padding: 8px 16px;
+        }
+
+        .btn:hover { background: #274f77; }
 
         /* KPI Cards */
         .kpi-grid {
@@ -32,9 +72,10 @@
 
         .kpi-card {
             background: white;
-            border-radius: 10px;
+            border: 1px solid #dde4ec;
+            border-radius: 8px;
             padding: 20px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            box-shadow: 0 1px 3px rgba(15,23,42,0.06);
             border-left: 4px solid #667eea;
         }
 
@@ -74,9 +115,10 @@
 
         .chart-card {
             background: white;
-            border-radius: 10px;
+            border: 1px solid #dde4ec;
+            border-radius: 8px;
             padding: 20px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            box-shadow: 0 1px 3px rgba(15,23,42,0.06);
         }
 
         .chart-card h3 {
@@ -92,17 +134,183 @@
             position: relative;
             height: 220px;
         }
+
+        /* Action Center */
+        .action-center {
+            background: white;
+            border: 1px solid #d8e0ea;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(15,23,42,0.06);
+            margin-bottom: 24px;
+            overflow: hidden;
+        }
+
+        .action-center-header {
+            align-items: center;
+            background: #f9fafb;
+            border-bottom: 1px solid #e1e7ef;
+            display: flex;
+            gap: 16px;
+            justify-content: space-between;
+            padding: 16px 18px;
+        }
+
+        .action-center-title h3 {
+            color: #253041;
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 3px;
+        }
+
+        .action-center-title p {
+            color: #6c757d;
+            font-size: 12px;
+        }
+
+        .action-summary {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: flex-end;
+        }
+
+        .summary-pill {
+            align-items: center;
+            border-radius: 999px;
+            display: inline-flex;
+            font-size: 12px;
+            font-weight: 700;
+            gap: 6px;
+            min-height: 28px;
+            padding: 5px 10px;
+        }
+
+        .summary-pill.critical { background: #fff1f2; color: #b42318; }
+        .summary-pill.warning  { background: #fffbeb; color: #a15c07; }
+        .summary-pill.normal   { background: #edf7f2; color: #0f7b52; }
+
+        .action-list {
+            display: grid;
+            gap: 0;
+        }
+
+        .action-item {
+            align-items: center;
+            border-bottom: 1px solid #edf1f5;
+            display: grid;
+            gap: 14px;
+            grid-template-columns: minmax(0, 1fr) auto;
+            padding: 14px 18px;
+        }
+
+        .action-item:last-child { border-bottom: 0; }
+
+        .action-meta {
+            align-items: center;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 5px;
+        }
+
+        .action-label {
+            border-radius: 999px;
+            color: white;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 4px 8px;
+            text-transform: uppercase;
+        }
+
+        .action-label.critical { background: #d92d20; }
+        .action-label.warning  { background: #f79009; }
+        .action-label.normal   { background: #2f5f8f; }
+
+        .action-source {
+            color: #6c757d;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .action-title {
+            color: #253041;
+            font-size: 14px;
+            font-weight: 700;
+            line-height: 1.35;
+        }
+
+        .action-detail {
+            color: #657386;
+            font-size: 12px;
+            line-height: 1.4;
+            margin-top: 3px;
+        }
+
+        .action-due {
+            color: #4b5565;
+            font-size: 12px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .empty-actions {
+            color: #64748b;
+            font-size: 14px;
+            padding: 28px 18px;
+            text-align: center;
+        }
+
+        @media (max-width: 760px) {
+            body { padding: 16px; }
+            .page-toolbar,
+            .action-center-header {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+            .refresh-group,
+            .action-summary {
+                justify-content: flex-start;
+                width: 100%;
+            }
+            .action-item {
+                grid-template-columns: 1fr;
+            }
+            .action-due {
+                white-space: normal;
+            }
+        }
     </style>
 </head>
 <body>
 
-    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
-        <h2 style="margin-bottom:0;">Security Operations Overview</h2>
-        <div style="display:flex; align-items:center; gap:12px;">
+    <div class="page-toolbar">
+        <div>
+            <div class="page-kicker">Client Operations</div>
+            <h2 style="margin-bottom:0;">Security Operations Overview</h2>
+        </div>
+        <div class="refresh-group">
             <span id="lastRefresh" style="font-size:12px;color:#6c757d;font-style:italic;"></span>
-            <button id="refreshBtn" onclick="requestRefresh()" style="padding:8px 18px;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;background:#667eea;color:white;">&#x21BB; Refresh</button>
+            <button id="refreshBtn" class="btn" onclick="requestRefresh()">Refresh</button>
         </div>
     </div>
+
+    <section class="action-center" aria-labelledby="actionCenterTitle">
+        <div class="action-center-header">
+            <div class="action-center-title">
+                <h3 id="actionCenterTitle">Action Center</h3>
+                <p>Prioritized risks, reviews, vendors, and operations tasks that need attention.</p>
+            </div>
+            <div class="action-summary">
+                <span class="summary-pill critical"><span id="action-critical-count">0</span> Critical</span>
+                <span class="summary-pill warning"><span id="action-warning-count">0</span> Due Soon</span>
+                <span class="summary-pill normal"><span id="action-total-count">0</span> Total</span>
+            </div>
+        </div>
+        <div id="actionList" class="action-list">
+            <div class="empty-actions">Import a workbook or refresh module data to build the action queue.</div>
+        </div>
+    </section>
 
     <!-- KPI Cards -->
     <div class="kpi-grid">
@@ -449,6 +657,127 @@
             });
             riskStatusChart.data.datasets[0].data = Object.values(stCounts);
             riskStatusChart.update();
+
+            renderActionCenter({ risks, policies, vendors, calendar, today, in7, in30 });
+        }
+
+        function renderActionCenter({ risks, policies, vendors, calendar, today, in7, in30 }) {
+            const actions = [];
+
+            const isClosedRisk = r => /(closed|archived|accepted|mitigated)/i.test(r['Status'] || '');
+            risks.forEach(r => {
+                if (isClosedRisk(r)) return;
+                const sev = capitalize(r['Severity Level (After)'] || r['Severity Level (Before)'] || '');
+                const score = Number(r['Severity Score (After)'] || r['Severity Score (Before)'] || 0);
+                if (sev === 'Critical' || sev === 'High' || score >= 40) {
+                    actions.push({
+                        source: 'Risk',
+                        level: sev === 'Critical' || score >= 70 ? 'critical' : 'warning',
+                        title: r['Title'] || r['Risk Title'] || 'Untitled risk',
+                        detail: [
+                            sev ? `${sev} severity` : '',
+                            r['Owner'] ? `Owner: ${r['Owner']}` : '',
+                            r['Status'] ? `Status: ${r['Status']}` : ''
+                        ].filter(Boolean).join(' | '),
+                        due: sev === 'Critical' || score >= 70 ? 'Immediate review' : 'Needs review',
+                        sort: sev === 'Critical' || score >= 70 ? 10 : 30
+                    });
+                }
+            });
+
+            policies.forEach(p => {
+                const d = parseDate(p['Next Review']);
+                if (!d) return;
+                if (d < today || d <= in30) {
+                    const overdue = d < today;
+                    actions.push({
+                        source: 'Policy',
+                        level: overdue ? 'critical' : 'warning',
+                        title: p['Policy Name'] || p['Policy ID'] || 'Policy review',
+                        detail: [
+                            p['Owner'] ? `Owner: ${p['Owner']}` : '',
+                            p['Compliance Framework'] ? `Framework: ${p['Compliance Framework']}` : '',
+                            p['Status'] ? `Status: ${p['Status']}` : ''
+                        ].filter(Boolean).join(' | '),
+                        due: `${overdue ? 'Overdue' : 'Due'} ${formatShortDate(d)}`,
+                        sort: overdue ? 20 : 60
+                    });
+                }
+            });
+
+            vendors.forEach(v => {
+                const currentRaw = String(v['Current'] || '').trim().toLowerCase();
+                const reviewDate = parseDate(v['Review Date']);
+                const highRisk = /^(critical|high|4|3)$/i.test(String(v['Risk Rating'] || '').trim());
+                const stale = currentRaw === 'not current' || currentRaw === 'no' || (reviewDate && reviewDate < today);
+                if (stale || highRisk) {
+                    const isCritical = stale && highRisk;
+                    actions.push({
+                        source: 'Vendor',
+                        level: isCritical || stale ? 'critical' : 'warning',
+                        title: v['Vendor Name'] || 'Vendor review',
+                        detail: [
+                            v['Risk Rating'] ? `Risk: ${v['Risk Rating']}` : '',
+                            v['Responsible Team'] ? `Team: ${v['Responsible Team']}` : '',
+                            v['Information Security Review'] ? `Review: ${v['Information Security Review']}` : ''
+                        ].filter(Boolean).join(' | '),
+                        due: reviewDate ? `${stale ? 'Review stale' : 'Review date'} ${formatShortDate(reviewDate)}` : 'Review status needed',
+                        sort: isCritical ? 15 : stale ? 25 : 70
+                    });
+                }
+            });
+
+            const isDone = t => /(closed|complete[d]?|done)/i.test(t['Status'] || '');
+            calendar.forEach(t => {
+                if (isDone(t)) return;
+                const d = parseDate(t['Date']);
+                if (!d) return;
+                if (d < today || d <= in7) {
+                    const overdue = d < today;
+                    actions.push({
+                        source: 'Task',
+                        level: overdue ? 'critical' : 'warning',
+                        title: t['Task'] || t['Title'] || 'Operations task',
+                        detail: [
+                            t['Category'] ? `Category: ${t['Category']}` : '',
+                            t['Owner'] ? `Owner: ${t['Owner']}` : '',
+                            t['Priority'] ? `Priority: ${t['Priority']}` : ''
+                        ].filter(Boolean).join(' | '),
+                        due: `${overdue ? 'Overdue' : 'Due'} ${formatShortDate(d)}`,
+                        sort: overdue ? 18 : 50
+                    });
+                }
+            });
+
+            actions.sort((a, b) => a.sort - b.sort || a.title.localeCompare(b.title));
+
+            const criticalCount = actions.filter(a => a.level === 'critical').length;
+            const warningCount = actions.filter(a => a.level === 'warning').length;
+            setKPI('action-critical-count', criticalCount);
+            setKPI('action-warning-count', warningCount);
+            setKPI('action-total-count', actions.length);
+
+            const list = document.getElementById('actionList');
+            if (!list) return;
+
+            if (!actions.length) {
+                list.innerHTML = '<div class="empty-actions">No urgent actions found. Policies, vendors, risks, and scheduled tasks look current.</div>';
+                return;
+            }
+
+            list.innerHTML = actions.slice(0, 12).map(action => `
+                <article class="action-item">
+                    <div>
+                        <div class="action-meta">
+                            <span class="action-label ${action.level}">${action.level === 'critical' ? 'Critical' : 'Due Soon'}</span>
+                            <span class="action-source">${escapeHtml(action.source)}</span>
+                        </div>
+                        <div class="action-title">${escapeHtml(action.title)}</div>
+                        ${action.detail ? `<div class="action-detail">${escapeHtml(action.detail)}</div>` : ''}
+                    </div>
+                    <div class="action-due">${escapeHtml(action.due)}</div>
+                </article>
+            `).join('');
         }
 
         function setKPI(id, val) {
@@ -469,6 +798,19 @@
             }
             const d = new Date(s);
             return isNaN(d) ? null : d;
+        }
+
+        function formatShortDate(d) {
+            return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+        }
+
+        function escapeHtml(value) {
+            return String(value || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
         }
     </script>
 </body>
