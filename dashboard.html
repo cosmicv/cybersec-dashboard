@@ -194,6 +194,79 @@
             gap: 0;
         }
 
+        .action-group {
+            border-bottom: 1px solid #edf1f5;
+        }
+
+        .action-group:last-child { border-bottom: 0; }
+
+        .action-group summary {
+            align-items: center;
+            cursor: pointer;
+            display: grid;
+            gap: 12px;
+            grid-template-columns: minmax(0, 1fr) auto;
+            list-style: none;
+            padding: 14px 18px;
+        }
+
+        .action-group summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .action-group-title {
+            align-items: center;
+            color: #253041;
+            display: flex;
+            flex-wrap: wrap;
+            font-size: 14px;
+            font-weight: 700;
+            gap: 10px;
+        }
+
+        .action-group-title::before {
+            color: #64748b;
+            content: '+';
+            display: inline-block;
+            font-size: 16px;
+            font-weight: 700;
+            line-height: 1;
+            width: 12px;
+        }
+
+        .action-group[open] .action-group-title::before {
+            content: '-';
+        }
+
+        .action-group-subtitle {
+            color: #64748b;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .action-group-counts {
+            align-items: center;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: flex-end;
+        }
+
+        .group-pill {
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 4px 8px;
+        }
+
+        .group-pill.critical { background: #fff1f2; color: #b42318; }
+        .group-pill.warning  { background: #fffbeb; color: #a15c07; }
+        .group-pill.total    { background: #eef4ff; color: #2f5f8f; }
+
+        .action-group-items {
+            border-top: 1px solid #edf1f5;
+        }
+
         .action-item {
             align-items: center;
             border-bottom: 1px solid #edf1f5;
@@ -275,6 +348,12 @@
             }
             .action-item {
                 grid-template-columns: 1fr;
+            }
+            .action-group summary {
+                grid-template-columns: 1fr;
+            }
+            .action-group-counts {
+                justify-content: flex-start;
             }
             .action-due {
                 white-space: normal;
@@ -765,19 +844,52 @@
                 return;
             }
 
-            list.innerHTML = actions.slice(0, 12).map(action => `
-                <article class="action-item">
-                    <div>
-                        <div class="action-meta">
-                            <span class="action-label ${action.level}">${action.level === 'critical' ? 'Critical' : 'Due Soon'}</span>
-                            <span class="action-source">${escapeHtml(action.source)}</span>
-                        </div>
-                        <div class="action-title">${escapeHtml(action.title)}</div>
-                        ${action.detail ? `<div class="action-detail">${escapeHtml(action.detail)}</div>` : ''}
-                    </div>
-                    <div class="action-due">${escapeHtml(action.due)}</div>
-                </article>
-            `).join('');
+            const groupMeta = [
+                { source: 'Risk', title: 'Risks', subtitle: 'Open high and critical risk items' },
+                { source: 'Policy', title: 'Policies', subtitle: 'Overdue and upcoming policy reviews' },
+                { source: 'Vendor', title: 'Vendors', subtitle: 'Stale or high-risk vendor reviews' },
+                { source: 'Task', title: 'Operations Tasks', subtitle: 'Overdue and upcoming scheduled work' }
+            ];
+
+            list.innerHTML = groupMeta
+                .map(group => {
+                    const groupActions = actions.filter(action => action.source === group.source);
+                    if (!groupActions.length) return '';
+                    const groupCritical = groupActions.filter(action => action.level === 'critical').length;
+                    const groupWarning = groupActions.filter(action => action.level === 'warning').length;
+
+                    return `
+                        <details class="action-group">
+                            <summary>
+                                <div>
+                                    <div class="action-group-title">${escapeHtml(group.title)}</div>
+                                    <div class="action-group-subtitle">${escapeHtml(group.subtitle)}</div>
+                                </div>
+                                <div class="action-group-counts">
+                                    ${groupCritical ? `<span class="group-pill critical">${groupCritical} Critical</span>` : ''}
+                                    ${groupWarning ? `<span class="group-pill warning">${groupWarning} Due Soon</span>` : ''}
+                                    <span class="group-pill total">${groupActions.length} Total</span>
+                                </div>
+                            </summary>
+                            <div class="action-group-items">
+                                ${groupActions.map(action => `
+                                    <article class="action-item">
+                                        <div>
+                                            <div class="action-meta">
+                                                <span class="action-label ${action.level}">${action.level === 'critical' ? 'Critical' : 'Due Soon'}</span>
+                                                <span class="action-source">${escapeHtml(action.source)}</span>
+                                            </div>
+                                            <div class="action-title">${escapeHtml(action.title)}</div>
+                                            ${action.detail ? `<div class="action-detail">${escapeHtml(action.detail)}</div>` : ''}
+                                        </div>
+                                        <div class="action-due">${escapeHtml(action.due)}</div>
+                                    </article>
+                                `).join('')}
+                            </div>
+                        </details>
+                    `;
+                })
+                .join('');
         }
 
         function setKPI(id, val) {
