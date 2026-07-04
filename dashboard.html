@@ -381,7 +381,7 @@
                 <p>Prioritized risks, reviews, vendors, and operations tasks that need attention.</p>
             </div>
             <div class="action-summary">
-                <span class="summary-pill critical"><span id="action-critical-count">0</span> Critical</span>
+                <span class="summary-pill critical"><span id="action-overdue-count">0</span> Overdue</span>
                 <span class="summary-pill warning"><span id="action-warning-count">0</span> Due Soon</span>
                 <span class="summary-pill normal"><span id="action-total-count">0</span> Total</span>
             </div>
@@ -453,13 +453,6 @@
             <h3>Policy Review Status</h3>
             <div class="chart-wrapper">
                 <canvas id="policyStatusChart"></canvas>
-            </div>
-        </div>
-
-        <div id="chart-section-vendors" class="chart-card">
-            <h3>Vendor Risk Tier</h3>
-            <div class="chart-wrapper">
-                <canvas id="vendorRiskChart"></canvas>
             </div>
         </div>
 
@@ -536,26 +529,6 @@
             }
         );
 
-        const vendorRiskChart = new Chart(
-            document.getElementById('vendorRiskChart'),
-            {
-                type: 'doughnut',
-                data: {
-                    labels: ['Critical', 'High', 'Medium', 'Low'],
-                    datasets: [{
-                        data: [0, 0, 0, 0],
-                        backgroundColor: [COLORS.red, COLORS.orange, COLORS.yellow, COLORS.green],
-                        borderWidth: 2,
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { position: 'bottom' } }
-                }
-            }
-        );
-
         const riskStatusChart = new Chart(
             document.getElementById('riskStatusChart'),
             {
@@ -605,7 +578,6 @@
             setVisible('kpi-section-policies',      show('policies'));
             setVisible('chart-section-policies',    show('policies'));
             setVisible('kpi-section-vendors',       show('vendors'));
-            setVisible('chart-section-vendors',     show('vendors'));
             setVisible('kpi-section-risks',         show('risks'));
             setVisible('chart-section-risks-status',   show('risks'));
             setVisible('chart-section-risks-severity', show('risks'));
@@ -703,19 +675,6 @@
             policyStatusChart.data.datasets[0].data = Object.values(polCounts);
             policyStatusChart.update();
 
-            // ── Vendor Risk Tier chart ──
-            const venCounts = { Critical: 0, High: 0, Medium: 0, Low: 0 };
-            vendors.forEach(v => {
-                // Prefer clean 'Risk Rating' key; fall back to fuzzy match
-                const raw = v['Risk Rating'] ||
-                    (Object.entries(v).find(([k]) => k.toLowerCase().replace(/[^a-z ]/g, '').trim() === 'risk rating') || [])[1] || '';
-                const tier = capitalize(String(raw));
-                if (tier in venCounts) venCounts[tier]++;
-            });
-            const venData = Object.values(venCounts);
-            venData.forEach((v, i) => { vendorRiskChart.data.datasets[0].data[i] = v; });
-            vendorRiskChart.update('none');
-
             // ── Calendar Tasks KPI + chart ──
             const in7 = new Date(today); in7.setDate(today.getDate() + 7);
             const isDone = t => /(closed|complete[d]?|done)/i.test(t['Status'] || '');
@@ -759,6 +718,8 @@
                             r['Status'] ? `Status: ${r['Status']}` : ''
                         ].filter(Boolean).join(' | '),
                         due: sev === 'Critical' || score >= 70 ? 'Immediate review' : 'Needs review',
+                        overdue: false,
+                        label: sev === 'Critical' || score >= 70 ? 'Critical' : 'Due Soon',
                         sort: sev === 'Critical' || score >= 70 ? 10 : 30
                     });
                 }
@@ -779,6 +740,8 @@
                             p['Status'] ? `Status: ${p['Status']}` : ''
                         ].filter(Boolean).join(' | '),
                         due: `${overdue ? 'Overdue' : 'Due'} ${formatShortDate(d)}`,
+                        overdue,
+                        label: overdue ? 'Overdue' : 'Due Soon',
                         sort: overdue ? 20 : 60
                     });
                 }
@@ -801,6 +764,8 @@
                             v['Information Security Review'] ? `Review: ${v['Information Security Review']}` : ''
                         ].filter(Boolean).join(' | '),
                         due: reviewDate ? `${stale ? 'Review stale' : 'Review date'} ${formatShortDate(reviewDate)}` : 'Review status needed',
+                        overdue: stale,
+                        label: stale ? 'Overdue' : 'Due Soon',
                         sort: isCritical ? 15 : stale ? 25 : 70
                     });
                 }
@@ -823,6 +788,8 @@
                             t['Priority'] ? `Priority: ${t['Priority']}` : ''
                         ].filter(Boolean).join(' | '),
                         due: `${overdue ? 'Overdue' : 'Due'} ${formatShortDate(d)}`,
+                        overdue,
+                        label: overdue ? 'Overdue' : 'Due Soon',
                         sort: overdue ? 18 : 50
                     });
                 }
@@ -830,9 +797,9 @@
 
             actions.sort((a, b) => a.sort - b.sort || a.title.localeCompare(b.title));
 
-            const criticalCount = actions.filter(a => a.level === 'critical').length;
-            const warningCount = actions.filter(a => a.level === 'warning').length;
-            setKPI('action-critical-count', criticalCount);
+            const overdueCount = actions.filter(a => a.overdue).length;
+            const warningCount = actions.filter(a => !a.overdue && a.level === 'warning').length;
+            setKPI('action-overdue-count', overdueCount);
             setKPI('action-warning-count', warningCount);
             setKPI('action-total-count', actions.length);
 
@@ -855,8 +822,8 @@
                 .map(group => {
                     const groupActions = actions.filter(action => action.source === group.source);
                     if (!groupActions.length) return '';
-                    const groupCritical = groupActions.filter(action => action.level === 'critical').length;
-                    const groupWarning = groupActions.filter(action => action.level === 'warning').length;
+                    const groupOverdue = groupActions.filter(action => action.overdue).length;
+                    const groupWarning = groupActions.filter(action => !action.overdue && action.level === 'warning').length;
 
                     return `
                         <details class="action-group">
@@ -866,7 +833,7 @@
                                     <div class="action-group-subtitle">${escapeHtml(group.subtitle)}</div>
                                 </div>
                                 <div class="action-group-counts">
-                                    ${groupCritical ? `<span class="group-pill critical">${groupCritical} Critical</span>` : ''}
+                                    ${groupOverdue ? `<span class="group-pill critical">${groupOverdue} Overdue</span>` : ''}
                                     ${groupWarning ? `<span class="group-pill warning">${groupWarning} Due Soon</span>` : ''}
                                     <span class="group-pill total">${groupActions.length} Total</span>
                                 </div>
@@ -876,7 +843,7 @@
                                     <article class="action-item">
                                         <div>
                                             <div class="action-meta">
-                                                <span class="action-label ${action.level}">${action.level === 'critical' ? 'Critical' : 'Due Soon'}</span>
+                                                <span class="action-label ${action.level}">${escapeHtml(action.label)}</span>
                                                 <span class="action-source">${escapeHtml(action.source)}</span>
                                             </div>
                                             <div class="action-title">${escapeHtml(action.title)}</div>
