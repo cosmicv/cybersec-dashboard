@@ -264,6 +264,20 @@
             background: #fbd0d3;
         }
 
+        tbody tr.no-review-date td {
+            background: #f1f3f5;
+            color: #7b8491;
+        }
+
+        tbody tr.no-review-date:hover td {
+            background: #e9ecef;
+        }
+
+        tbody tr.no-review-date strong,
+        tbody tr.no-review-date .badge {
+            opacity: 0.72;
+        }
+
         /* Badges */
         .badge {
             display: inline-block;
@@ -1121,9 +1135,12 @@
                 const risk = v['Risk Rating'] || '';
                 const classification = (v['Information Classification'] || '').toLowerCase();
                 const currentVal = getCalculatedCurrent(v);
-                const isOverdue = currentVal === 'Not Current';
+                const hasReviewDate = parseFlexDate(v['Review Date']) > 0;
+                const isNoReviewDate = !hasReviewDate;
+                const isOverdue = currentVal === 'Not Current' && hasReviewDate;
+                const rowStateClass = isNoReviewDate ? ' no-review-date' : isOverdue ? ' overdue' : '';
 
-                html += `<tr class="risk-${risk}${isOverdue ? ' overdue' : ''}" ondblclick="editVendor(${origIdx})" title="Double-click to edit">`;                displayCols.forEach(col => {
+                html += `<tr class="risk-${risk}${rowStateClass}" ondblclick="editVendor(${origIdx})" title="Double-click to edit">`;                displayCols.forEach(col => {
                     const val = col === 'Current' ? currentVal : (v[col] || '');
                     if (col === 'Risk Rating') {
                         html += `<td><span class="badge badge-risk-${val}">${val}</span></td>`;

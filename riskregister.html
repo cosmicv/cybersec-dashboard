@@ -466,40 +466,36 @@
 
         .heatmap-box { margin-top: 20px; }
 
-        .heatmap-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+        .heatmap-box > h3 {
             margin-bottom: 15px;
         }
 
-        .heatmap-toggle {
-            display: flex;
-            gap: 4px;
-            background: #e9ecef;
+        .heatmap-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 20px;
+        }
+
+        .heatmap-panel {
+            min-width: 0;
+            padding: 14px;
+            border: 1px solid #dee2e6;
             border-radius: 6px;
-            padding: 3px;
+            background: #f8f9fa;
         }
 
-        .heatmap-toggle button {
-            padding: 4px 12px;
-            border: none;
-            background: transparent;
-            border-radius: 4px;
-            font-size: 12px;
-            font-weight: 500;
-            cursor: pointer;
-            color: #6c757d;
-            transition: all 0.2s;
+        .heatmap-panel h4 {
+            margin: 0 0 10px;
+            color: #495057;
+            font-size: 14px;
+            text-align: center;
         }
 
-        .heatmap-toggle button.active {
-            background: white;
-            color: #212529;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        .heatmap-panel canvas {
+            display: block;
+            max-width: 100%;
+            margin: 0 auto;
         }
-
-        #heatmapChart { display: block; margin: 0 auto; }
 
 
         @media (max-width: 768px) {
@@ -508,6 +504,7 @@
             .controls { flex-direction: column; align-items: stretch; }
             .filter-group { margin-left: 0; }
             .charts-container { grid-template-columns: 1fr; }
+            .heatmap-grid { grid-template-columns: 1fr; }
             .risk-grid { grid-template-columns: 1fr; }
             .form-row { grid-template-columns: 1fr; }
         }
@@ -572,14 +569,17 @@
                 </div>
             </div>
             <div class="chart-box heatmap-box">
-                <div class="heatmap-header">
-                    <h3>Risk Heatmap</h3>
-                    <div class="heatmap-toggle">
-                        <button id="heatmapBefore" onclick="setHeatmapMode('before')">Before Controls</button>
-                        <button class="active" id="heatmapAfter" onclick="setHeatmapMode('after')">After Controls</button>
+                <h3>Risk Heatmaps</h3>
+                <div class="heatmap-grid">
+                    <div class="heatmap-panel">
+                        <h4>Before Controls</h4>
+                        <canvas id="heatmapBeforeChart"></canvas>
+                    </div>
+                    <div class="heatmap-panel">
+                        <h4>After Controls</h4>
+                        <canvas id="heatmapAfterChart"></canvas>
                     </div>
                 </div>
-                <canvas id="heatmapChart"></canvas>
             </div>
         </div>
 
@@ -726,8 +726,6 @@
         let chartsVisible = true;
         let severityChartInstance = null;
         let statusChartInstance = null;
-        let heatmapMode = 'after';
-
         // ==================== SEVERITY CALC ====================
         function formatDateUS(val) {
             if (!val) return '';
@@ -996,17 +994,22 @@
                 }
             });
 
-            renderHeatmap();
+            renderHeatmaps();
         }
 
-        function renderHeatmap() {
-            const canvas = document.getElementById('heatmapChart');
+        function renderHeatmaps() {
+            renderHeatmap('heatmapBeforeChart', 'before');
+            renderHeatmap('heatmapAfterChart', 'after');
+        }
+
+        function renderHeatmap(canvasId, mode) {
+            const canvas = document.getElementById(canvasId);
             if (!canvas) return;
             const ctx = canvas.getContext('2d');
 
             const pad = { top: 20, right: 20, bottom: 56, left: 64 };
             const boxW = canvas.parentElement.clientWidth || 600;
-            const gridSize = Math.min(boxW - pad.left - pad.right - 40, 400);
+            const gridSize = Math.max(180, Math.min(boxW - pad.left - pad.right - 28, 400));
             const cell = gridSize / 5;
             canvas.width  = gridSize + pad.left + pad.right;
             canvas.height = gridSize + pad.top  + pad.bottom;
@@ -1015,8 +1018,8 @@
             // Build count grid [probBand 0-4][impactBand 0-4]
             const grid = Array.from({length: 5}, () => Array(5).fill(0));
             risks.forEach(r => {
-                const prob   = heatmapMode === 'after' && r.probabilityAfter != null ? r.probabilityAfter : r.probability;
-                const impact = heatmapMode === 'after' && r.impactAfter != null      ? r.impactAfter      : r.impact;
+                const prob   = mode === 'after' && r.probabilityAfter != null ? r.probabilityAfter : r.probability;
+                const impact = mode === 'after' && r.impactAfter != null      ? r.impactAfter      : r.impact;
                 const pb = Math.min(4, Math.ceil(prob   / 2) - 1);
                 const ib = Math.min(4, Math.ceil(impact / 2) - 1);
                 grid[pb][ib]++;
@@ -1094,13 +1097,6 @@
                 ctx.fillText(l.label, lx + 16, ly);
                 lx += 72;
             });
-        }
-
-        function setHeatmapMode(mode) {
-            heatmapMode = mode;
-            document.getElementById('heatmapBefore').classList.toggle('active', mode === 'before');
-            document.getElementById('heatmapAfter').classList.toggle('active', mode === 'after');
-            renderHeatmap();
         }
 
         function toggleCharts() {
