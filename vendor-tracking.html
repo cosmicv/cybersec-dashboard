@@ -631,7 +631,7 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label>Current (Review Up To Date)</label>
-                        <input type="text" id="fCurrent" list="currentList" placeholder="Current, Not Current, or N/A">
+                        <input type="text" id="fCurrent" list="currentList" placeholder="Current, Not Current, or N/A" readonly>
                         <datalist id="currentList">
                             <option value="Current">
                             <option value="Not Current">
@@ -751,6 +751,8 @@
         // ==================== INIT ====================
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('csvFile').addEventListener('change', handleImport);
+            document.getElementById('fReviewDate').addEventListener('input', updateCurrentFieldFromForm);
+            document.getElementById('fReviewFreq').addEventListener('input', updateCurrentFieldFromForm);
             window.addEventListener('click', (e) => {
                 if (e.target.classList.contains('modal')) {
                     e.target.classList.remove('active');
@@ -870,7 +872,7 @@
                         const idx = colMap[col];
                         vendor[col] = (idx !== undefined && idx < row.length) ? row[idx] : '';
                     });
-                    imported.push(vendor);
+                    imported.push(applyCalculatedCurrent(vendor));
                 }
 
                 vendors = imported;
@@ -910,7 +912,7 @@
             let csv = csvHeaders.join(',') + '\r\n';
 
             vendors.forEach(v => {
-                const row = COLUMNS.map(col => escapeField(v[col] || ''));
+                const row = COLUMNS.map(col => escapeField(col === 'Current' ? getCalculatedCurrent(v) : (v[col] || '')));
                 csv += row.join(',') + '\r\n';
             });
 
@@ -929,12 +931,43 @@
             renderTable();
         }
 
+        function getOneYearAgoTs() {
+            const oneYearAgo = new Date();
+            oneYearAgo.setHours(0, 0, 0, 0);
+            oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+            return oneYearAgo.getTime();
+        }
+
+        function getCalculatedCurrent(v) {
+            const reviewRequired = !/^no$/i.test(String(v['Information Security Review'] || '').trim());
+            if (!reviewRequired) return 'N/A';
+
+            const reviewTs = parseFlexDate(v['Review Date']);
+            if (!reviewTs) return 'Not Current';
+
+            return reviewTs < getOneYearAgoTs() ? 'Not Current' : 'Current';
+        }
+
+        function applyCalculatedCurrent(v) {
+            v['Current'] = getCalculatedCurrent(v);
+            return v;
+        }
+
+        function updateCurrentFieldFromForm() {
+            const currentInput = document.getElementById('fCurrent');
+            if (!currentInput) return;
+            currentInput.value = getCalculatedCurrent({
+                'Information Security Review': document.getElementById('fReviewFreq').value,
+                'Review Date': document.getElementById('fReviewDate').value
+            });
+        }
+
         function renderStats() {
             const total = vendors.length;
-            const current = vendors.filter(v => v['Current'] === 'Current').length;
-            const notCurrent = vendors.filter(v => v['Current'] === 'Not Current').length;
+            const current = vendors.filter(v => getCalculatedCurrent(v) === 'Current').length;
+            const notCurrent = vendors.filter(v => getCalculatedCurrent(v) === 'Not Current').length;
             const highRisk = vendors.filter(v => v['Risk Rating'] === 'High' || v['Risk Rating'] === 'Critical').length;
-            const noReview = vendors.filter(v => v['Current'] === 'N/A' || v['Information Security Review'] === 'No').length;
+            const noReview = vendors.filter(v => getCalculatedCurrent(v) === 'N/A').length;
 
             document.getElementById('statsBar').innerHTML = `
                 <div class="stat-card stat-total">
@@ -1015,15 +1048,15 @@
                 if (fType !== 'all' && v['Vendor Type'] !== fType) return false;
                 if (fClass !== 'all' && v['Information Classification'] !== fClass) return false;
                 if (fRisk !== 'all' && v['Risk Rating'] !== fRisk) return false;
-                if (fCurrent !== 'all' && v['Current'] !== fCurrent) return false;
+                if (fCurrent !== 'all' && getCalculatedCurrent(v) !== fCurrent) return false;
                 if (fReview !== 'all' && v['Information Security Review'] !== fReview) return false;
                 return true;
             });
 
             if (sortColumn !== null) {
                 filtered.sort((a, b) => {
-                    let va = a[sortColumn] || '';
-                    let vb = b[sortColumn] || '';
+                    let va = sortColumn === 'Current' ? getCalculatedCurrent(a) : (a[sortColumn] || '');
+                    let vb = sortColumn === 'Current' ? getCalculatedCurrent(b) : (b[sortColumn] || '');
                     // Ordered sort for Risk Rating strings
                     if (sortColumn === 'Risk Rating') {
                         const order = { 'Low': 1, 'Medium': 2, 'High': 3, 'Critical': 4 };
@@ -1083,21 +1116,15 @@
                 html += `<tr><td colspan="${displayCols.length + 1}" style="text-align:center; padding:40px; color:#6c757d;">No matching vendors found.</td></tr>`;
             }
 
-            const oneYearAgo = new Date();
-            oneYearAgo.setHours(0, 0, 0, 0);
-            oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
-            const oneYearAgoTs = oneYearAgo.getTime();
-
             filtered.forEach((v) => {
                 const origIdx = vendors.indexOf(v);
                 const risk = v['Risk Rating'] || '';
                 const classification = (v['Information Classification'] || '').toLowerCase();
-                const currentVal = (v['Current'] || '').trim();
-                const reviewTs = parseFlexDate(v['Review Date']);
-                const isOverdue = reviewTs > 0 && reviewTs < oneYearAgoTs && currentVal !== 'N/A';
+                const currentVal = getCalculatedCurrent(v);
+                const isOverdue = currentVal === 'Not Current';
 
                 html += `<tr class="risk-${risk}${isOverdue ? ' overdue' : ''}" ondblclick="editVendor(${origIdx})" title="Double-click to edit">`;                displayCols.forEach(col => {
-                    const val = v[col] || '';
+                    const val = col === 'Current' ? currentVal : (v[col] || '');
                     if (col === 'Risk Rating') {
                         html += `<td><span class="badge badge-risk-${val}">${val}</span></td>`;
                     } else if (col === 'Information Classification') {
@@ -1198,7 +1225,7 @@
                 document.getElementById('fClassification').value = v['Information Classification'] || '';
                 document.getElementById('fRiskRating').value = v['Risk Rating'] || 'High';
                 document.getElementById('fReviewFreq').value = v['Information Security Review'] || 'No';
-                document.getElementById('fCurrent').value = v['Current'] || 'N/A';
+                document.getElementById('fCurrent').value = getCalculatedCurrent(v);
                 document.getElementById('fNotes').value = v['Notes'] || '';
                 document.getElementById('fContact').value = v['Contact Information'] || '';
                 document.getElementById('fReviewDate').value = v['Review Date'] || '';
@@ -1211,6 +1238,7 @@
                 document.getElementById('fAdminNotes').value = v['Administration Notes'] || '';
             } else {
                 document.getElementById('modalTitle').textContent = 'Add Vendor';
+                updateCurrentFieldFromForm();
             }
 
             document.getElementById('vendorModal').classList.add('active');
@@ -1230,7 +1258,7 @@
                 'Information Classification': document.getElementById('fClassification').value,
                 'Risk Rating': document.getElementById('fRiskRating').value,
                 'Information Security Review': document.getElementById('fReviewFreq').value,
-                'Current': document.getElementById('fCurrent').value,
+                'Current': '',
                 'Notes': document.getElementById('fNotes').value,
                 'Contact Information': document.getElementById('fContact').value,
                 'Review Date': document.getElementById('fReviewDate').value,
@@ -1242,6 +1270,8 @@
                 'Administration Responsibilities': document.getElementById('fAdminResp').value,
                 'Administration Notes': document.getElementById('fAdminNotes').value
             };
+
+            applyCalculatedCurrent(v);
 
             if (editingIndex >= 0) {
                 vendors[editingIndex] = v;
@@ -1289,7 +1319,7 @@
 
             let html = '<div style="display:grid; gap:12px;">';
             COLUMNS.forEach(col => {
-                const val = v[col] || '';
+                const val = col === 'Current' ? getCalculatedCurrent(v) : (v[col] || '');
                 if (!val) return;
                 html += `<div style="border-bottom:1px solid #e9ecef; padding-bottom:10px;">
                     <div style="font-weight:600; font-size:12px; color:#667eea; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px;">${escapeHtml(col)}</div>
@@ -1311,7 +1341,7 @@
         window.addEventListener('message', (e) => {
             if (e.data && e.data.type === 'importVendorData') {
                 // Allow parent to push data
-                vendors = e.data.vendors || [];
+                vendors = (e.data.vendors || []).map(v => applyCalculatedCurrent({ ...v }));
                 populateFilters();
                 renderAll();
             }
@@ -1320,7 +1350,9 @@
                 const exportData = vendors.map(v => {
                     const row = {};
                     COLUMNS.forEach(col => {
-                        row[col] = DATE_COLS.has(col) ? (toDateInputVal(v[col]) || '') : (v[col] || '');
+                        row[col] = col === 'Current'
+                            ? getCalculatedCurrent(v)
+                            : DATE_COLS.has(col) ? (toDateInputVal(v[col]) || '') : (v[col] || '');
                     });
                     return row;
                 });
@@ -1354,13 +1386,8 @@
                         const mapped = exact || fuzzy;
                         if (mapped && !vendor[mapped]) vendor[mapped] = r[key];
                     });
-                    // Fallback: compute Current from Review Date if formula cell had no cached value
-                    if (!vendor['Current'] && vendor['Review Date']) {
-                        const ts = parseFlexDate(vendor['Review Date']);
-                        if (ts) vendor['Current'] = ts >= Date.now() ? 'Current' : 'Not Current';
-                    }
                     // Only include rows that have a vendor name
-                    if ((vendor['Vendor Name'] || '').trim()) imported.push(vendor);
+                    if ((vendor['Vendor Name'] || '').trim()) imported.push(applyCalculatedCurrent(vendor));
                 });
                 vendors = imported;
                 populateFilters();
