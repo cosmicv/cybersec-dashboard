@@ -1611,6 +1611,13 @@ ${appendices}
         // Store last imported raw data so the dashboard refresh button can re-use it
         let _lastDashboardData = null;
         let _calendarShouldShowTodayAfterImport = false;
+        const DASHBOARD_MODULES = ['calendar', 'risks', 'vendors', 'policies'];
+        const DASHBOARD_MODULE_MAP = {
+            calendar: 'calendar',
+            risks: 'risks',
+            vendors: 'vendors',
+            policies: 'policies'
+        };
 
         // Cache the last import payload per module so we can re-deliver if an iframe
         // signals ready after the import message was already sent (timing race fix).
@@ -1630,12 +1637,63 @@ ${appendices}
             }
         }
 
+        function buildDashboardData(collected) {
+            const data = { risks: [], vendors: [], policies: [], calendar: [] };
+            DASHBOARD_MODULES.forEach(mod => {
+                const dashKey = DASHBOARD_MODULE_MAP[mod];
+                data[dashKey] = (collected[mod] && collected[mod].data) || [];
+            });
+            return data;
+        }
+
+        function refreshDashboardFromModules() {
+            const dashIframe = document.getElementById('dashboard-iframe');
+            if (!dashIframe || !dashIframe.contentWindow) return;
+
+            const collected = {};
+            let pending = DASHBOARD_MODULES.length;
+            let timeout;
+
+            function finish() {
+                window.removeEventListener('message', onDashboardModuleData);
+                clearTimeout(timeout);
+                _lastDashboardData = buildDashboardData(collected);
+                dashIframe.contentWindow.postMessage({ type: 'refreshResponse', data: _lastDashboardData }, '*');
+            }
+
+            function onDashboardModuleData(event) {
+                if (!event.data || event.data.type !== 'exportData') return;
+                if (!DASHBOARD_MODULES.includes(event.data.module)) return;
+                if (collected[event.data.module]) return;
+
+                collected[event.data.module] = event.data;
+                pending--;
+                if (pending <= 0) finish();
+            }
+
+            window.addEventListener('message', onDashboardModuleData);
+
+            DASHBOARD_MODULES.forEach(mod => {
+                const cfg = MODULE_CONFIG[mod];
+                const iframe = cfg && document.getElementById(cfg.iframe);
+                if (iframe && iframe.contentWindow) {
+                    iframe.contentWindow.postMessage({ type: 'getDataForExport' }, '*');
+                } else {
+                    pending--;
+                }
+            });
+
+            if (pending <= 0) {
+                finish();
+                return;
+            }
+
+            timeout = setTimeout(finish, 2500);
+        }
+
         window.addEventListener('message', function(e) {
             if (e.data && e.data.type === 'requestDashboardData') {
-                const dashIframe = document.getElementById('dashboard-iframe');
-                if (dashIframe && dashIframe.contentWindow && _lastDashboardData) {
-                    dashIframe.contentWindow.postMessage({ type: 'refreshResponse', data: _lastDashboardData }, '*');
-                }
+                refreshDashboardFromModules();
             }
             // If an iframe signals it's ready, re-send any pending import data for that module
             if (e.data && e.data.type === 'iframeReady' && e.data.module) {
