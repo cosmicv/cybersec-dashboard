@@ -106,6 +106,60 @@
             margin-top: 6px;
         }
 
+        /* Master program status */
+        .program-status-card {
+            background: white;
+            border: 1px solid #d8e0ea;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(15,23,42,0.06);
+            margin-bottom: 24px;
+            padding: 20px;
+        }
+
+        .program-status-header {
+            align-items: flex-start;
+            display: flex;
+            gap: 20px;
+            justify-content: space-between;
+            margin-bottom: 14px;
+        }
+
+        .program-status-header h3 {
+            color: #253041;
+            font-size: 15px;
+            margin-bottom: 4px;
+        }
+
+        .program-status-header p,
+        .program-status-components {
+            color: #6c757d;
+            font-size: 12px;
+        }
+
+        .program-status-score {
+            color: #1a1a2e;
+            font-size: 30px;
+            font-weight: 700;
+            line-height: 1;
+            text-align: right;
+        }
+
+        .program-status-label {
+            color: #6c757d;
+            font-size: 12px;
+            font-weight: 700;
+            margin-top: 5px;
+            text-align: right;
+            text-transform: uppercase;
+        }
+
+        .program-status-chart {
+            height: 54px;
+            position: relative;
+        }
+
+        .program-status-components { margin-top: 10px; }
+
         /* Charts grid */
         .charts-grid {
             display: grid;
@@ -374,6 +428,25 @@
         </div>
     </div>
 
+    <section class="program-status-card" aria-labelledby="programStatusTitle">
+        <div class="program-status-header">
+            <div>
+                <h3 id="programStatusTitle">Overall Program Status</h3>
+                <p>Composite health score across policies, vendors, risks, and calendar operations.</p>
+            </div>
+            <div>
+                <div id="program-status-score" class="program-status-score">--</div>
+                <div id="program-status-label" class="program-status-label">Awaiting data</div>
+            </div>
+        </div>
+        <div class="program-status-chart">
+            <canvas id="programStatusChart"></canvas>
+        </div>
+        <div id="program-status-components" class="program-status-components">
+            Import a workbook or refresh module data to calculate the composite score.
+        </div>
+    </section>
+
     <section class="action-center" aria-labelledby="actionCenterTitle">
         <div class="action-center-header">
             <div class="action-center-title">
@@ -485,6 +558,52 @@
             teal:   '#20c997',
             gray:   '#adb5bd',
         };
+
+        const programStatusChart = new Chart(
+            document.getElementById('programStatusChart'),
+            {
+                type: 'bar',
+                data: {
+                    labels: ['Program Status'],
+                    datasets: [
+                        {
+                            label: 'Score',
+                            data: [0],
+                            backgroundColor: COLORS.gray,
+                            borderRadius: 6,
+                            borderSkipped: false
+                        },
+                        {
+                            label: 'Remaining',
+                            data: [100],
+                            backgroundColor: '#e9ecef',
+                            borderRadius: 6,
+                            borderSkipped: false
+                        }
+                    ]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: { duration: 450 },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: context => context.datasetIndex === 0
+                                    ? ` Program health: ${context.raw}%`
+                                    : ` Remaining: ${context.raw}%`
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { display: false, min: 0, max: 100, stacked: true },
+                        y: { display: false, stacked: true }
+                    }
+                }
+            }
+        );
 
         // ── Placeholder charts (replace data when wired to modules) ─
         const riskSeverityChart = new Chart(
@@ -687,6 +806,22 @@
             setKPI('kpi-cal-soon',      calSoon);
             setKPI('kpi-cal-scheduled', calScheduled);
 
+            updateProgramStatus({
+                risks,
+                policies,
+                vendors,
+                calendar,
+                policiesDue,
+                compliantPolicies,
+                overduePolicies,
+                vendorsCurrent,
+                vendorsNotCurrent,
+                calOverdue,
+                calSoon,
+                calScheduled,
+                isDone
+            });
+
             // ── Risk Status chart ──
             const stCounts = { Open: 0, Monitoring: 0, Mitigated: 0, Closed: 0, Archived: 0 };
             risks.forEach(r => {
@@ -697,6 +832,88 @@
             riskStatusChart.update();
 
             renderActionCenter({ risks, policies, vendors, calendar, today, in7, in30 });
+        }
+
+        function updateProgramStatus(metrics) {
+            const components = [];
+
+            const policyTotal = metrics.compliantPolicies + metrics.policiesDue + metrics.overduePolicies;
+            if (policyTotal > 0) {
+                components.push({
+                    label: 'Policies',
+                    score: ((metrics.compliantPolicies + (metrics.policiesDue * 0.5)) / policyTotal) * 100
+                });
+            }
+
+            const vendorTotal = metrics.vendorsCurrent + metrics.vendorsNotCurrent;
+            if (vendorTotal > 0) {
+                components.push({
+                    label: 'Vendors',
+                    score: (metrics.vendorsCurrent / vendorTotal) * 100
+                });
+            }
+
+            if (metrics.risks.length > 0) {
+                const riskWeight = risk => {
+                    const status = String(risk['Status'] || '').toLowerCase();
+                    if (/(closed|archived|accepted|mitigated)/.test(status)) return 1;
+                    if (status === 'monitoring') return 0.65;
+                    if (status === 'in progress') return 0.25;
+                    return 0;
+                };
+                components.push({
+                    label: 'Risks',
+                    score: (metrics.risks.reduce((sum, risk) => sum + riskWeight(risk), 0) / metrics.risks.length) * 100
+                });
+            }
+
+            if (metrics.calendar.length > 0) {
+                const completed = metrics.calendar.filter(metrics.isDone).length;
+                const points = completed + (metrics.calScheduled * 0.8) + (metrics.calSoon * 0.5);
+                components.push({
+                    label: 'Calendar',
+                    score: (points / metrics.calendar.length) * 100
+                });
+            }
+
+            const scoreEl = document.getElementById('program-status-score');
+            const labelEl = document.getElementById('program-status-label');
+            const componentsEl = document.getElementById('program-status-components');
+
+            if (components.length === 0) {
+                scoreEl.textContent = '--';
+                scoreEl.style.color = COLORS.gray;
+                labelEl.textContent = 'Awaiting data';
+                labelEl.style.color = COLORS.gray;
+                componentsEl.textContent = 'Import a workbook or refresh module data to calculate the composite score.';
+                programStatusChart.data.datasets[0].data = [0];
+                programStatusChart.data.datasets[0].backgroundColor = COLORS.gray;
+                programStatusChart.data.datasets[1].data = [100];
+                programStatusChart.update();
+                return;
+            }
+
+            const score = Math.round(
+                components.reduce((sum, component) => sum + component.score, 0) / components.length
+            );
+            const status = score >= 80
+                ? { label: 'Healthy', color: COLORS.green }
+                : score >= 60
+                    ? { label: 'Needs Attention', color: COLORS.yellow }
+                    : { label: 'At Risk', color: COLORS.red };
+
+            scoreEl.textContent = `${score}%`;
+            scoreEl.style.color = status.color;
+            labelEl.textContent = status.label;
+            labelEl.style.color = status.color;
+            componentsEl.textContent = components
+                .map(component => `${component.label}: ${Math.round(component.score)}%`)
+                .join('  •  ');
+
+            programStatusChart.data.datasets[0].data = [score];
+            programStatusChart.data.datasets[0].backgroundColor = status.color;
+            programStatusChart.data.datasets[1].data = [100 - score];
+            programStatusChart.update();
         }
 
         function renderActionCenter({ risks, policies, vendors, calendar, today, in7, in30 }) {
