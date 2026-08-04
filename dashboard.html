@@ -831,7 +831,7 @@
             riskStatusChart.data.datasets[0].data = Object.values(stCounts);
             riskStatusChart.update();
 
-            renderActionCenter({ risks, policies, vendors, calendar, today, in7, in30 });
+            renderActionCenter({ risks, policies, vendors, calendar, today, in7, in30, oneYearAgo });
         }
 
         function updateProgramStatus(metrics) {
@@ -916,8 +916,15 @@
             programStatusChart.update();
         }
 
-        function renderActionCenter({ risks, policies, vendors, calendar, today, in7, in30 }) {
+        function renderActionCenter({ risks, policies, vendors, calendar, today, in7, in30, oneYearAgo }) {
             const actions = [];
+
+            // Keep the action center usable if called independently of updateDashboard.
+            const vendorReviewCutoff = oneYearAgo || (() => {
+                const cutoff = new Date(today);
+                cutoff.setFullYear(cutoff.getFullYear() - 1);
+                return cutoff;
+            })();
 
             const isClosedRisk = r => /(closed|archived|accepted|mitigated)/i.test(r['Status'] || '');
             risks.forEach(r => {
@@ -968,7 +975,7 @@
                 const reviewDate = parseDate(v['Review Date']);
                 const reviewRequired = !/^no$/i.test(String(v['Information Security Review'] || '').trim());
                 const highRisk = /^(critical|high|4|3)$/i.test(String(v['Risk Rating'] || '').trim());
-                const stale = reviewRequired && reviewDate && reviewDate < oneYearAgo;
+                const stale = reviewRequired && reviewDate && reviewDate < vendorReviewCutoff;
                 const needsReviewDate = reviewRequired && !reviewDate;
                 if (stale || needsReviewDate || highRisk) {
                     const isCritical = stale && highRisk;
