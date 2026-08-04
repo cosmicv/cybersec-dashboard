@@ -749,7 +749,7 @@ function _buildZip(files) {
 
         <div id="info-tab" class="tab-content">
             <div class="info-content">
-                <h2>&#x1F6E1;&#xFE0F; CyberSec Operations Dashboard <span class="version-badge">v1.0</span></h2>
+                <h2>&#x1F6E1;&#xFE0F; CyberSec Operations Dashboard <span class="version-badge">v1.0.2</span></h2>
                 <p class="info-subtitle">A unified platform for managing cybersecurity operations, risk tracking, and compliance scheduling.</p>
 
                 <div class="info-columns">
@@ -1307,13 +1307,15 @@ function _buildZip(files) {
             setStatus('Collecting data for report...');
 
             const collected = {};
-            const reportModules = ['risks', 'vendors', 'policies', 'calendar'];
+            const reportModules = ['risks', 'vendors', 'policies', 'calendar', 'notes'];
             let pending = reportModules.length;
             let rptTimeout;
 
             function onReportData(event) {
                 if (event.data && event.data.type === 'exportData') {
-                    collected[event.data.module] = event.data;
+                    const module = event.data.module;
+                    if (!reportModules.includes(module) || collected[module]) return;
+                    collected[module] = event.data;
                     pending--;
                     if (pending <= 0) {
                         window.removeEventListener('message', onReportData);
@@ -1366,35 +1368,122 @@ function _buildZip(files) {
             const vendors  = (collected.vendors  && collected.vendors.data)  || [];
             const policies = (collected.policies && collected.policies.data) || [];
             const calendar = (collected.calendar && collected.calendar.data) || [];
+            const notes     = (collected.notes    && collected.notes.data)    || [];
 
-            // --- Risk metrics ---
-            const openRisks    = risks.filter(r => r.Status !== 'Closed' && r.Status !== 'Archived');
-            const criticalRisks = openRisks.filter(r => (r['Severity Level (Before)'] || '').toLowerCase() === 'critical');
-            const highRisks     = openRisks.filter(r => (r['Severity Level (Before)'] || '').toLowerCase() === 'high');
-            const mediumRisks   = openRisks.filter(r => (r['Severity Level (Before)'] || '').toLowerCase() === 'medium');
-            const lowRisks      = openRisks.filter(r => (r['Severity Level (Before)'] || '').toLowerCase() === 'low');
+            const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+            const in7Days = new Date(todayMidnight.getTime() + 7*24*60*60*1000);
+            const in30Days = new Date(todayMidnight.getTime() + 30*24*60*60*1000);
 
-            // --- Policy metrics ---
-            const overduePolicies  = policies.filter(p => /overdue/i.test(p.Status || ''));
-            const dueSoonPolicies  = policies.filter(p => /due soon/i.test(p.Status || ''));
-            const compliantPolicies = policies.filter(p => /current|compliant/i.test(p.Status || ''));
+            function reportDate(value) {
+                if (!value && value !== 0) return null;
+                if (typeof value === 'number') {
+                    const excelDate = new Date((value - 25569) * 86400000);
+                    return isNaN(excelDate) ? null : excelDate;
+                }
+                const parsed = new Date(value);
+                return isNaN(parsed) ? null : parsed;
+            }
 
-            // --- Vendor metrics ---
-            const notCurrentVendors = vendors.filter(v => /not current|expired/i.test(v.Current || ''));
+            // --- Risk metrics (same post-treatment severity/status logic as dashboard) ---
+            const openRisks = risks.filter(r => /^(open|in progress)$/i.test(r.Status || ''));
+            const riskSeverity = r => r['Severity Level (After)'] || r['Severity Level (Before)'] || '';
+            const riskScore = r => r['Severity Score (After)'] || r['Severity Score (Before)'] || '';
+            const criticalRisks = openRisks.filter(r => riskSeverity(r).toLowerCase() === 'critical');
+            const highRisks = openRisks.filter(r => riskSeverity(r).toLowerCase() === 'high');
+            const mediumRisks = openRisks.filter(r => riskSeverity(r).toLowerCase() === 'medium');
+            const lowRisks = openRisks.filter(r => riskSeverity(r).toLowerCase() === 'low');
+
+            // --- Policy metrics (calculated from Next Review, with Status fallback) ---
+            const overduePolicies = policies.filter(p => {
+                const d = reportDate(p['Next Review']);
+                return d ? d < todayMidnight : /overdue/i.test(p.Status || '');
+            });
+            const dueSoonPolicies = policies.filter(p => {
+                const d = reportDate(p['Next Review']);
+                return d ? d >= todayMidnight && d <= in30Days : /due soon/i.test(p.Status || '');
+            });
+            const compliantPolicies = policies.filter(p => {
+                const d = reportDate(p['Next Review']);
+                return d ? d > in30Days : /current|compliant|approved/i.test(p.Status || '');
+            });
+            const resolvePolicyStatus = p => {
+                const d = reportDate(p['Next Review']);
+                if (d) return d < todayMidnight ? 'Overdue' : d <= in30Days ? 'Due Soon' : 'Current';
+                return p.Status || 'Unknown';
+            };
+
+            // --- Vendor metrics (same annual review calculation as dashboard) ---
+            const vendorReviewCutoff = new Date(todayMidnight);
+            vendorReviewCutoff.setFullYear(vendorReviewCutoff.getFullYear() - 1);
+            const resolveVendorCurrent = v => {
+                const reviewRequired = !/^no$/i.test(String(v['Information Security Review'] || '').trim());
+                if (!reviewRequired) return 'N/A';
+                const d = reportDate(v['Review Date']);
+                if (!d) return 'Not Current';
+                return d < vendorReviewCutoff ? 'Not Current' : 'Current';
+            };
+            const currentVendors = vendors.filter(v => resolveVendorCurrent(v) === 'Current');
+            const notCurrentVendors = vendors.filter(v => resolveVendorCurrent(v) === 'Not Current');
 
             // --- Calendar metrics ---
-            const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-            const in30Days = new Date(todayMidnight.getTime() + 30*24*60*60*1000);
+            const isDone = e => /(closed|complete[d]?|done)/i.test(e.Status || '');
             const overdueEvents = calendar.filter(e => {
-                if (/completed/i.test(e.Status || '')) return false;
-                const d = new Date(e.Date);
-                return !isNaN(d) && d < todayMidnight;
+                if (isDone(e)) return false;
+                const d = reportDate(e.Date);
+                return d && d < todayMidnight;
             });
             const dueSoonEvents = calendar.filter(e => {
-                if (/completed/i.test(e.Status || '')) return false;
-                const d = new Date(e.Date);
-                return !isNaN(d) && d >= todayMidnight && d <= in30Days;
+                if (isDone(e)) return false;
+                const d = reportDate(e.Date);
+                return d && d >= todayMidnight && d <= in30Days;
             });
+            const calendarSoon = calendar.filter(e => {
+                if (isDone(e)) return false;
+                const d = reportDate(e.Date);
+                return d && d >= todayMidnight && d <= in7Days;
+            });
+            const calendarScheduled = calendar.filter(e => {
+                if (isDone(e)) return false;
+                const d = reportDate(e.Date);
+                return d && d > in7Days;
+            });
+            const completedEvents = calendar.filter(isDone);
+
+            // --- Composite program score (same weighting and thresholds as dashboard) ---
+            const programComponents = [];
+            const policyTotal = compliantPolicies.length + dueSoonPolicies.length + overduePolicies.length;
+            if (policyTotal) {
+                programComponents.push({ label:'Policies', score:((compliantPolicies.length + dueSoonPolicies.length * 0.5) / policyTotal) * 100 });
+            }
+            const vendorTotal = currentVendors.length + notCurrentVendors.length;
+            if (vendorTotal) {
+                programComponents.push({ label:'Vendors', score:(currentVendors.length / vendorTotal) * 100 });
+            }
+            if (risks.length) {
+                const riskWeight = r => {
+                    const status = String(r.Status || '').toLowerCase();
+                    if (/(closed|archived|accepted|mitigated)/.test(status)) return 1;
+                    if (status === 'monitoring') return 0.65;
+                    if (status === 'in progress') return 0.25;
+                    return 0;
+                };
+                programComponents.push({ label:'Risks', score:(risks.reduce((sum, r) => sum + riskWeight(r), 0) / risks.length) * 100 });
+            }
+            if (calendar.length) {
+                const points = completedEvents.length + calendarScheduled.length * 0.8 + calendarSoon.length * 0.5;
+                programComponents.push({ label:'Calendar', score:(points / calendar.length) * 100 });
+            }
+            const programScore = programComponents.length
+                ? Math.round(programComponents.reduce((sum, component) => sum + component.score, 0) / programComponents.length)
+                : null;
+            const programStatus = programScore === null ? 'Awaiting Data'
+                : programScore >= 80 ? 'Healthy'
+                : programScore >= 60 ? 'Needs Attention'
+                : 'At Risk';
+            const programColor = programStatus === 'Healthy' ? '#28a745'
+                : programStatus === 'Needs Attention' ? '#ffc107'
+                : programStatus === 'At Risk' ? '#dc3545'
+                : '#adb5bd';
 
             // --- Auto-generated narrative ---
             let narrative = 'As of ' + dateStr + ', ' + esc(clientName) + ' has ' + openRisks.length + ' open risk' + (openRisks.length !== 1 ? 's' : '');
@@ -1428,6 +1517,11 @@ function _buildZip(files) {
                 return '<span class="' + cls + '">' + esc(status) + '</span>';
             }
 
+            function programBadge(status) {
+                const cls = status === 'At Risk' ? 'bc' : status === 'Needs Attention' ? 'bh' : status === 'Healthy' ? 'bl' : 'bm';
+                return '<span class="' + cls + '">' + esc(status) + '</span>';
+            }
+
             // ========== HTML SECTIONS ==========
 
             // Cover
@@ -1446,9 +1540,13 @@ function _buildZip(files) {
             const execSummary = `
 <h2>Executive Summary</h2>
 <p>${narrative}</p>
+<h3>Overall Program Status: ${programScore === null ? 'N/A' : programScore + '%'} &mdash; ${esc(programStatus)}</h3>
+<div class="program-bar"><div style="height:14pt;width:${programScore === null ? 0 : programScore}%;background-color:${programColor};"></div></div>
 <h3>Security Posture at a Glance</h3>
 <table>
   <tr><th>Area</th><th>Metric</th><th>Value</th><th>Status</th></tr>
+  <tr><td><strong>Overall Program</strong></td><td>Composite Score</td><td><strong>${programScore === null ? 'N/A' : programScore + '%'}</strong></td>
+    <td>${programBadge(programStatus)}</td></tr>
   <tr><td>Risks</td><td>Open Risks</td><td>${openRisks.length}</td>
     <td>${criticalRisks.length > 0 ? badge('Critical') : highRisks.length > 0 ? badge('High') : '<span class="bl">Acceptable</span>'}</td></tr>
   <tr><td></td><td>Critical &amp; High</td><td>${criticalRisks.length} / ${highRisks.length}</td><td></td></tr>
@@ -1461,12 +1559,18 @@ function _buildZip(files) {
   <tr><td>Operations</td><td>Overdue Tasks</td><td>${overdueEvents.length}</td>
     <td>${overdueEvents.length > 0 ? '<span class="bh">Attention</span>' : '<span class="bl">On Track</span>'}</td></tr>
   <tr><td></td><td>Due in 30 Days</td><td>${dueSoonEvents.length}</td><td></td></tr>
-</table>`;
+  <tr><td>Notes</td><td>Notes Included</td><td>${notes.length > 0 && String(notes[0]['Notes Content'] || '').trim() ? 'Yes' : 'No'}</td><td></td></tr>
+</table>
+${programComponents.length ? `<h3>Program Score Components</h3>
+<table>
+  <tr><th>Component</th><th>Score</th></tr>
+  ${programComponents.map(component => `<tr><td>${esc(component.label)}</td><td>${Math.round(component.score)}%</td></tr>`).join('')}
+</table>` : ''}`;
 
             // Risk Summary
             const topRisks = [...openRisks].sort((a,b) => {
                 const o = { critical:0, high:1, medium:2, low:3 };
-                return (o[(a['Severity Level (Before)']||'').toLowerCase()] ?? 4) - (o[(b['Severity Level (Before)']||'').toLowerCase()] ?? 4);
+                return (o[riskSeverity(a).toLowerCase()] ?? 4) - (o[riskSeverity(b).toLowerCase()] ?? 4);
             }).slice(0,10);
             const riskSection = `
 <h2>Risk Summary</h2>
@@ -1481,7 +1585,7 @@ function _buildZip(files) {
 ${topRisks.length > 0 ? `<h3>Top Open Risks</h3>
 <table>
   <tr><th>Title</th><th>Category</th><th>Severity</th><th>Score</th><th>Status</th><th>Owner</th></tr>
-  ${topRisks.map(r => `<tr><td>${esc(r.Title)}</td><td>${esc(r.Category)}</td><td>${badge(r['Severity Level (Before)'])}</td><td>${esc(r['Severity Score (Before)'])}</td><td>${esc(r.Status)}</td><td>${esc(r.Owner)}</td></tr>`).join('')}
+  ${topRisks.map(r => `<tr><td>${esc(r.Title)}</td><td>${esc(r.Category)}</td><td>${badge(riskSeverity(r))}</td><td>${esc(riskScore(r))}</td><td>${esc(r.Status)}</td><td>${esc(r.Owner)}</td></tr>`).join('')}
 </table>` : '<p><em>No open risks recorded.</em></p>'}`;
 
             // Policy Status
@@ -1489,7 +1593,7 @@ ${topRisks.length > 0 ? `<h3>Top Open Risks</h3>
 <h2>Policy Status</h2>
 ${policies.length > 0 ? `<table>
   <tr><th>Policy Name</th><th>Status</th><th>Last Reviewed</th><th>Next Review</th><th>Owner</th><th>Framework</th></tr>
-  ${policies.map(p => `<tr><td>${esc(p['Policy Name'])}</td><td>${statusBadge(p.Status)}</td><td>${esc(p['Last Reviewed'])}</td><td>${esc(p['Next Review'])}</td><td>${esc(p.Owner)}</td><td>${esc(p['Compliance Framework'])}</td></tr>`).join('')}
+  ${policies.map(p => `<tr><td>${esc(p['Policy Name'])}</td><td>${statusBadge(resolvePolicyStatus(p))}</td><td>${esc(p['Last Reviewed'])}</td><td>${esc(p['Next Review'])}</td><td>${esc(p.Owner)}</td><td>${esc(p['Compliance Framework'])}</td></tr>`).join('')}
 </table>` : '<p><em>No policies recorded.</em></p>'}`;
 
             // Vendor Status
@@ -1497,7 +1601,7 @@ ${policies.length > 0 ? `<table>
 <h2>Vendor Status</h2>
 ${vendors.length > 0 ? `<table>
   <tr><th>Vendor Name</th><th>Type</th><th>Risk Rating</th><th>Current</th><th>Review Date</th><th>Responsible Team</th></tr>
-  ${vendors.map(v => `<tr><td>${esc(v['Vendor Name'])}</td><td>${esc(v['Vendor Type'])}</td><td>${esc(v['Risk Rating'])}</td><td>${statusBadge(v.Current)}</td><td>${esc(v['Review Date'])}</td><td>${esc(v['Responsible Team'])}</td></tr>`).join('')}
+  ${vendors.map(v => `<tr><td>${esc(v['Vendor Name'])}</td><td>${esc(v['Vendor Type'])}</td><td>${esc(v['Risk Rating'])}</td><td>${statusBadge(resolveVendorCurrent(v) || 'Unknown')}</td><td>${esc(v['Review Date'])}</td><td>${esc(v['Responsible Team'])}</td></tr>`).join('')}
 </table>` : '<p><em>No vendors recorded.</em></p>'}`;
 
             // Action Items
@@ -1524,7 +1628,7 @@ ${actionItems.length > 0 ? `<table>
 <h2>Appendix A: Full Risk Register</h2>
 <table>
   <tr><th>Title</th><th>Category</th><th>Severity</th><th>Score</th><th>Status</th><th>Owner</th><th>Mitigation Plan</th></tr>
-  ${risks.map(r => `<tr><td>${esc(r.Title)}</td><td>${esc(r.Category)}</td><td>${badge(r['Severity Level (Before)'])}</td><td>${esc(r['Severity Score (Before)'])}</td><td>${esc(r.Status)}</td><td>${esc(r.Owner)}</td><td>${esc(r['Mitigation Plan'])}</td></tr>`).join('')}
+  ${risks.map(r => `<tr><td>${esc(r.Title)}</td><td>${esc(r.Category)}</td><td>${badge(riskSeverity(r))}</td><td>${esc(riskScore(r))}</td><td>${esc(r.Status)}</td><td>${esc(r.Owner)}</td><td>${esc(r['Mitigation Plan'])}</td></tr>`).join('')}
 </table>
 </div>`;
                 }
@@ -1534,8 +1638,36 @@ ${actionItems.length > 0 ? `<table>
 <h2>Appendix B: Complete Vendor List</h2>
 <table>
   <tr><th>Vendor Name</th><th>Type</th><th>Business Purpose</th><th>Info Classification</th><th>Risk Rating</th><th>Current</th><th>Review Date</th><th>Responsible Team</th></tr>
-  ${vendors.map(v => `<tr><td>${esc(v['Vendor Name'])}</td><td>${esc(v['Vendor Type'])}</td><td>${esc(v['Business Purpose'])}</td><td>${esc(v['Information Classification'])}</td><td>${esc(v['Risk Rating'])}</td><td>${statusBadge(v.Current)}</td><td>${esc(v['Review Date'])}</td><td>${esc(v['Responsible Team'])}</td></tr>`).join('')}
+  ${vendors.map(v => `<tr><td>${esc(v['Vendor Name'])}</td><td>${esc(v['Vendor Type'])}</td><td>${esc(v['Business Purpose'])}</td><td>${esc(v['Information Classification'])}</td><td>${esc(v['Risk Rating'])}</td><td>${statusBadge(resolveVendorCurrent(v) || 'Unknown')}</td><td>${esc(v['Review Date'])}</td><td>${esc(v['Responsible Team'])}</td></tr>`).join('')}
 </table>
+</div>`;
+                }
+                if (policies.length > 0) {
+                    appendices += `
+<div class="pb">
+<h2>Appendix C: Complete Policy List</h2>
+<table>
+  <tr><th>Policy Name</th><th>Category</th><th>Framework</th><th>Status</th><th>Last Reviewed</th><th>Next Review</th><th>Owner</th><th>Approver</th></tr>
+  ${policies.map(p => `<tr><td>${esc(p['Policy Name'])}</td><td>${esc(p.Category)}</td><td>${esc(p['Compliance Framework'])}</td><td>${statusBadge(resolvePolicyStatus(p))}</td><td>${esc(p['Last Reviewed'])}</td><td>${esc(p['Next Review'])}</td><td>${esc(p.Owner)}</td><td>${esc(p.Approver)}</td></tr>`).join('')}
+</table>
+</div>`;
+                }
+                if (calendar.length > 0) {
+                    appendices += `
+<div class="pb">
+<h2>Appendix D: Complete Operations Calendar</h2>
+<table>
+  <tr><th>Task</th><th>Date</th><th>Category</th><th>Priority</th><th>Status</th><th>Owner</th><th>Notes</th></tr>
+  ${calendar.map(e => `<tr><td>${esc(e.Task)}</td><td>${esc(e.Date)}</td><td>${esc(e.Category)}</td><td>${esc(e.Priority)}</td><td>${esc(e.Status)}</td><td>${esc(e.Owner)}</td><td>${esc(e.Notes)}</td></tr>`).join('')}
+</table>
+</div>`;
+                }
+                const notesContent = notes.length ? String(notes[0]['Notes Content'] || '').trim() : '';
+                if (notesContent) {
+                    appendices += `
+<div class="pb">
+<h2>Appendix E: Security Program Notes</h2>
+<div class="notes-content">${esc(notesContent).replace(/\r?\n/g, '<br>')}</div>
 </div>`;
                 }
             }
@@ -1565,6 +1697,8 @@ tr:nth-child(even) td { background-color:#f8f9fa; }
 .bh { color:#856404; background-color:#fff3cd; padding:1pt 5pt; }
 .bm { color:#0c5460; background-color:#d1ecf1; padding:1pt 5pt; }
 .bl { color:#155724; background-color:#d4edda; padding:1pt 5pt; }
+.notes-content { border:0.5pt solid #dee2e6; padding:12pt; white-space:normal; }
+.program-bar { background-color:#e9ecef; border:0.5pt solid #ced4da; height:14pt; margin:6pt 0 14pt; width:100%; }
 </style>
 </head>
 <body>
@@ -1729,13 +1863,13 @@ ${appendices}
                     style="padding:16px 20px;border:2px solid #667eea;border-radius:8px;cursor:pointer;background:white;text-align:left;transition:background 0.2s;font-family:'Inter',sans-serif;"
                     onmouseover="this.style.background='#f0f2ff'" onmouseout="this.style.background='white'">
                     <div style="font-weight:700;font-size:14px;color:#3d5a99;">&#x1F4C4; Executive Summary</div>
-                    <div style="font-size:12px;color:#6c757d;margin-top:4px;">Cover page &bull; KPI snapshot &bull; Risk summary &bull; Policy &amp; vendor status &bull; Action items &mdash; ~3&ndash;4 pages</div>
+                    <div style="font-size:12px;color:#6c757d;margin-top:4px;">Cover page &bull; Composite program score &bull; KPI snapshot &bull; Risk, policy, vendor, and operations status &bull; Action items</div>
                 </button>
                 <button onclick="generateReport('full')"
                     style="padding:16px 20px;border:2px solid #28a745;border-radius:8px;cursor:pointer;background:white;text-align:left;transition:background 0.2s;font-family:'Inter',sans-serif;"
                     onmouseover="this.style.background='#f0fff4'" onmouseout="this.style.background='white'">
                     <div style="font-weight:700;font-size:14px;color:#1a7a34;">&#x1F4CB; Full Report</div>
-                    <div style="font-size:12px;color:#6c757d;margin-top:4px;">Everything above plus complete Risk Register and Vendor List appendices</div>
+                    <div style="font-size:12px;color:#6c757d;margin-top:4px;">Everything above plus complete risk, vendor, policy, calendar, and notes appendices</div>
                 </button>
             </div>
             <div style="text-align:right;">

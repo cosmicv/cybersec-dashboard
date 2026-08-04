@@ -750,15 +750,15 @@
                 return s === 'overdue';
             }).length;
 
-            // Normalize Current field: raw Excel may have Yes/No, empty (formula), or Current/Not Current
+            // Calculate vendor status from the annual review window, matching Vendor Tracking.
+            const oneYearAgo = new Date(today);
+            oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
             const resolveVendorCurrent = v => {
-                const raw = (v['Current'] || '').trim();
-                if (raw === 'Current' || raw === 'Yes') return 'Current';
-                if (raw === 'Not Current' || raw === 'No') return 'Not Current';
-                // Fallback: compute from Review Date
-                const ts = parseDate(v['Review Date']);
-                if (ts) return ts >= new Date() ? 'Current' : 'Not Current';
-                return '';
+                const reviewRequired = !/^no$/i.test(String(v['Information Security Review'] || '').trim());
+                if (!reviewRequired) return 'N/A';
+                const reviewDate = parseDate(v['Review Date']);
+                if (!reviewDate) return 'Not Current';
+                return reviewDate < oneYearAgo ? 'Not Current' : 'Current';
             };
             const vendorsCurrent    = vendors.filter(v => resolveVendorCurrent(v) === 'Current').length;
             const vendorsNotCurrent = vendors.filter(v => resolveVendorCurrent(v) === 'Not Current').length;
@@ -965,22 +965,23 @@
             });
 
             vendors.forEach(v => {
-                const currentRaw = String(v['Current'] || '').trim().toLowerCase();
                 const reviewDate = parseDate(v['Review Date']);
+                const reviewRequired = !/^no$/i.test(String(v['Information Security Review'] || '').trim());
                 const highRisk = /^(critical|high|4|3)$/i.test(String(v['Risk Rating'] || '').trim());
-                const stale = currentRaw === 'not current' || currentRaw === 'no' || (reviewDate && reviewDate < today);
-                if (stale || highRisk) {
+                const stale = reviewRequired && reviewDate && reviewDate < oneYearAgo;
+                const needsReviewDate = reviewRequired && !reviewDate;
+                if (stale || needsReviewDate || highRisk) {
                     const isCritical = stale && highRisk;
                     actions.push({
                         source: 'Vendor',
-                        level: isCritical || stale ? 'critical' : 'warning',
+                        level: stale ? 'critical' : 'warning',
                         title: v['Vendor Name'] || 'Vendor review',
                         detail: [
                             v['Risk Rating'] ? `Risk: ${v['Risk Rating']}` : '',
                             v['Responsible Team'] ? `Team: ${v['Responsible Team']}` : '',
                             v['Information Security Review'] ? `Review: ${v['Information Security Review']}` : ''
                         ].filter(Boolean).join(' | '),
-                        due: reviewDate ? `${stale ? 'Review stale' : 'Review date'} ${formatShortDate(reviewDate)}` : 'Review status needed',
+                        due: reviewDate ? `${stale ? 'Review stale' : 'Review date'} ${formatShortDate(reviewDate)}` : 'Review date needed',
                         overdue: stale,
                         label: stale ? 'Overdue' : 'Due Soon',
                         sort: isCritical ? 15 : stale ? 25 : 70
