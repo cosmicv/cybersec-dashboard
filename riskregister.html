@@ -284,6 +284,9 @@
         .badge-mitigated { background: #17a2b8; color: white; }
         .badge-closed { background: #28a745; color: white; }
         .badge-archived { background: #6c757d; color: white; }
+        .badge-review-current { background: #d4edda; color: #155724; }
+        .badge-review-due-soon { background: #fff3cd; color: #856404; }
+        .badge-review-overdue, .badge-review-never-reviewed { background: #f8d7da; color: #721c24; }
 
         .severity-critical { background-color: #dc3545; }
         .severity-high { background-color: #fd7e14; }
@@ -666,6 +669,11 @@
                     </div>
                 </div>
                 <div class="form-group">
+                    <label>Last Review Date</label>
+                    <input type="date" id="riskLastReviewed">
+                    <div style="font-size:12px;color:#6c757d;margin-top:5px;">The next review is automatically scheduled one year later.</div>
+                </div>
+                <div class="form-group">
                     <label>Mitigation Plan</label>
                     <textarea id="riskMitigation" rows="2" placeholder="Describe mitigation steps..."></textarea>
                 </div>
@@ -737,6 +745,37 @@
             const d = new Date(str);
             if (!isNaN(d.getTime())) return `${d.getMonth()+1}/${d.getDate()}/${d.getFullYear()}`;
             return str;
+        }
+
+        function parseLocalDate(val) {
+            if (!val) return null;
+            const str = String(val).trim();
+            let match = str.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+            if (match) return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+            match = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+            if (match) return new Date(Number(match[3]), Number(match[1]) - 1, Number(match[2]));
+            const parsed = new Date(str);
+            return isNaN(parsed.getTime()) ? null : new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
+        }
+
+        function toInputDate(val) {
+            const date = parseLocalDate(val);
+            if (!date) return '';
+            return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+        }
+
+        function getRiskReview(risk) {
+            const last = parseLocalDate(risk.lastReviewed);
+            if (!last) return { status: 'Never Reviewed', nextReview: '', daysUntil: null };
+            const next = new Date(last.getFullYear() + 1, last.getMonth(), last.getDate());
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const daysUntil = Math.ceil((next - today) / 86400000);
+            return {
+                status: daysUntil < 0 ? 'Overdue' : daysUntil <= 30 ? 'Due Soon' : 'Current',
+                nextReview: toInputDate(next),
+                daysUntil
+            };
         }
 
         function calcSeverity(prob, impact) {
@@ -862,6 +901,7 @@
             const monitoring = risks.filter(r => r.status === 'Monitoring').length;
             const mitigated = risks.filter(r => r.status === 'Mitigated').length;
             const critical = risks.filter(r => getAfterControlsSeverity(r).label === 'Critical').length;
+            const reviewsDue = risks.filter(r => ['Overdue', 'Never Reviewed'].includes(getRiskReview(r).status)).length;
 
             document.getElementById('statsBar').innerHTML = `
                 <div class="stat-card"><div class="stat-value" style="color:#667eea;">${total}</div><div class="stat-label">Total Risks</div></div>
@@ -869,6 +909,7 @@
                 <div class="stat-card"><div class="stat-value" style="color:#ffc107;">${monitoring}</div><div class="stat-label">Monitoring</div></div>
                 <div class="stat-card"><div class="stat-value" style="color:#17a2b8;">${mitigated}</div><div class="stat-label">Mitigated</div></div>
                 <div class="stat-card"><div class="stat-value" style="color:#dc3545;">${critical}</div><div class="stat-label">Critical Severity</div></div>
+                <div class="stat-card"><div class="stat-value" style="color:#dc3545;">${reviewsDue}</div><div class="stat-label">Reviews Due</div></div>
             `;
         }
 
@@ -899,6 +940,8 @@
                 const impactAfter = r.impactAfter != null ? r.impactAfter : r.impact;
                 const sevAfter = calcSeverity(probAfter, impactAfter);
                 const sevAfterClass = sevAfter.label.toLowerCase();
+                const review = getRiskReview(r);
+                const reviewClass = review.status.toLowerCase().replace(/\s+/g, '-');
 
                 return `
                     <div class="risk-card">
@@ -920,10 +963,12 @@
                             </div>
                             ${r.category ? `<span class="badge" style="background:#e9ecef; color:#495057;">${escapeHtml(r.category)}</span>` : ''}
                             ${r.owner ? `<span class="badge" style="background:#e8eaf6; color:#3949ab;">${escapeHtml(r.owner)}</span>` : ''}
+                            <span class="badge badge-review-${reviewClass}">Review: ${review.status}${review.nextReview ? ` (${formatDateUS(review.nextReview)})` : ''}</span>
                         </div>
                         <div class="card-actions">
                             <button class="action-btn" onclick="viewRisk(${origIdx})">View</button>
                             <button class="action-btn" onclick="editRisk(${origIdx})">&#9998; Edit</button>
+                            <button class="action-btn" onclick="markRiskReviewed(${origIdx})">Review Today</button>
                             <button class="action-btn delete" onclick="deleteRisk(${origIdx})">Delete</button>
                         </div>
                     </div>
@@ -1115,6 +1160,7 @@
             document.getElementById('riskImpact').value = 5;
             document.getElementById('riskProbabilityAfter').value = 5;
             document.getElementById('riskImpactAfter').value = 5;
+            document.getElementById('riskLastReviewed').value = '';
             populateOwnerSelects();
             updateScorePreview();
             document.getElementById('addModal').classList.add('active');
@@ -1142,6 +1188,7 @@
             document.getElementById('riskOwner').value = r.owner || '';
             document.getElementById('riskMitigation').value = r.mitigation || '';
             document.getElementById('riskNotes').value = r.notes || '';
+            document.getElementById('riskLastReviewed').value = toInputDate(r.lastReviewed);
             updateScorePreview();
             document.getElementById('addModal').classList.add('active');
         }
@@ -1160,6 +1207,7 @@
                 owner: document.getElementById('riskOwner').value,
                 mitigation: document.getElementById('riskMitigation').value,
                 notes: document.getElementById('riskNotes').value,
+                lastReviewed: document.getElementById('riskLastReviewed').value,
                 dateCreated: editingIndex >= 0 ? risks[editingIndex].dateCreated : new Date().toISOString().split('T')[0],
                 dateModified: new Date().toISOString().split('T')[0]
             };
@@ -1171,6 +1219,14 @@
             }
 
             closeAddModal();
+            renderAll();
+        }
+
+        function markRiskReviewed(idx) {
+            const today = toInputDate(new Date());
+            if (!confirm(`Mark "${risks[idx].title}" as reviewed today (${formatDateUS(today)})?`)) return;
+            risks[idx].lastReviewed = today;
+            risks[idx].dateModified = today;
             renderAll();
         }
 
@@ -1238,6 +1294,9 @@
 
                     ${fieldHtml('Mitigation Plan', r.mitigation)}
                     ${fieldHtml('Notes', r.notes)}
+                    ${fieldHtml('Last Reviewed', r.lastReviewed ? formatDateUS(r.lastReviewed) : 'Never Reviewed')}
+                    ${fieldHtml('Next Annual Review', getRiskReview(r).nextReview ? formatDateUS(getRiskReview(r).nextReview) : 'Due now')}
+                    ${fieldHtml('Review Status', getRiskReview(r).status)}
                     ${fieldHtml('Date Created', formatDateUS(r.dateCreated))}
                     ${fieldHtml('Last Modified', formatDateUS(r.dateModified))}
                 </div>`;
@@ -1356,7 +1415,7 @@
                 'Title','Description','Category',
                 'Probability (Before)','Impact (Before)','Severity Score (Before)','Severity Level (Before)',
                 'Probability (After)','Impact (After)','Severity Score (After)','Severity Level (After)',
-                'Status','Owner','Mitigation Plan','Notes','Date Created','Date Modified'
+                'Status','Owner','Mitigation Plan','Notes','Last Reviewed','Next Review','Review Status','Date Created','Date Modified'
             ];
             let csv = headers.join(',') + '\r\n';
 
@@ -1369,7 +1428,7 @@
                     esc(r.title), esc(r.description), esc(r.category),
                     r.probability, r.impact, sev.score, esc(sev.label),
                     probAfter, impactAfter, sevAfter.score, esc(sevAfter.label),
-                    esc(r.status), esc(r.owner), esc(r.mitigation), esc(r.notes),
+                    esc(r.status), esc(r.owner), esc(r.mitigation), esc(r.notes), esc(formatDateUS(r.lastReviewed)), esc(formatDateUS(getRiskReview(r).nextReview)), esc(getRiskReview(r).status),
                     esc(formatDateUS(r.dateCreated)), esc(formatDateUS(r.dateModified))
                 ].join(',') + '\r\n';
             });
@@ -1431,7 +1490,8 @@
                     mitigation: ['mitigation plan', 'mitigation', 'treatment', 'response'],
                     notes: ['notes', 'comments', 'remarks', 'observations'],
                     dateCreated: ['date created', 'created', 'date added', 'creation date'],
-                    dateModified: ['date modified', 'modified', 'last modified', 'last updated']
+                    dateModified: ['date modified', 'modified', 'last modified', 'last updated'],
+                    lastReviewed: ['last reviewed', 'last review date', 'reviewed date']
                 };
 
                 for (const [key, names] of Object.entries(aliases)) {
@@ -1484,6 +1544,7 @@
                         owner: getVal(r, 'owner'),
                         mitigation: getVal(r, 'mitigation'),
                         notes: getVal(r, 'notes'),
+                        lastReviewed: getVal(r, 'lastReviewed'),
                         dateCreated: getVal(r, 'dateCreated') || new Date().toISOString().split('T')[0],
                         dateModified: getVal(r, 'dateModified') || new Date().toISOString().split('T')[0]
                     });
@@ -1579,6 +1640,9 @@
                         'Owner': r.owner || '',
                         'Mitigation Plan': r.mitigation || '',
                         'Notes': r.notes || '',
+                        'Last Reviewed': formatDateUS(r.lastReviewed) || '',
+                        'Next Review': formatDateUS(getRiskReview(r).nextReview) || '',
+                        'Review Status': getRiskReview(r).status,
                         'Date Created': formatDateUS(r.dateCreated) || '',
                         'Date Modified': formatDateUS(r.dateModified) || ''
                     };
@@ -1587,7 +1651,7 @@
                     type: 'exportData',
                     module: 'risks',
                     data: exportData,
-                    headers: ['Title','Description','Category','Probability (Before)','Impact (Before)','Severity Score (Before)','Severity Level (Before)','Probability (After)','Impact (After)','Severity Score (After)','Severity Level (After)','Status','Owner','Mitigation Plan','Notes','Date Created','Date Modified']
+                    headers: ['Title','Description','Category','Probability (Before)','Impact (Before)','Severity Score (Before)','Severity Level (Before)','Probability (After)','Impact (After)','Severity Score (After)','Severity Level (After)','Status','Owner','Mitigation Plan','Notes','Last Reviewed','Next Review','Review Status','Date Created','Date Modified']
                 }, '*');
             }
             if (event.data && event.data.type === 'importDataFromWorkbook' && event.data.module === 'risks') {
@@ -1611,6 +1675,7 @@
                         owner: r['Owner'] || r['owner'] || '',
                         mitigation: r['Mitigation Plan'] || r['mitigation'] || '',
                         notes: r['Notes'] || r['notes'] || '',
+                        lastReviewed: r['Last Reviewed'] || r['lastReviewed'] || '',
                         dateCreated: r['Date Created'] || r['dateCreated'] || new Date().toISOString(),
                         dateModified: r['Date Modified'] || r['dateModified'] || new Date().toISOString()
                     });

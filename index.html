@@ -749,7 +749,7 @@ function _buildZip(files) {
 
         <div id="info-tab" class="tab-content">
             <div class="info-content">
-                <h2>&#x1F6E1;&#xFE0F; CyberSec Operations Dashboard <span class="version-badge">v1.0.3</span></h2>
+                <h2>&#x1F6E1;&#xFE0F; CyberSec Operations Dashboard <span class="version-badge">v1.0.4</span></h2>
                 <p class="info-subtitle">A unified platform for managing cybersecurity operations, risk tracking, and compliance scheduling.</p>
 
                 <div class="info-columns">
@@ -832,7 +832,7 @@ function _buildZip(files) {
                     <p style="margin-top: 4px; font-size: 13px; color: #6c757d;">Status values: Not Started, In Progress, Completed. Dates in YYYY-MM-DD format.</p>
 
                     <p style="margin-top: 14px;"><strong>Risk Register:</strong></p>
-                    <div class="csv-format">Title | Description | Category | Probability | Impact | Severity Score | Severity Level | Status | Owner | Mitigation Plan | Notes | Date Created | Date Modified</div>
+                    <div class="csv-format">Title | Description | Category | Probability (Before) | Impact (Before) | Severity Score (Before) | Severity Level (Before) | Probability (After) | Impact (After) | Severity Score (After) | Severity Level (After) | Status | Owner | Mitigation Plan | Notes | Last Reviewed | Next Review | Review Status | Date Created | Date Modified</div>
 
                     <p style="margin-top: 14px;"><strong>Vendors:</strong></p>
                     <div class="csv-format">Vendor Name | Vendor Type | Business Purpose | SavvyFi Information | Information Classification | Risk Rating | Information Security Review | Current | Notes | Contact Information | Review Date | Type Review | Vendor Technical Contact | Responsible Team | Administration Portal Link | SavvyFi App Dependency | Integration Type | Administration Responsibilities | Administration Notes</div>
@@ -1138,7 +1138,7 @@ function _buildZip(files) {
         function getDefaultHeaders(mod) {
             const defaults = {
                 calendar: ['Date','Task','Category','Priority','Status','Owner','Notes'],
-                risks: ['Title','Description','Category','Probability (Before)','Impact (Before)','Severity Score (Before)','Severity Level (Before)','Probability (After)','Impact (After)','Severity Score (After)','Severity Level (After)','Status','Owner','Mitigation Plan','Notes','Date Created','Date Modified'],
+                risks: ['Title','Description','Category','Probability (Before)','Impact (Before)','Severity Score (Before)','Severity Level (Before)','Probability (After)','Impact (After)','Severity Score (After)','Severity Level (After)','Status','Owner','Mitigation Plan','Notes','Last Reviewed','Next Review','Review Status','Date Created','Date Modified'],
                 vendors: ['Vendor Name','Vendor Type','Business Purpose','Information Classification','Risk Rating','Information Security Review','Current','Notes','Contact Information','Review Date','Type Review','Vendor Technical Contact','Responsible Team','Administration Portal Link','Integration Type','Administration Responsibilities','Administration Notes'],
                 policies: ['Policy Name','Policy ID','Description','Policy URL','Category','Compliance Framework','Review Frequency','Status','Last Reviewed','Next Review','Effective Date','Version','Owner','Approver','Notes'],
                 notes:      ['Title','Date','Category','Priority','Author','Content','Tags'],
@@ -1627,8 +1627,8 @@ ${actionItems.length > 0 ? `<table>
 <div class="pb">
 <h2>Appendix A: Full Risk Register</h2>
 <table>
-  <tr><th>Title</th><th>Category</th><th>Severity</th><th>Score</th><th>Status</th><th>Owner</th><th>Mitigation Plan</th></tr>
-  ${risks.map(r => `<tr><td>${esc(r.Title)}</td><td>${esc(r.Category)}</td><td>${badge(riskSeverity(r))}</td><td>${esc(riskScore(r))}</td><td>${esc(r.Status)}</td><td>${esc(r.Owner)}</td><td>${esc(r['Mitigation Plan'])}</td></tr>`).join('')}
+  <tr><th>Title</th><th>Category</th><th>Severity</th><th>Score</th><th>Status</th><th>Owner</th><th>Last Reviewed</th><th>Next Review</th><th>Review Status</th><th>Mitigation Plan</th></tr>
+  ${risks.map(r => `<tr><td>${esc(r.Title)}</td><td>${esc(r.Category)}</td><td>${badge(riskSeverity(r))}</td><td>${esc(riskScore(r))}</td><td>${esc(r.Status)}</td><td>${esc(r.Owner)}</td><td>${esc(r['Last Reviewed'])}</td><td>${esc(r['Next Review'])}</td><td>${esc(r['Review Status'])}</td><td>${esc(r['Mitigation Plan'])}</td></tr>`).join('')}
 </table>
 </div>`;
                 }
