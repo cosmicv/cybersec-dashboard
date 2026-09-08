@@ -749,7 +749,7 @@ function _buildZip(files) {
 
         <div id="info-tab" class="tab-content">
             <div class="info-content">
-                <h2>&#x1F6E1;&#xFE0F; CyberSec Operations Dashboard <span class="version-badge">v1.0.4</span></h2>
+                <h2>&#x1F6E1;&#xFE0F; CyberSec Operations Dashboard <span class="version-badge">v1.0.5</span></h2>
                 <p class="info-subtitle">A unified platform for managing cybersecurity operations, risk tracking, and compliance scheduling.</p>
 
                 <div class="info-columns">
@@ -1008,6 +1008,12 @@ function _buildZip(files) {
 
             if (tabName === 'calendar' && _calendarShouldShowTodayAfterImport) {
                 postCalendarShowToday(true);
+            }
+
+            // Re-poll live module data whenever Dashboard is shown so KPIs
+            // reflect edits made in other tabs (not just the last Import).
+            if (tabName === 'dashboard' && typeof refreshDashboardFromModules === 'function') {
+                refreshDashboardFromModules();
             }
         }
 
