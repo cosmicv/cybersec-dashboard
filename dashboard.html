@@ -926,27 +926,58 @@
                 return cutoff;
             })();
 
+            // Annual risk review (same rules as Risk Register getRiskReview):
+            // Current reviews stay off the Action Center; only Never Reviewed /
+            // Overdue / Due Soon (within 30 days of next annual review) appear.
             const isClosedRisk = r => /(closed|archived|accepted|mitigated)/i.test(r['Status'] || '');
+            const normalizeReviewStatus = s => {
+                const v = String(s || '').trim().toLowerCase();
+                if (v === 'never reviewed') return 'Never Reviewed';
+                if (v === 'overdue') return 'Overdue';
+                if (v === 'due soon') return 'Due Soon';
+                if (v === 'current') return 'Current';
+                return '';
+            };
+            const resolveRiskReview = r => {
+                const exported = normalizeReviewStatus(r['Review Status']);
+                if (exported) {
+                    return { status: exported, next: parseDate(r['Next Review']) };
+                }
+                const last = parseDate(r['Last Reviewed']);
+                if (!last) return { status: 'Never Reviewed', next: null };
+                const next = new Date(last.getFullYear() + 1, last.getMonth(), last.getDate());
+                const daysUntil = Math.ceil((next - today) / 86400000);
+                return {
+                    status: daysUntil < 0 ? 'Overdue' : daysUntil <= 30 ? 'Due Soon' : 'Current',
+                    next
+                };
+            };
             risks.forEach(r => {
                 if (isClosedRisk(r)) return;
+                const review = resolveRiskReview(r);
+                if (review.status === 'Current') return;
+
                 const sev = capitalize(r['Severity Level (After)'] || r['Severity Level (Before)'] || '');
-                const score = Number(r['Severity Score (After)'] || r['Severity Score (Before)'] || 0);
-                if (sev === 'Critical' || sev === 'High' || score >= 40) {
-                    actions.push({
-                        source: 'Risk',
-                        level: sev === 'Critical' || score >= 70 ? 'critical' : 'warning',
-                        title: r['Title'] || r['Risk Title'] || 'Untitled risk',
-                        detail: [
-                            sev ? `${sev} severity` : '',
-                            r['Owner'] ? `Owner: ${r['Owner']}` : '',
-                            r['Status'] ? `Status: ${r['Status']}` : ''
-                        ].filter(Boolean).join(' | '),
-                        due: sev === 'Critical' || score >= 70 ? 'Immediate review' : 'Needs review',
-                        overdue: false,
-                        label: sev === 'Critical' || score >= 70 ? 'Critical' : 'Due Soon',
-                        sort: sev === 'Critical' || score >= 70 ? 10 : 30
-                    });
-                }
+                const overdue = review.status === 'Overdue' || review.status === 'Never Reviewed';
+                actions.push({
+                    source: 'Risk',
+                    level: overdue ? 'critical' : 'warning',
+                    title: r['Title'] || r['Risk Title'] || 'Untitled risk',
+                    detail: [
+                        sev ? `${sev} severity` : '',
+                        r['Owner'] ? `Owner: ${r['Owner']}` : '',
+                        r['Status'] ? `Status: ${r['Status']}` : '',
+                        `Review: ${review.status}`
+                    ].filter(Boolean).join(' | '),
+                    due: review.status === 'Never Reviewed'
+                        ? 'Never reviewed'
+                        : review.next
+                            ? `${overdue ? 'Overdue' : 'Due'} ${formatShortDate(review.next)}`
+                            : review.status,
+                    overdue,
+                    label: overdue ? 'Overdue' : 'Due Soon',
+                    sort: overdue ? 12 : 35
+                });
             });
 
             policies.forEach(p => {
@@ -1037,7 +1068,7 @@
             }
 
             const groupMeta = [
-                { source: 'Risk', title: 'Risks', subtitle: 'Open high and critical risk items' },
+                { source: 'Risk', title: 'Risks', subtitle: 'Overdue and upcoming annual risk reviews' },
                 { source: 'Policy', title: 'Policies', subtitle: 'Overdue and upcoming policy reviews' },
                 { source: 'Vendor', title: 'Vendors', subtitle: 'Stale or high-risk vendor reviews' },
                 { source: 'Task', title: 'Operations Tasks', subtitle: 'Overdue and upcoming scheduled work' }
