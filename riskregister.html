@@ -896,12 +896,13 @@
         }
 
         function renderStats() {
-            const total = risks.length;
-            const open = risks.filter(r => r.status === 'Open').length;
-            const monitoring = risks.filter(r => r.status === 'Monitoring').length;
-            const mitigated = risks.filter(r => r.status === 'Mitigated').length;
-            const critical = risks.filter(r => getAfterControlsSeverity(r).label === 'Critical').length;
-            const reviewsDue = risks.filter(r => ['Overdue', 'Never Reviewed'].includes(getRiskReview(r).status)).length;
+            const filtered = getFilteredRisks();
+            const total = filtered.length;
+            const open = filtered.filter(r => r.status === 'Open').length;
+            const monitoring = filtered.filter(r => r.status === 'Monitoring').length;
+            const mitigated = filtered.filter(r => r.status === 'Mitigated').length;
+            const critical = filtered.filter(r => getAfterControlsSeverity(r).label === 'Critical').length;
+            const reviewsDue = filtered.filter(r => ['Overdue', 'Never Reviewed'].includes(getRiskReview(r).status)).length;
 
             document.getElementById('statsBar').innerHTML = `
                 <div class="stat-card"><div class="stat-value" style="color:#667eea;">${total}</div><div class="stat-label">Total Risks</div></div>
