@@ -530,14 +530,14 @@
                 <label>Filter:</label>
 
                 <div class="multi-select-wrapper">
-                    <div class="multi-select-display" id="statusFilterDisplay" onclick="toggleDropdown('statusDropdown')">All Status</div>
+                    <div class="multi-select-display" id="statusFilterDisplay" onclick="toggleDropdown('statusDropdown')">4 selected</div>
                     <div class="multi-select-dropdown" id="statusDropdown">
-                        <div class="multi-select-option"><input type="checkbox" id="status_all" checked onchange="handleFilterChange('status', this)"><label for="status_all">All Status</label></div>
-                        <div class="multi-select-option"><input type="checkbox" id="status_Open" onchange="handleFilterChange('status', this)"><label for="status_Open">Open</label></div>
-                        <div class="multi-select-option"><input type="checkbox" id="status_Monitoring" onchange="handleFilterChange('status', this)"><label for="status_Monitoring">Monitoring</label></div>
-                        <div class="multi-select-option"><input type="checkbox" id="status_Mitigated" onchange="handleFilterChange('status', this)"><label for="status_Mitigated">Mitigated</label></div>
+                        <div class="multi-select-option"><input type="checkbox" id="status_all" onchange="handleFilterChange('status', this)"><label for="status_all">All Status</label></div>
+                        <div class="multi-select-option"><input type="checkbox" id="status_Open" checked onchange="handleFilterChange('status', this)"><label for="status_Open">Open</label></div>
+                        <div class="multi-select-option"><input type="checkbox" id="status_Monitoring" checked onchange="handleFilterChange('status', this)"><label for="status_Monitoring">Monitoring</label></div>
+                        <div class="multi-select-option"><input type="checkbox" id="status_Mitigated" checked onchange="handleFilterChange('status', this)"><label for="status_Mitigated">Mitigated</label></div>
                         <div class="multi-select-option"><input type="checkbox" id="status_Closed" onchange="handleFilterChange('status', this)"><label for="status_Closed">Closed</label></div>
-                        <div class="multi-select-option"><input type="checkbox" id="status_Archived" onchange="handleFilterChange('status', this)"><label for="status_Archived">Archived</label></div>
+                        <div class="multi-select-option"><input type="checkbox" id="status_Archived" checked onchange="handleFilterChange('status', this)"><label for="status_Archived">Archived</label></div>
                     </div>
                 </div>
 
@@ -985,9 +985,11 @@
         function renderCharts() {
             if (!chartsVisible) return;
 
+            const filtered = getFilteredRisks();
+
             // Severity distribution after controls
             const sevCounts = { Critical: 0, High: 0, Medium: 0, Low: 0 };
-            risks.forEach(r => {
+            filtered.forEach(r => {
                 const sev = getAfterControlsSeverity(r);
                 sevCounts[sev.label]++;
             });
@@ -1015,7 +1017,7 @@
 
             // Status distribution
             const statusCounts = { Open: 0, Monitoring: 0, Mitigated: 0, Closed: 0, Archived: 0 };
-            risks.forEach(r => { statusCounts[r.status] = (statusCounts[r.status] || 0) + 1; });
+            filtered.forEach(r => { statusCounts[r.status] = (statusCounts[r.status] || 0) + 1; });
 
             if (statusChartInstance) statusChartInstance.destroy();
             const statusCtx = document.getElementById('statusChart').getContext('2d');
@@ -1039,15 +1041,15 @@
                 }
             });
 
-            renderHeatmaps();
+            renderHeatmaps(filtered);
         }
 
-        function renderHeatmaps() {
-            renderHeatmap('heatmapBeforeChart', 'before');
-            renderHeatmap('heatmapAfterChart', 'after');
+        function renderHeatmaps(filtered) {
+            renderHeatmap('heatmapBeforeChart', 'before', filtered);
+            renderHeatmap('heatmapAfterChart', 'after', filtered);
         }
 
-        function renderHeatmap(canvasId, mode) {
+        function renderHeatmap(canvasId, mode, filtered) {
             const canvas = document.getElementById(canvasId);
             if (!canvas) return;
             const ctx = canvas.getContext('2d');
@@ -1062,7 +1064,7 @@
 
             // Build count grid [probBand 0-4][impactBand 0-4]
             const grid = Array.from({length: 5}, () => Array(5).fill(0));
-            risks.forEach(r => {
+            filtered.forEach(r => {
                 const prob   = mode === 'after' && r.probabilityAfter != null ? r.probabilityAfter : r.probability;
                 const impact = mode === 'after' && r.impactAfter != null      ? r.impactAfter      : r.impact;
                 const pb = Math.min(4, Math.ceil(prob   / 2) - 1);
